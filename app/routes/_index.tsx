@@ -4,8 +4,8 @@ import { spotifyStrategy } from '~/services/auth.server';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Like songs automatic sorter" },
+    { name: "description", content: "Welcome to AI liked songs sorter!" },
   ];
 };
 
@@ -19,11 +19,8 @@ export default function Index() {
 
   return (
     <div style={{ textAlign: 'center', padding: 20 }}>
-      <h2>Welcome to Remix!</h2>
-      <p>
-        <a href="https://docs.remix.run">Check out the docs</a> to get
-        started.
-      </p>
+      <h2>Welcome to AI liked songs sorter!</h2>
+      <br></br>
       {user ? (
         <p>You are logged in as: {user.name}</p>
       ) : (
