@@ -1,7 +1,7 @@
 singleQuote: true
 semi: false
 tabWidth: 2
-useTabs: false
+useTabs: true
 printWidth: 90
 arrowParens: avoid
 trailingComma: es5
@@ -14,3 +14,4 @@ htmlWhitespaceSensitivity: css # 'css', 'strict', 'ignore'
 jsxSingleQuote: false
 proseWrap: preserve # 'always', 'never', 'preserve'
 vueIndentScriptAndStyle: true
+experimentalTernaries: true
