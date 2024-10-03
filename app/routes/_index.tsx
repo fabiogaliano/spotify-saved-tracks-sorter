@@ -1,52 +1,94 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
-import { Form, useLoaderData } from '@remix-run/react';
-import { spotifyStrategy } from '~/services/auth.server';
-import { SpotifyApi } from '@fostertheweb/spotify-web-sdk';
+import type { LoaderFunctionArgs, MetaFunction, ActionFunction } from '@remix-run/node'
+import { Form, useActionData, useLoaderData } from '@remix-run/react'
+import {
+  spotifyStrategy,
+  getSpotifyApi,
+  getOrCreateUserDB,
+  initializeSpotifyApi,
+} from '~/services'
+import { SYNC_TYPES, startSyncSavedTracks } from '~/services/api.sync_savedtracks'
+import { getLastSyncTime } from '~/services/db/savedtracks.server'
 
 export const meta: MetaFunction = () => {
   return [
     { title: 'Like songs automatic sorter' },
     { name: 'description', content: 'Welcome to AI liked songs sorter!' },
-  ];
-};
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  if (!process.env.SPOTIFY_CLIENT_ID) {
-    throw new Error('SPOTIFY_CLIENT_ID environment variable is not set!');
-  }
-
-  const data = await spotifyStrategy.getSession(request);
-  let savedTracks = null;
-  if (data && data.accessToken) {
-    const sdk = SpotifyApi.withAccessToken(process.env.SPOTIFY_CLIENT_ID, {
-      access_token: data.accessToken,
-      refresh_token: data.refreshToken!,
-      expires_in: data.expiresAt,
-      token_type: data.tokenType!
-    })
-    savedTracks = await sdk.currentUser.tracks.savedTracks()
-  }
-
-  return { data, savedTracks }
+  ]
 }
 
-export default function Index() {
-  const { data, savedTracks } = useLoaderData<typeof loader>();
-  const user = data?.user;
+export async function loader({ request }: LoaderFunctionArgs) {
+  let spotifyProfile = null
+  let user = null
 
-  console.log('savedTracks: ', savedTracks?.items[0].track);
+  const session = await spotifyStrategy.getSession(request)
+  if (session) {
+    initializeSpotifyApi(session)
+    const spotifyApi = getSpotifyApi()
+    spotifyProfile = await spotifyApi.currentUser.profile()
+    if (spotifyProfile && spotifyProfile.id) {
+      try {
+        user = await getOrCreateUserDB(spotifyProfile.id, spotifyProfile.email)
+        const lastsync = await getLastSyncTime(user.id, SYNC_TYPES.SONGS)
+        const lastSyncDate = new Date(lastsync)
+
+        // console.log('lastsync : ', lastSyncDate)
+      } catch (error) {
+        console.error('getOrCreateUserDB error:', error)
+      }
+    }
+  }
+
+  return { spotifyProfile, user }
+}
+
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData()
+  const userId = formData.get('userId')
+
+  try {
+    const userIdNumber = userId ? Number(userId) : null
+    if (!userIdNumber) throw new Error('User ID not provided')
+    const result = await startSyncSavedTracks(userIdNumber)
+    console.log(result)
+    return result
+  } catch (error) {
+    console.error('Error syncing tracks:', error)
+    return { error: 'Failed to sync tracks' }
+  }
+}
+export default function Index() {
+  const { spotifyProfile, user } = useLoaderData<typeof loader>()
+  const actionData = useActionData<typeof action>()
+  console.log('actionData: ', actionData)
   return (
     <div style={{ textAlign: 'center', padding: 20 }}>
-      <h2>Welcome to AI liked songs sorter!</h2>
-      <br></br>
-      {user ? (
-        <p>You are logged in as: {user.name}</p>
+      {spotifyProfile ? (
+        <p>You are logged in as: {spotifyProfile.display_name}</p>
       ) : (
         <p>You are not logged in yet!</p>
       )}
-      <Form action={user ? '/logout' : '/auth/spotify'} method="post">
-        <button>{user ? 'Logout' : 'Log in with Spotify'}</button>
+      <Form action={spotifyProfile ? '/logout' : '/auth/spotify'} method="post">
+        <button>{spotifyProfile ? 'Logout' : 'Log in with Spotify'}</button>
       </Form>
+      <br />
+      <br />
+      <p>Organize your Spotify Liked Songs with the help of AI</p>
+      <br />
+      <p>To any playlist, edit the description to start with "AI:"</p>
+      <p>Then write the mood you want for songs to be matched against.</p>
+      <p>
+        <b>example</b>
+      </p>
+      <p>AI: falling in love and taking life slowly</p>
+      <br />
+      {spotifyProfile ? (
+        <Form method="post">
+          <input type="hidden" name="userId" value={user?.id} />
+          <button type="submit" name="_action" value="sync">
+            Fetch saved tracks
+          </button>
+        </Form>
+      ) : null}
     </div>
-  );
+  )
 }
