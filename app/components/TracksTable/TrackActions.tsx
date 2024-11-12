@@ -88,7 +88,7 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
   }
 
   return (
-    <div className="relative w-[120px]">
+    <div className="relative w-[120px] mx-auto">
       <Form ref={formRef} method="post" className="hidden">
         <input type="hidden" name="userId" value={userId} />
         <input type="hidden" name="trackId" value={trackId} />
@@ -105,10 +105,21 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
         onMouseLeave={handleMouseUp}
       >
         {/* Status indicators */}
-        <div className="absolute inset-0 flex justify-between items-center px-3 text-xs">
-          <span className="text-rose-300">–</span>
-          <span className="text-gray-300">•</span>
-          <span className="text-emerald-300">+</span>
+        <div className="absolute inset-0 flex justify-between items-center px-3">
+          {/* Remove icon */}
+          <svg className="w-3 h-3 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+
+          {/* Skip/Pause icon */}
+          <svg className="w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14m8-14v14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+
+          {/* Sort/Plus icon */}
+          <svg className="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
 
         {/* Sliding button with dynamic shapes */}
@@ -124,27 +135,27 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
             ${isDragging ? 'scale-105' : ''}
           `}
           style={{
-            transform: `translateX(calc(-50% + ${offsetX}px)) ${
-              status === 'sorted'
-                ? 'rotate(45deg)'
-                : status === 'ignored'
-                ? 'rotate(-45deg)'
-                : 'rotate(0deg)'
-            }`,
+            transform: `translateX(calc(-50% + ${offsetX}px))`,
           }}
         >
           {/* Dynamic inner content */}
           <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200
-            ${status === 'sorted' 
-              ? 'opacity-100' 
-              : 'opacity-0'}`}>
-            <div className="w-2 h-2 rounded-sm bg-emerald-200 rotate-[-45deg]" />
+            ${status === 'sorted' ? 'opacity-100' : 'opacity-0'}`}>
+            <svg className="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
           <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200
-            ${status === 'ignored' 
-              ? 'opacity-100' 
-              : 'opacity-0'}`}>
-            <div className="w-2 h-2 rounded-sm bg-rose-200 rotate-[45deg]" />
+            ${status === 'ignored' ? 'opacity-100' : 'opacity-0'}`}>
+            <svg className="w-3 h-3 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200
+            ${status === 'unsorted' ? 'opacity-100' : 'opacity-0'}`}>
+            <svg className="w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14m8-14v14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
         </div>
       </div>

@@ -28,7 +28,11 @@ export const createColumns = ({ showAddedDate = false, showAlbum = true }) => {
 
   columns.push(
     columnHelper.accessor('id', {
-      header: 'Status',
+      header: () => (
+        <div className="flex justify-center w-full">
+          Actions
+        </div>
+      ),
       cell: info => (
         <div className="flex justify-center w-full">
           <TrackActions 
