@@ -25,7 +25,7 @@ export function Instructions() {
             </svg>
           </div>
           <p className="text-sm">
-            <span className="font-medium">Sort (+):</span> Enable the track to be sorted into matching AI playlists
+            <span className="font-medium">Sort:</span> Enable the track to be sorted into matching AI playlists
           </p>
         </div>
 
@@ -37,7 +37,7 @@ export function Instructions() {
             </svg>
           </div>
           <p className="text-sm">
-            <span className="font-medium">Skip (•):</span> Temporarily ignore the track - it will reappear in future sorting sessions
+            <span className="font-medium">Skip:</span> Temporarily ignore the track - it will reappear in future sorting sessions
           </p>
         </div>
 
@@ -49,7 +49,7 @@ export function Instructions() {
             </svg>
           </div>
           <p className="text-sm">
-            <span className="font-medium">Remove (–):</span> Remove the track from sorting consideration permanently
+            <span className="font-medium">Remove:</span> Remove the track from sorting consideration permanently
           </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction, ActionFunction } from '@remix-run/node'
 import { useActionData, useLoaderData } from '@remix-run/react'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Instructions } from '~/components/Instructions'
 import { SyncLibrary } from '~/components/SyncLibrary'
 import {
@@ -124,11 +124,29 @@ export default function Index() {
 	)
 	const [showAlbum, setShowAlbum] = useState(() => {
 		if (typeof window !== 'undefined') {
-			return window.innerWidth >= 640 // sm breakpoint
+			return window.innerWidth >= 1000
 		}
 		return true
 	})
 	const [showAddedDate, setShowAddedDate] = useState(false)
+
+	// Add useEffect to handle window resize
+	useEffect(() => {
+		const handleResize = () => {
+			setShowAlbum(window.innerWidth >= 1000)
+		}
+
+		if (typeof window !== 'undefined') {
+			window.addEventListener('resize', handleResize)
+		}
+
+		// Cleanup listener on component unmount
+		return () => {
+			if (typeof window !== 'undefined') {
+				window.removeEventListener('resize', handleResize)
+			}
+		}
+	}, [])
 
 	const tableData = useMemo(() => {
 		if (!savedTracks) return []
@@ -190,14 +208,12 @@ export default function Index() {
 						/>
 					</div>
 				</div>
-				<div className="bg-white rounded-xl lg:rounded-3xl border border-gray-100 shadow-sm p-3 sm:p-4 lg:p-8 -mx-4 sm:mx-0 overflow-x-auto">
-					<TracksTable
-						tracks={tableData}
-						showStatus={showStatus}
-						showAddedDate={showAddedDate}
-						showAlbum={showAlbum}
-					/>
-				</div>
+				<TracksTable
+					tracks={tableData}
+					showStatus={showStatus}
+					showAddedDate={showAddedDate}
+					showAlbum={showAlbum}
+				/>
 			</main>
 		</div>
 	)

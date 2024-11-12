@@ -1,5 +1,4 @@
-import { Form } from '@remix-run/react'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 
 interface TrackActionsProps {
   userId: string
@@ -13,7 +12,6 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [offsetX, setOffsetX] = useState(0)
-  const formRef = useRef<HTMLFormElement>(null)
 
   const getStatusFromPosition = (position: number): Status => {
     if (position < -33) return 'ignored'
@@ -21,32 +19,13 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
     return 'unsorted'
   }
 
-  const getNextStatus = (currentStatus: Status): Status => {
-    if (currentStatus === 'unsorted' && offsetX === 0) return 'sorted'
-    if (currentStatus === 'sorted' && offsetX === 40) return 'ignored'
-    if (currentStatus === 'ignored' && offsetX === -40) return 'unsorted'
-    
-    if (currentStatus === 'unsorted') return 'sorted'
-    if (currentStatus === 'sorted') return 'ignored'
-    return 'unsorted'
-  }
-
-  const handleSubmit = () => {
-    if (formRef.current) {
-      formRef.current.requestSubmit()
-    }
-  }
-
-  // Click handler for simple status changes
   const handleClick = (e: React.MouseEvent) => {
     if (isDragging) return
 
-    // Get click position relative to the slider
     const rect = e.currentTarget.getBoundingClientRect()
     const clickX = e.clientX - rect.left
     const totalWidth = rect.width
 
-    // Simply set the state based on which third was clicked
     if (clickX < totalWidth / 3) {
       setStatus('ignored')
       setOffsetX(-40)
@@ -57,11 +36,8 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
       setStatus('unsorted')
       setOffsetX(0)
     }
-    
-    handleSubmit()
   }
 
-  // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
     setStartX(e.clientX - offsetX)
@@ -84,18 +60,10 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
     
     setIsDragging(false)
     setOffsetX(status === 'sorted' ? 40 : status === 'ignored' ? -40 : 0)
-    handleSubmit()
   }
 
   return (
     <div className="relative w-[120px] mx-auto">
-      <Form ref={formRef} method="post" className="hidden">
-        <input type="hidden" name="userId" value={userId} />
-        <input type="hidden" name="trackId" value={trackId} />
-        <input type="hidden" name="status" value={status} />
-        <input type="hidden" name="_action" value="updateTrackStatus" />
-      </Form>
-
       <div 
         className="relative h-8 rounded-full bg-gray-100/80 cursor-pointer backdrop-blur-sm"
         onClick={handleClick}

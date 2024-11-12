@@ -2,9 +2,11 @@ import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
+  getSortedRowModel,
   flexRender,
   createColumnHelper,
   ColumnDef,
+  SortingState,
 } from '@tanstack/react-table'
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { createColumns } from './columns'
@@ -20,12 +22,24 @@ export function TracksTable({
 }: TracksTableProps) {
   const [displayedRows, setDisplayedRows] = useState(tracks.slice(0, INITIAL_LOAD))
   const [isLoading, setIsLoading] = useState(false)
+  const [sorting, setSorting] = useState<SortingState>([])
   const containerRef = useRef<HTMLDivElement>(null)
   const allRowsLoaded = displayedRows.length >= tracks.length
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 685)
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   const columns = useMemo(
-    () => createColumns({ showAddedDate, showAlbum }),
-    [showAddedDate, showAlbum]
+    () => createColumns({ showAddedDate, showAlbum, isSmallScreen }),
+    [showAddedDate, showAlbum, isSmallScreen]
   )
 
   const table = useReactTable({
@@ -33,11 +47,15 @@ export function TracksTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
   })
 
   const { rows } = table.getRowModel()
 
-  // Set up intersection observer for infinite loading
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -63,7 +81,6 @@ export function TracksTable({
   const loadMoreRows = () => {
     setIsLoading(true)
     
-    // Simulate network delay
     setTimeout(() => {
       const currentLength = displayedRows.length
       const newRows = tracks.slice(
@@ -89,12 +106,24 @@ export function TracksTable({
                       <th
                         key={header.id}
                         scope="col"
-                        className="py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sm:pl-6"
+                        className={`py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sm:pl-6 
+                          ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
+                        onClick={header.column.getToggleSortingHandler()}
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        <div className="flex items-center gap-2">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {header.column.getCanSort() && header.column.getIsSorted() && (
+                            <span className="inline-block">
+                              {{
+                                asc: '↑',
+                                desc: '↓',
+                              }[header.column.getIsSorted() as string]}
+                            </span>
+                          )}
+                        </div>
                       </th>
                     ))}
                   </tr>
@@ -126,7 +155,6 @@ export function TracksTable({
         </div>
       </div>
 
-      {/* Loading indicator and intersection observer target */}
       <div ref={containerRef} className="h-20 flex items-center justify-center">
         {isLoading ? (
           <div className="animate-pulse text-gray-500">Loading more tracks...</div>
