@@ -1,49 +1,53 @@
 import { Form } from '@remix-run/react'
 import { createColumnHelper } from '@tanstack/react-table'
 import type { Track } from './types'
+import { TrackActions } from './TrackActions'
 
 const columnHelper = createColumnHelper<Track>()
 
-export const columns = [
-  columnHelper.accessor('name', {
-    header: 'Track',
-    cell: info => info.getValue(),
-  }),
-  columnHelper.accessor('artist', {
-    header: 'Artist',
-    cell: info => info.getValue(),
-  }),
-  columnHelper.accessor('album', {
-    header: 'Album',
-    cell: info => info.getValue(),
-  }),
-  columnHelper.accessor('likedAt', {
-    header: 'Added',
-    cell: info => new Date(info.getValue()).toLocaleDateString(),
-  }),
-  columnHelper.accessor('id', {
-    header: 'Actions',
-    cell: info => (
-      <Form method="post" className="inline-flex space-x-2">
-        <input type="hidden" name="userId" value={info.row.original.userId} />
-        <input type="hidden" name="trackId" value={info.getValue()} />
-        <button
-          type="submit"
-          name="_action"
-          value="updateTrackStatus"
-          className="px-3 py-1 bg-[#1DB954] text-white text-sm rounded-full hover:bg-[#1ed760] transition-colors"
-        >
-          Sort
-        </button>
-        <button
-          type="submit"
-          name="status"
-          value="ignored"
-          className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200 transition-colors"
-        >
-          Ignore
-        </button>
-      </Form>
-    ),
-  }),
-] 
+export const createColumns = ({ showAddedDate = false, showAlbum = true }) => {
+  const columns = [
+    columnHelper.accessor('artist', {
+      header: 'Artist',
+      cell: info => info.getValue(),
+    }),
+    columnHelper.accessor('name', {
+      header: 'Track',
+      cell: info => info.getValue(),
+    }),
+  ]
+
+  if (showAlbum) {
+    columns.push(
+      columnHelper.accessor('album', {
+        header: 'Album',
+        cell: info => info.getValue(),
+      })
+    )
+  }
+
+  columns.push(
+    columnHelper.accessor('id', {
+      header: 'Status',
+      cell: info => (
+        <div className="flex justify-center w-full">
+          <TrackActions 
+            userId={String(info.row.original.userId)}
+            trackId={info.getValue()} 
+          />
+        </div>
+      ),
+    })
+  )
+
+  if (showAddedDate) {
+    columns.push(
+      columnHelper.accessor('likedAt', {
+        header: 'Added',
+        cell: info => new Date(info.getValue()).toLocaleDateString(),
+      })
+    )
+  }
+
+  return columns
+} 

@@ -6,18 +6,27 @@ import {
   createColumnHelper,
   ColumnDef,
 } from '@tanstack/react-table'
-import { useEffect, useRef, useState } from 'react'
-import { columns } from './columns'
+import { useEffect, useRef, useState, useMemo } from 'react'
+import { createColumns } from './columns'
 import type { TracksTableProps } from './types'
 
 const INITIAL_LOAD = 20
 const LOAD_MORE_COUNT = 15
 
-export function TracksTable({ tracks, showStatus }: TracksTableProps) {
+export function TracksTable({ 
+  tracks, 
+  showAddedDate = false, 
+  showAlbum = true 
+}: TracksTableProps) {
   const [displayedRows, setDisplayedRows] = useState(tracks.slice(0, INITIAL_LOAD))
   const [isLoading, setIsLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const allRowsLoaded = displayedRows.length >= tracks.length
+
+  const columns = useMemo(
+    () => createColumns({ showAddedDate, showAlbum }),
+    [showAddedDate, showAlbum]
+  )
 
   const table = useReactTable({
     data: displayedRows,
@@ -97,7 +106,11 @@ export function TracksTable({ tracks, showStatus }: TracksTableProps) {
                     {row.getVisibleCells().map(cell => (
                       <td
                         key={cell.id}
-                        className="px-3 py-4 text-sm text-gray-500 truncate max-w-xs"
+                        className={`px-3 py-4 text-sm text-gray-500 ${
+                          cell.column.id === 'id' 
+                            ? 'w-[180px] text-right' 
+                            : 'truncate max-w-xs'
+                        }`}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,

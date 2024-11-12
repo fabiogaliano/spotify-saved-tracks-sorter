@@ -13,4 +13,6 @@ export type Track = {
 export type TracksTableProps = {
   tracks: Track[]
   showStatus: 'all' | 'unsorted' | 'sorted' | 'ignored'
+  showAddedDate?: boolean
+  showAlbum?: boolean
 } 

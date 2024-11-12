@@ -52,26 +52,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useLoaderData<typeof loader>();
 
   return (
-    <html lang="en">
+    <html lang="en" className="
+      text-[100%]
+      2xl:text-[110%]
+      3xl:text-[125%]
+    ">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
-      <body>
-        {isAuthenticated && (
-          <nav>
-            <div>
-              {user?.name && <span>Welcome, {user.name}</span>}
-              <Form action="/logout" method="post">
-                <button type="submit">Logout</button>
-              </Form>
-              <a href="/">Home</a>
-            </div>
-          </nav>
-        )}
-        {children}
+      <body className="min-h-screen bg-gray-50">
+        <main>
+          {children}
+        </main>
         <ScrollRestoration />
         <Scripts />
       </body>
