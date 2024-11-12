@@ -1,0 +1,764 @@
+{
+  "href": "https://api.spotify.com/v1/users/kapran0s/playlists?offset=0&limit=20",
+  "limit": 20,
+  "next": "https://api.spotify.com/v1/users/kapran0s/playlists?offset=20&limit=20",
+  "offset": 0,
+  "previous": null,
+  "total": 250,
+  "items": [
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/2rsql27KK8iuVzchaEXylQ"
+      },
+      "href": "https://api.spotify.com/v1/playlists/2rsql27KK8iuVzchaEXylQ",
+      "id": "2rsql27KK8iuVzchaEXylQ",
+      "images": [
+        {
+          "height": null,
+          "url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da846305283fa23ac19a63bf12ff",
+          "width": null
+        }
+      ],
+      "name": "journal",
+      "owner": {
+        "display_name": "cutefractal",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/rp4gqixxwxi8z99cqo5ba9jqi"
+        },
+        "href": "https://api.spotify.com/v1/users/rp4gqixxwxi8z99cqo5ba9jqi",
+        "id": "rp4gqixxwxi8z99cqo5ba9jqi",
+        "type": "user",
+        "uri": "spotify:user:rp4gqixxwxi8z99cqo5ba9jqi"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAECumUQaucqpn/MJh+Vj6Lxzzfm9s",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/2rsql27KK8iuVzchaEXylQ/tracks",
+        "total": 11
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:2rsql27KK8iuVzchaEXylQ"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/3T8RVkFYt42NbONcP3c2Cy"
+      },
+      "href": "https://api.spotify.com/v1/playlists/3T8RVkFYt42NbONcP3c2Cy",
+      "id": "3T8RVkFYt42NbONcP3c2Cy",
+      "images": [
+        {
+          "height": null,
+          "url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da849629e63c3f94aa1ac9dbaec8",
+          "width": null
+        }
+      ],
+      "name": "consistently inconsistent",
+      "owner": {
+        "display_name": "d",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/djv975vyzuun3ahwuesxuu0tl"
+        },
+        "href": "https://api.spotify.com/v1/users/djv975vyzuun3ahwuesxuu0tl",
+        "id": "djv975vyzuun3ahwuesxuu0tl",
+        "type": "user",
+        "uri": "spotify:user:djv975vyzuun3ahwuesxuu0tl"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAOV7/xhIM30fzeLJ98NrGX7XAngQp",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/3T8RVkFYt42NbONcP3c2Cy/tracks",
+        "total": 19
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:3T8RVkFYt42NbONcP3c2Cy"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/6Y8ZZJUL1R4i3sznSkF6Wt"
+      },
+      "href": "https://api.spotify.com/v1/playlists/6Y8ZZJUL1R4i3sznSkF6Wt",
+      "id": "6Y8ZZJUL1R4i3sznSkF6Wt",
+      "images": [
+        {
+          "height": null,
+          "url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da84617209e5d9a6dd3df9ab8272",
+          "width": null
+        }
+      ],
+      "name": "SD 26.2",
+      "owner": {
+        "display_name": "aanych",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/aanych"
+        },
+        "href": "https://api.spotify.com/v1/users/aanych",
+        "id": "aanych",
+        "type": "user",
+        "uri": "spotify:user:aanych"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAXhTBx+Jho+rJITRpX4WUsQ8SvwNK",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/6Y8ZZJUL1R4i3sznSkF6Wt/tracks",
+        "total": 56
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:6Y8ZZJUL1R4i3sznSkF6Wt"
+    },
+    {
+      "collaborative": false,
+      "description": "it’s the little things ✨",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/37i9dQZF1DWWAv76uXmtxB"
+      },
+      "href": "https://api.spotify.com/v1/playlists/37i9dQZF1DWWAv76uXmtxB",
+      "id": "37i9dQZF1DWWAv76uXmtxB",
+      "images": [
+        {
+          "height": null,
+          "url": "https://i.scdn.co/image/ab67706f00000002939028c1e5124638af3ecaf1",
+          "width": null
+        }
+      ],
+      "name": "romanticizing life",
+      "owner": {
+        "display_name": "Spotify",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/spotify"
+        },
+        "href": "https://api.spotify.com/v1/users/spotify",
+        "id": "spotify",
+        "type": "user",
+        "uri": "spotify:user:spotify"
+      },
+      "primary_color": "#ffffff",
+      "public": true,
+      "snapshot_id": "Zu1vgwAAAACZRipCfFrOhP9JIB7sbgIE",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/37i9dQZF1DWWAv76uXmtxB/tracks",
+        "total": 60
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:37i9dQZF1DWWAv76uXmtxB"
+    },
+    {
+      "collaborative": false,
+      "description": "You listened to <a href=\"spotify:playlist:37i9dQZF1EIgYdxh4wMIPG\">west coast hip hop</a> and storytelling in the early morning. Here's some: storytelling, <a href=\"spotify:playlist:37i9dQZF1EIgSAfoNxRk9o\">lyrical</a>, <a href=\"spotify:playlist:37i9dQZF1EQnqst5TRi17F\">hip hop</a>, <a href=\"spotify:playlist:37i9dQZF1EIhDO2ETsFddh\">rhymes</a>, <a href=\"spotify:playlist:37i9dQZF1EIhq5htbTjdSw\">socially conscious</a> and <a href=\"spotify:playlist:37i9dQZF1EIdnokGNaE69g\">poetry</a>",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/37i9dQZF1EP6YuccBxUcC1"
+      },
+      "href": "https://api.spotify.com/v1/playlists/37i9dQZF1EP6YuccBxUcC1",
+      "id": "37i9dQZF1EP6YuccBxUcC1",
+      "images": [
+        {
+          "height": null,
+          "url": "https://daylist.spotifycdn.com/playlist-covers-mix/en/early-morning_default.jpg",
+          "width": null
+        }
+      ],
+      "name": "daylist • storytelling lyrical early morning",
+      "owner": {
+        "display_name": "Spotify",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/spotify"
+        },
+        "href": "https://api.spotify.com/v1/users/spotify",
+        "id": "spotify",
+        "type": "user",
+        "uri": "spotify:user:spotify"
+      },
+      "primary_color": "#ffffff",
+      "public": true,
+      "snapshot_id": "AAAAAAAAAADXOyL9FKkFmiuJGpelHYbr",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/37i9dQZF1EP6YuccBxUcC1/tracks",
+        "total": 50
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:37i9dQZF1EP6YuccBxUcC1"
+    },
+    {
+      "collaborative": false,
+      "description": "Created by Shazam. Made for you. Songs are automatically added to this playlist each time you Shazam.",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/6SLT70ZVgePpvRgv2fU6d5"
+      },
+      "href": "https://api.spotify.com/v1/playlists/6SLT70ZVgePpvRgv2fU6d5",
+      "id": "6SLT70ZVgePpvRgv2fU6d5",
+      "images": [
+        {
+          "height": null,
+          "url": "https://i.scdn.co/image/ab67616d00001e02ad3a122ae5a91ac9bf93bf93",
+          "width": null
+        }
+      ],
+      "name": "My Shazam Tracks",
+      "owner": {
+        "display_name": "sozinhonolugar",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/kapran0s"
+        },
+        "href": "https://api.spotify.com/v1/users/kapran0s",
+        "id": "kapran0s",
+        "type": "user",
+        "uri": "spotify:user:kapran0s"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAA/5UZFqx7tp2hF5DjAq+jUyMx8Jo",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/6SLT70ZVgePpvRgv2fU6d5/tracks",
+        "total": 2
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:6SLT70ZVgePpvRgv2fU6d5"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/60iKYUhSKnAkgfh7vy1Wbu"
+      },
+      "href": "https://api.spotify.com/v1/playlists/60iKYUhSKnAkgfh7vy1Wbu",
+      "id": "60iKYUhSKnAkgfh7vy1Wbu",
+      "images": [
+        {
+          "height": null,
+          "url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da844824146a6dfddb731caa18f4",
+          "width": null
+        }
+      ],
+      "name": "🌻",
+      "owner": {
+        "display_name": "Moné",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/simonaslavova"
+        },
+        "href": "https://api.spotify.com/v1/users/simonaslavova",
+        "id": "simonaslavova",
+        "type": "user",
+        "uri": "spotify:user:simonaslavova"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAMYZATlEQuE6HuoabBIKsLWy6CDX6",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/60iKYUhSKnAkgfh7vy1Wbu/tracks",
+        "total": 17
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:60iKYUhSKnAkgfh7vy1Wbu"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/50rDvVb6q0E2iQj43qKXH7"
+      },
+      "href": "https://api.spotify.com/v1/playlists/50rDvVb6q0E2iQj43qKXH7",
+      "id": "50rDvVb6q0E2iQj43qKXH7",
+      "images": [
+        {
+          "height": null,
+          "url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000d72cbd12806b2746438c02852d2f",
+          "width": null
+        }
+      ],
+      "name": "❤️",
+      "owner": {
+        "display_name": "Moné",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/simonaslavova"
+        },
+        "href": "https://api.spotify.com/v1/users/simonaslavova",
+        "id": "simonaslavova",
+        "type": "user",
+        "uri": "spotify:user:simonaslavova"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAASOsEAJGMmp2P5jbGDvNWPp3Ne0T8",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/50rDvVb6q0E2iQj43qKXH7/tracks",
+        "total": 34
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:50rDvVb6q0E2iQj43qKXH7"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/4miHP3gANIqMLJRYQcq2LZ"
+      },
+      "href": "https://api.spotify.com/v1/playlists/4miHP3gANIqMLJRYQcq2LZ",
+      "id": "4miHP3gANIqMLJRYQcq2LZ",
+      "images": [
+        {
+          "height": null,
+          "url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000d72c38d53698da133de95f90aae7",
+          "width": null
+        }
+      ],
+      "name": "💔",
+      "owner": {
+        "display_name": "Moné",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/simonaslavova"
+        },
+        "href": "https://api.spotify.com/v1/users/simonaslavova",
+        "id": "simonaslavova",
+        "type": "user",
+        "uri": "spotify:user:simonaslavova"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAT6Ce3+W1qmVLFp3CiNk0kU7uvK8p",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/4miHP3gANIqMLJRYQcq2LZ/tracks",
+        "total": 35
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:4miHP3gANIqMLJRYQcq2LZ"
+    },
+    {
+      "collaborative": false,
+      "description": "Copy of Electric Study Vibes by Derek Sherman. Thee Playlist to put your mind at ease while you get shit done.  Designed to provide nondisruptive music to feed your mind, while seamlessly putting a smile on your face",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/0priO9fneavhbkBGHBYI2d"
+      },
+      "href": "https://api.spotify.com/v1/playlists/0priO9fneavhbkBGHBYI2d",
+      "id": "0priO9fneavhbkBGHBYI2d",
+      "images": [
+        {
+          "height": 640,
+          "url": "https://mosaic.scdn.co/640/ab67616d00001e02175097c9e9233c28d1ec8048ab67616d00001e021baedecb709ee32a328e9db4ab67616d00001e02b2719353a2c131c734cff475ab67616d00001e02e37608ac9405cd4163c20207",
+          "width": 640
+        },
+        {
+          "height": 300,
+          "url": "https://mosaic.scdn.co/300/ab67616d00001e02175097c9e9233c28d1ec8048ab67616d00001e021baedecb709ee32a328e9db4ab67616d00001e02b2719353a2c131c734cff475ab67616d00001e02e37608ac9405cd4163c20207",
+          "width": 300
+        },
+        {
+          "height": 60,
+          "url": "https://mosaic.scdn.co/60/ab67616d00001e02175097c9e9233c28d1ec8048ab67616d00001e021baedecb709ee32a328e9db4ab67616d00001e02b2719353a2c131c734cff475ab67616d00001e02e37608ac9405cd4163c20207",
+          "width": 60
+        }
+      ],
+      "name": "Copy- Electric Study Vibes (22-Aug-2024)",
+      "owner": {
+        "display_name": "sozinhonolugar",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/kapran0s"
+        },
+        "href": "https://api.spotify.com/v1/users/kapran0s",
+        "id": "kapran0s",
+        "type": "user",
+        "uri": "spotify:user:kapran0s"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAA4gk8l2bIR6RRtQe7f1zM/VPHHKq",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/0priO9fneavhbkBGHBYI2d/tracks",
+        "total": 167
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:0priO9fneavhbkBGHBYI2d"
+    },
+    {
+      "collaborative": false,
+      "description": "A Blend of music for sozinhonolugar and Giuli3. Updates daily.",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/37i9dQZF1EJDFOL8WkPzsv"
+      },
+      "href": "https://api.spotify.com/v1/playlists/37i9dQZF1EJDFOL8WkPzsv",
+      "id": "37i9dQZF1EJDFOL8WkPzsv",
+      "images": [
+        {
+          "height": null,
+          "url": "https://blend-playlist-covers.spotifycdn.com/v2/blend_DEFAULT-forest-seafoam-en.jpg",
+          "width": null
+        }
+      ],
+      "name": "Giuli3 + sozinhonolugar",
+      "owner": {
+        "display_name": "Spotify",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/spotify"
+        },
+        "href": "https://api.spotify.com/v1/users/spotify",
+        "id": "spotify",
+        "type": "user",
+        "uri": "spotify:user:spotify"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAAAAAAAB+ZVykUlNmyMyejta3xYTD",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/37i9dQZF1EJDFOL8WkPzsv/tracks",
+        "total": 50
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:37i9dQZF1EJDFOL8WkPzsv"
+    },
+    {
+      "collaborative": false,
+      "description": "A Blend of music for sozinhonolugar and Moné. Updates daily.",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/37i9dQZF1EJLIlj8oScptS"
+      },
+      "href": "https://api.spotify.com/v1/playlists/37i9dQZF1EJLIlj8oScptS",
+      "id": "37i9dQZF1EJLIlj8oScptS",
+      "images": [
+        {
+          "height": null,
+          "url": "https://blend-playlist-covers.spotifycdn.com/v2/blend_DEFAULT-azure-yellow-en.jpg",
+          "width": null
+        }
+      ],
+      "name": "Moné + sozinhonolugar",
+      "owner": {
+        "display_name": "Spotify",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/spotify"
+        },
+        "href": "https://api.spotify.com/v1/users/spotify",
+        "id": "spotify",
+        "type": "user",
+        "uri": "spotify:user:spotify"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAAAAAAABVqBQZriZr8CFPClpmA0KN",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/37i9dQZF1EJLIlj8oScptS/tracks",
+        "total": 50
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:37i9dQZF1EJLIlj8oScptS"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/5bp33jdnCiKuLxdcxZLrkc"
+      },
+      "href": "https://api.spotify.com/v1/playlists/5bp33jdnCiKuLxdcxZLrkc",
+      "id": "5bp33jdnCiKuLxdcxZLrkc",
+      "images": [
+        {
+          "height": 640,
+          "url": "https://mosaic.scdn.co/640/ab67616d00001e02131f4bdcb103d8c69ac8c16fab67616d00001e02787dab9c2dd37b7bfbe8270fab67616d00001e02d9587ababd13bd90db19ebd1ab67616d00001e02ff76191b987b4fbcc5b4e7b8",
+          "width": 640
+        },
+        {
+          "height": 300,
+          "url": "https://mosaic.scdn.co/300/ab67616d00001e02131f4bdcb103d8c69ac8c16fab67616d00001e02787dab9c2dd37b7bfbe8270fab67616d00001e02d9587ababd13bd90db19ebd1ab67616d00001e02ff76191b987b4fbcc5b4e7b8",
+          "width": 300
+        },
+        {
+          "height": 60,
+          "url": "https://mosaic.scdn.co/60/ab67616d00001e02131f4bdcb103d8c69ac8c16fab67616d00001e02787dab9c2dd37b7bfbe8270fab67616d00001e02d9587ababd13bd90db19ebd1ab67616d00001e02ff76191b987b4fbcc5b4e7b8",
+          "width": 60
+        }
+      ],
+      "name": "SOUND ADVICE: LIANA FLORES",
+      "owner": {
+        "display_name": "Interview Magazine",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/3a683i6v7bkjw4jj0gj7puwcn"
+        },
+        "href": "https://api.spotify.com/v1/users/3a683i6v7bkjw4jj0gj7puwcn",
+        "id": "3a683i6v7bkjw4jj0gj7puwcn",
+        "type": "user",
+        "uri": "spotify:user:3a683i6v7bkjw4jj0gj7puwcn"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAABJ2/3q/WF9Kra/9frfSXBhxZeqzJ",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/5bp33jdnCiKuLxdcxZLrkc/tracks",
+        "total": 16
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:5bp33jdnCiKuLxdcxZLrkc"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/3sXJurFIydhRLgssgWgRmh"
+      },
+      "href": "https://api.spotify.com/v1/playlists/3sXJurFIydhRLgssgWgRmh",
+      "id": "3sXJurFIydhRLgssgWgRmh",
+      "images": [
+        {
+          "height": null,
+          "url": "https://i.scdn.co/image/ab67616d00001e0271d62ea7ea8a5be92d3c1f62",
+          "width": null
+        }
+      ],
+      "name": "reset 0",
+      "owner": {
+        "display_name": "sozinhonolugar",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/kapran0s"
+        },
+        "href": "https://api.spotify.com/v1/users/kapran0s",
+        "id": "kapran0s",
+        "type": "user",
+        "uri": "spotify:user:kapran0s"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAABhWc1CJKoebDkAcbaKotr4ULB6F8",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/3sXJurFIydhRLgssgWgRmh/tracks",
+        "total": 3
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:3sXJurFIydhRLgssgWgRmh"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/6ICbSTDgXQ8oxEjnm0LXFf"
+      },
+      "href": "https://api.spotify.com/v1/playlists/6ICbSTDgXQ8oxEjnm0LXFf",
+      "id": "6ICbSTDgXQ8oxEjnm0LXFf",
+      "images": null,
+      "name": "My Playlist #104",
+      "owner": {
+        "display_name": "sozinhonolugar",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/kapran0s"
+        },
+        "href": "https://api.spotify.com/v1/users/kapran0s",
+        "id": "kapran0s",
+        "type": "user",
+        "uri": "spotify:user:kapran0s"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAAUs9G6+oKVkT3sNxVQrI+QWtDGs4",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/6ICbSTDgXQ8oxEjnm0LXFf/tracks",
+        "total": 0
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:6ICbSTDgXQ8oxEjnm0LXFf"
+    },
+    {
+      "collaborative": false,
+      "description": "After first seven albums (his most recent 10&#x2F;10s) it goes by release date of said album (some of the stuff isn&#x27;t on spotify and I&#x27;m not including classics that he hasn&#x27;t reviewed).",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/2YkruHugPy0BpIMPgx93pn"
+      },
+      "href": "https://api.spotify.com/v1/playlists/2YkruHugPy0BpIMPgx93pn",
+      "id": "2YkruHugPy0BpIMPgx93pn",
+      "images": [
+        {
+          "height": 640,
+          "url": "https://mosaic.scdn.co/640/ab67616d00001e02013c00ee367dd85396f79c82ab67616d00001e02b4f8459b0f719f8a97ee1c8cab67616d00001e02b7b029f75973dbee1961ca23ab67616d00001e02cdb645498cd3d8a2db4d05e1",
+          "width": 640
+        },
+        {
+          "height": 300,
+          "url": "https://mosaic.scdn.co/300/ab67616d00001e02013c00ee367dd85396f79c82ab67616d00001e02b4f8459b0f719f8a97ee1c8cab67616d00001e02b7b029f75973dbee1961ca23ab67616d00001e02cdb645498cd3d8a2db4d05e1",
+          "width": 300
+        },
+        {
+          "height": 60,
+          "url": "https://mosaic.scdn.co/60/ab67616d00001e02013c00ee367dd85396f79c82ab67616d00001e02b4f8459b0f719f8a97ee1c8cab67616d00001e02b7b029f75973dbee1961ca23ab67616d00001e02cdb645498cd3d8a2db4d05e1",
+          "width": 60
+        }
+      ],
+      "name": "Anthony Fantano 10/10s",
+      "owner": {
+        "display_name": "Miles Lambert-Gilliam",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/miles_lamborgenie"
+        },
+        "href": "https://api.spotify.com/v1/users/miles_lamborgenie",
+        "id": "miles_lamborgenie",
+        "type": "user",
+        "uri": "spotify:user:miles_lamborgenie"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAcAJZZ1fg4H9qZXy/V3Gqhcld8eTM",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/2YkruHugPy0BpIMPgx93pn/tracks",
+        "total": 886
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:2YkruHugPy0BpIMPgx93pn"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/1ERu7dDvKO4Rf93Qnf0fdF"
+      },
+      "href": "https://api.spotify.com/v1/playlists/1ERu7dDvKO4Rf93Qnf0fdF",
+      "id": "1ERu7dDvKO4Rf93Qnf0fdF",
+      "images": [
+        {
+          "height": null,
+          "url": "https://i.scdn.co/image/ab67616d00001e022e3a93f7e7cf2ff54852c8a1",
+          "width": null
+        }
+      ],
+      "name": "/ lounge /",
+      "owner": {
+        "display_name": "sozinhonolugar",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/kapran0s"
+        },
+        "href": "https://api.spotify.com/v1/users/kapran0s",
+        "id": "kapran0s",
+        "type": "user",
+        "uri": "spotify:user:kapran0s"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAAiWcrcOfn64r5dVrKpfJGIAutw5h",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/1ERu7dDvKO4Rf93Qnf0fdF/tracks",
+        "total": 1
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:1ERu7dDvKO4Rf93Qnf0fdF"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/6SwXTWjc9p3BaKwDFJgwfG"
+      },
+      "href": "https://api.spotify.com/v1/playlists/6SwXTWjc9p3BaKwDFJgwfG",
+      "id": "6SwXTWjc9p3BaKwDFJgwfG",
+      "images": [
+        {
+          "height": null,
+          "url": "https://i.scdn.co/image/ab67616d00001e02e045aa197ada995407bf92fc",
+          "width": null
+        }
+      ],
+      "name": "Panchiko – D>E>A>T>H>M>E>T>A>L",
+      "owner": {
+        "display_name": "sozinhonolugar",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/kapran0s"
+        },
+        "href": "https://api.spotify.com/v1/users/kapran0s",
+        "id": "kapran0s",
+        "type": "user",
+        "uri": "spotify:user:kapran0s"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAAjGXL6lY9fLhm1qxFhd5DEVnjbtn",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/6SwXTWjc9p3BaKwDFJgwfG/tracks",
+        "total": 11
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:6SwXTWjc9p3BaKwDFJgwfG"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/53to3Rn6NfyqvCEnbQlioW"
+      },
+      "href": "https://api.spotify.com/v1/playlists/53to3Rn6NfyqvCEnbQlioW",
+      "id": "53to3Rn6NfyqvCEnbQlioW",
+      "images": [
+        {
+          "height": 640,
+          "url": "https://mosaic.scdn.co/640/ab67616d00001e02532391d63cfd6d32677f7af6ab67616d00001e02656094f05ffe84c3b41564d2ab67616d00001e0281aaddeaacc1b4006b1d6fb1ab67616d00001e028ca7d89456553e4bbbf3c981",
+          "width": 640
+        },
+        {
+          "height": 300,
+          "url": "https://mosaic.scdn.co/300/ab67616d00001e02532391d63cfd6d32677f7af6ab67616d00001e02656094f05ffe84c3b41564d2ab67616d00001e0281aaddeaacc1b4006b1d6fb1ab67616d00001e028ca7d89456553e4bbbf3c981",
+          "width": 300
+        },
+        {
+          "height": 60,
+          "url": "https://mosaic.scdn.co/60/ab67616d00001e02532391d63cfd6d32677f7af6ab67616d00001e02656094f05ffe84c3b41564d2ab67616d00001e0281aaddeaacc1b4006b1d6fb1ab67616d00001e028ca7d89456553e4bbbf3c981",
+          "width": 60
+        }
+      ],
+      "name": "indie shit",
+      "owner": {
+        "display_name": "sozinhonolugar",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/kapran0s"
+        },
+        "href": "https://api.spotify.com/v1/users/kapran0s",
+        "id": "kapran0s",
+        "type": "user",
+        "uri": "spotify:user:kapran0s"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAAAI/Glc8B7Hczt9FLptM243NUy1+20",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/53to3Rn6NfyqvCEnbQlioW/tracks",
+        "total": 29
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:53to3Rn6NfyqvCEnbQlioW"
+    },
+    {
+      "collaborative": false,
+      "description": "suburban kid typa beat",
+      "external_urls": {
+        "spotify": "https://open.spotify.com/playlist/4gvayGSGohZdSfoKnRWZma"
+      },
+      "href": "https://api.spotify.com/v1/playlists/4gvayGSGohZdSfoKnRWZma",
+      "id": "4gvayGSGohZdSfoKnRWZma",
+      "images": [
+        {
+          "height": null,
+          "url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da8437be3f61699a7c8ea06a345c",
+          "width": null
+        }
+      ],
+      "name": "suburbs",
+      "owner": {
+        "display_name": "Gaby Malabanan",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/user/1216939801"
+        },
+        "href": "https://api.spotify.com/v1/users/1216939801",
+        "id": "1216939801",
+        "type": "user",
+        "uri": "spotify:user:1216939801"
+      },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "AAABq1/0OFba5QLFSfKpj6n+vNMPcMg8",
+      "tracks": {
+        "href": "https://api.spotify.com/v1/playlists/4gvayGSGohZdSfoKnRWZma/tracks",
+        "total": 333
+      },
+      "type": "playlist",
+      "uri": "spotify:playlist:4gvayGSGohZdSfoKnRWZma"
+    }
+  ]
+}

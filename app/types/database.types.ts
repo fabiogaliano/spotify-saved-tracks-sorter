@@ -104,6 +104,52 @@ export type Database = {
           },
         ]
       }
+      playlist_tracks: {
+        Row: {
+          added_at: string
+          id: number
+          playlist_id: number
+          track_id: number
+          user_id: number
+        }
+        Insert: {
+          added_at: string
+          id?: number
+          playlist_id: number
+          track_id: number
+          user_id: number
+        }
+        Update: {
+          added_at?: string
+          id?: number
+          playlist_id?: number
+          track_id?: number
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_tracks_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlists: {
         Row: {
           created_at: string | null
@@ -149,18 +195,27 @@ export type Database = {
         Row: {
           id: number
           liked_at: string
+          sorting_status:
+            | Database["public"]["Enums"]["sorting_status_enum"]
+            | null
           track_id: number
           user_id: number
         }
         Insert: {
           id?: number
           liked_at: string
+          sorting_status?:
+            | Database["public"]["Enums"]["sorting_status_enum"]
+            | null
           track_id: number
           user_id: number
         }
         Update: {
           id?: number
           liked_at?: string
+          sorting_status?:
+            | Database["public"]["Enums"]["sorting_status_enum"]
+            | null
           track_id?: number
           user_id?: number
         }
@@ -287,7 +342,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      sorting_status_enum: "unsorted" | "sorted" | "ignored"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -375,4 +430,19 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never

@@ -7,8 +7,13 @@ const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID
 
 let spotifyInstance: SpotifyApi | null = null
 
-// TODO: fix any
-export function initializeSpotifyApi(session: any) {
+interface SpotifySession {
+  accessToken: string
+  refreshToken: string
+  expiresIn: number
+}
+
+export function initializeSpotifyApi(session: SpotifySession) {
   spotifyInstance = SpotifyApi.withAccessToken(SPOTIFY_CLIENT_ID, {
     access_token: session.accessToken,
     refresh_token: session.refreshToken,

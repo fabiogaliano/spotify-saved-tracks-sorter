@@ -74,7 +74,7 @@ module.exports = {
 			rules: {
 				'no-unused-vars': 'warn',
 				'@typescript-eslint/no-explicit-any': 'warn',
-				'no-unexpected-multiline': true,
+				'no-unexpected-multiline': 'error',
 			},
 		},
 

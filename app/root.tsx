@@ -10,6 +10,7 @@ import {
 import type { LinksFunction, LoaderFunctionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { authenticator } from '~/services/auth.server';
+import type { SpotifySession } from '~/services/auth.server';
 
 import './tailwind.css';
 
@@ -26,21 +27,29 @@ export const links: LinksFunction = () => [
   },
 ];
 
-const publicRoutes = ['/', '/about'];
+const publicRoutes = ['/', '/about', '/auth/spotify', '/auth/spotify/callback'];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const pathname = new URL(request.url).pathname;
-  const isAuthenticated = !!(await authenticator.isAuthenticated(request));
+  const url = new URL(request.url);
+  const pathname = url.pathname;
 
-  if (!publicRoutes.includes(pathname) && !isAuthenticated) {
-    throw redirect('/');
+  // Get session and handle type safety
+  const session = await authenticator.isAuthenticated(request) as SpotifySession | null;
+
+  // For protected routes, redirect if not authenticated
+  if (!publicRoutes.includes(pathname) && !session) {
+    return redirect('/');
   }
 
-  return json({ isAuthenticated });
+  // Return minimal session data needed for UI
+  return json({
+    isAuthenticated: !!session,
+    user: session?.user || null
+  });
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated = false } = useLoaderData<typeof loader>();
+  const { isAuthenticated, user } = useLoaderData<typeof loader>();
 
   return (
     <html lang="en">
@@ -53,17 +62,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         {isAuthenticated && (
           <nav>
-            {/* Add navigation items */}
-            <Form action="/logout" method="post">
-              <button type="submit">Logout</button>
-            </Form>
-            <a href="/">Home</a>
-            <br />
-            <a href="/playlists">Playlists</a>
-            <br />
-            <a href="/savedtracks">Saved Tracks</a>
-            <br />
-            <br />
+            <div>
+              {user?.name && <span>Welcome, {user.name}</span>}
+              <Form action="/logout" method="post">
+                <button type="submit">Logout</button>
+              </Form>
+              <a href="/">Home</a>
+            </div>
           </nav>
         )}
         {children}

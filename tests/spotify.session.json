@@ -1,0 +1,12 @@
+{
+  "accessToken": "BQDE167fV2R-Wu7jQd49s_O8uIKaZkuFvERgWW3BXiAEFMSCZZqlzxAUNreMJfUplL-cPkUinK2cEPTh4cxRH4f_ntfQHQ-lH7NE5C1PfH8hO9VosnPtvjRXDOaxgIndNngo_ZlwXHXxwJkOIy5AAxr7wzg56oFVTRytu940qMkaMIX4y3VWxN8rGln-Kd1PYEK_R2VeMQ-tPDXDshbTcOeoC5kA-jAQQxxVXy-HBNKtBb-4CLDMsY8NK5abZvX_ZYDyvT2OEvUMxZ5-4NluSvY",
+  "refreshToken": "AQDJIzJszBaBzYUVsxUmai6CJZllqoX_coQdfuMT9ORdU42p1FELzDJSPxbInvQo7FGZn3f2LlolZuS2Lts4HOc0b5YpjAnuO3lt8eVZ9ubEjzg_wN6kVjFAgsxT3WRW7ik",
+  "expiresAt": 1731372567485,
+  "tokenType": "Bearer",
+  "user": {
+    "id": "kapran0s",
+    "email": "fbkzyeu@gmail.com",
+    "name": "sozinhonolugar",
+    "image": "https://i.scdn.co/image/ab67757000003b82cfdcbcd3a06c2ce785abb9b3"
+  }
+}

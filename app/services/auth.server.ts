@@ -1,7 +1,21 @@
-import { Authenticator } from 'remix-auth'
+import { Authenticator, Strategy } from 'remix-auth'
 import { SpotifyStrategy } from 'remix-auth-spotify'
 
 import { sessionStorage } from '~/services/session.server'
+
+// Define and export the session type
+export type SpotifySession = {
+  accessToken: string
+  refreshToken: string
+  expiresAt: number
+  tokenType: string
+  user: {
+    id: string
+    email: string
+    name: string
+    image?: string
+  }
+}
 
 if (!process.env.SPOTIFY_CLIENT_ID) {
   throw new Error('Missing SPOTIFY_CLIENT_ID env')
