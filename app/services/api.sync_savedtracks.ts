@@ -19,7 +19,12 @@ export const SYNC_TYPES = {
 	PLAYLISTS: 'playlists',
 } as const
 
-export async function startSyncSavedTracks(userId: number) {
+export interface SyncResult {
+	success: boolean
+	message: string
+}
+
+export async function startSyncSavedTracks(userId: number): Promise<SyncResult> {
 	if (!userId || userId <= 0) {
 		throw new Error('Invalid userId provided')
 	}

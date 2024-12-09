@@ -5,12 +5,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
 } from '@remix-run/react';
-import type { LinksFunction, LoaderFunctionArgs } from '@remix-run/node';
+import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { authenticator } from '~/services/auth.server';
 import type { SpotifySession } from '~/services/auth.server';
+import { StrictMode } from 'react';
 
 import './tailwind.css';
 
@@ -33,33 +33,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const pathname = url.pathname;
 
-  // Get session and handle type safety
   const session = await authenticator.isAuthenticated(request) as SpotifySession | null;
 
-  // For protected routes, redirect if not authenticated
   if (!publicRoutes.includes(pathname) && !session) {
     return redirect('/');
   }
 
-  // Return minimal session data needed for UI
   return json({
     isAuthenticated: !!session,
     user: session?.user || null
   });
 }
 
-export function Layout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useLoaderData<typeof loader>();
+export const meta: MetaFunction = () => {
+  return [
+    { charSet: "utf-8" },
+    { name: "viewport", content: "width=device-width, initial-scale=1" },
+    { title: "spotify liked songs - ai sorter" },
+  ];
+};
 
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="
-      text-[100%]
-      2xl:text-[110%]
-      3xl:text-[125%]
-    ">
+    <html lang="en" className="text-[100%] 2xl:text-[110%] 3xl:text-[125%]">
       <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
@@ -75,5 +72,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <StrictMode>
+      <Outlet />
+    </StrictMode>
+  );
 }

@@ -94,76 +94,79 @@ export function TracksTable({
   }
 
   return (
-    <>
-      <div className="overflow-x-auto">
-        <div className="inline-block min-w-full align-middle">
-          <div className="overflow-hidden border border-gray-200 rounded-2xl">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                {table.getHeaderGroups().map(headerGroup => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map(header => (
-                      <th
-                        key={header.id}
-                        scope="col"
-                        className={`py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sm:pl-6 
-                          ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        <div className="flex items-center gap-2">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {header.column.getCanSort() && header.column.getIsSorted() && (
-                            <span className="inline-block">
-                              {{
-                                asc: '↑',
-                                desc: '↓',
-                              }[header.column.getIsSorted() as string]}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {rows.map(row => (
-                  <tr key={row.id} className="hover:bg-gray-50">
-                    {row.getVisibleCells().map(cell => (
-                      <td
-                        key={cell.id}
-                        className={`px-3 py-4 text-sm text-gray-500 ${
-                          cell.column.id === 'id' 
-                            ? 'w-[180px] text-right' 
-                            : 'truncate max-w-xs'
-                        }`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div ref={containerRef} className="h-20 flex items-center justify-center">
-        {isLoading ? (
-          <div className="animate-pulse text-gray-500">Loading more tracks...</div>
-        ) : !allRowsLoaded ? (
-          <div className="text-gray-400">Scroll to load more</div>
-        ) : (
-          <div className="text-gray-400">All tracks loaded</div>
-        )}
-      </div>
-    </>
-  )
+  <>
+    <div className="w-full overflow-x-auto border border-gray-200 rounded-2xl">
+      <table className="w-full min-w-[800px] divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map(header => (
+                <th
+                  key={header.id}
+                  scope="col"
+                  className={`py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sm:pl-6 whitespace-nowrap
+                    ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
+                  onClick={header.column.getToggleSortingHandler()}
+                >
+                  <div className="flex items-center gap-2">
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                    {header.column.getCanSort() && header.column.getIsSorted() && (
+                      <span className="inline-block">
+                        {{
+                          asc: '↑',
+                          desc: '↓',
+                        }[header.column.getIsSorted() as string]}
+                      </span>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {rows.map(row => (
+            <tr key={row.id} className="hover:bg-gray-50">
+              {row.getVisibleCells().map(cell => (
+                <td
+                  key={cell.id}
+                  className={`px-3 py-4 text-sm text-gray-500 ${
+                    cell.column.id === 'id' 
+                      ? 'w-[180px] text-right' 
+                      : cell.column.id === 'name'
+                        ? 'max-w-[200px]'
+                        : 'max-w-xs'
+                  }`}
+                >
+                  <div className={`${
+                    cell.column.id === 'name'
+                      ? 'truncate overflow-hidden text-ellipsis'
+                      : ''
+                  }`}>
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
+                    )}
+                  </div>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div ref={containerRef} className="h-20 flex items-center justify-center">
+      {isLoading ? (
+        <div className="animate-pulse text-gray-500">Loading more tracks...</div>
+      ) : !allRowsLoaded ? (
+        <div className="text-gray-400">Scroll to load more</div>
+      ) : (
+        <div className="text-gray-400">All tracks loaded</div>
+      )}
+    </div>
+  </>
+)
 } 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Instructions } from '~/components/Instructions'
+import { Help } from '~/components/Instructions'
 
 type ColumnToggleProps = {
   showAlbum: boolean

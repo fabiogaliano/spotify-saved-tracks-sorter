@@ -1,8 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction, ActionFunction } from '@remix-run/node'
-import { useActionData, useLoaderData } from '@remix-run/react'
+import { useActionData, useLoaderData, useFetcher, json } from '@remix-run/react'
 import { useState, useMemo, useEffect } from 'react'
-import { Instructions } from '~/components/Instructions'
-import { SyncLibrary } from '~/components/SyncLibrary'
 import {
 	spotifyStrategy,
 	getSpotifyApi,
@@ -10,9 +8,8 @@ import {
 	initializeSpotifyApi,
 	authenticator,
 } from '~/services'
-import { SYNC_TYPES, startSyncSavedTracks } from '~/services/api.sync_savedtracks'
+import { startSyncSavedTracks, SyncResult } from '~/services/api.sync_savedtracks'
 import { startSyncPlaylists } from '~/services/api.sync_playlists'
-import { getLastSyncTime, SavedTrackRow } from '~/services/db/savedtracks.server'
 import { getSavedTracks } from '~/services/db/savedtracks.server'
 import { Database } from '~/types/database.types'
 import { SpotifyLogin } from '~/components/SpotifyLogin'
@@ -20,66 +17,47 @@ import { SpotifySignOut } from '~/components/SpotifySignOut'
 import { TracksTable } from '~/components/TracksTable/TracksTable'
 import { StatusFilter } from '~/components/TracksTable/StatusFilter'
 import { ColumnToggle } from '~/components/TracksTable/ColumnVisibility'
-import { InstructionsButton } from '~/components/InstructionsButton'
+import { HelpButton } from '~/components/HelpButton'
+import { SyncLibraryButton } from '~/components/Sync/SyncLibraryButton'
+import { ConfigButton } from '~/components/ConfigButton'
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: 'Like songs automatic sorter' },
-		{ name: 'description', content: 'Welcome to AI liked songs sorter!' },
+		{ title: 'spotify liked songs - ai sorter' },
+		{ name: 'description', content: 'Welcome to spotify liked songs - ai sorter!' },
 	]
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
-	let spotifyProfile = null
-	let user = null
-	let savedTracks: SavedTrackRow[] | null = null
-
+export const loader = async ({ request }: LoaderFunctionArgs) => {
 	try {
-		// First try to get the session
 		const session = await spotifyStrategy.getSession(request)
-
 		if (!session) {
-			// If no session, return early with null values
-			return { spotifyProfile, user, savedTracks }
+			return { spotifyProfile: null, user: null, savedTracks: null }
 		}
 
-		// Check if session is expired
 		if (session.expiresAt <= Date.now()) {
-			// If session is expired, redirect to login
 			throw await authenticator.logout(request, { redirectTo: '/login' })
 		}
 
-		try {
-			// Initialize Spotify API with the session tokens
-			initializeSpotifyApi({
-				accessToken: session.accessToken,
-				refreshToken: session.refreshToken!,
-				expiresIn: Math.floor((session.expiresAt - Date.now()) / 1000),
-			})
+		initializeSpotifyApi({
+			accessToken: session.accessToken,
+			refreshToken: session.refreshToken!,
+			expiresIn: Math.floor((session.expiresAt - Date.now()) / 1000),
+		})
 
-			const spotifyApi = getSpotifyApi()
-			spotifyProfile = await spotifyApi.currentUser.profile()
+		const spotifyApi = getSpotifyApi()
+		const spotifyProfile = await spotifyApi.currentUser.profile()
 
-			if (!spotifyProfile?.id) {
-				throw new Error('Failed to get Spotify profile')
-			}
-
-			user = await getOrCreateUserDB(spotifyProfile.id, spotifyProfile.email)
-			if (user) {
-				savedTracks = await getSavedTracks(user.id)
-			}
-		} catch (error) {
-			console.error('API or DB error:', error)
-			// If there's an API error, we might need to re-authenticate
-			throw await authenticator.logout(request, { redirectTo: '/login' })
+		if (!spotifyProfile?.id) {
+			throw new Error('Failed to get Spotify profile')
 		}
 
+		const user = await getOrCreateUserDB(spotifyProfile.id, spotifyProfile.email)
+		const savedTracks = user ? await getSavedTracks(user.id) : null
 		return { spotifyProfile, user, savedTracks }
 	} catch (error) {
 		console.error('Loader error:', error)
-		// If it's a Response (redirect), throw it
 		if (error instanceof Response) throw error
-		// Otherwise return null values
 		return { spotifyProfile: null, user: null, savedTracks: null }
 	}
 }
@@ -94,13 +72,15 @@ export const action: ActionFunction = async ({ request }) => {
 		if (!userIdNumber) throw new Error('User ID not provided')
 
 		if (action === 'sync') {
-			const savedTracksResult = await startSyncSavedTracks(userIdNumber)
-			const playlistsResult = await startSyncPlaylists(userIdNumber)
+			const [savedTracksResult, playlistsResult] = await Promise.all([
+				startSyncSavedTracks(userIdNumber),
+				startSyncPlaylists(userIdNumber),
+			])
 
-			return {
+			return json({
 				savedTracks: savedTracksResult,
 				playlists: playlistsResult,
-			}
+			})
 		}
 
 		if (action === 'updateTrackStatus') {
@@ -112,7 +92,9 @@ export const action: ActionFunction = async ({ request }) => {
 		}
 	} catch (error) {
 		console.error('Action error:', error)
-		return { error: 'Failed to process request' }
+		return json({
+			error: 'Failed to process request',
+		})
 	}
 }
 
@@ -122,40 +104,15 @@ export default function Index() {
 	const [showStatus, setShowStatus] = useState<'all' | 'unsorted' | 'sorted' | 'ignored'>(
 		'unsorted'
 	)
-	const [showAlbum, setShowAlbum] = useState(() => {
-		if (typeof window !== 'undefined') {
-			return window.innerWidth >= 1000
-		}
-		return true
-	})
+	const [showAlbum, setShowAlbum] = useState(false)
 	const [showAddedDate, setShowAddedDate] = useState(false)
 
-	// Add useEffect to handle window resize
-	useEffect(() => {
-		const handleResize = () => {
-			setShowAlbum(window.innerWidth >= 1000)
-		}
-
-		if (typeof window !== 'undefined') {
-			window.addEventListener('resize', handleResize)
-		}
-
-		// Cleanup listener on component unmount
-		return () => {
-			if (typeof window !== 'undefined') {
-				window.removeEventListener('resize', handleResize)
-			}
-		}
-	}, [])
-
+	// Memoized table data to prevent unnecessary recalculations
 	const tableData = useMemo(() => {
 		if (!savedTracks) return []
 
 		return savedTracks
-			.filter(track => {
-				if (showStatus === 'all') return true
-				return track.sorting_status === showStatus
-			})
+			.filter(track => showStatus === 'all' || track.sorting_status === showStatus)
 			.map(track => ({
 				id: track.tracks.spotify_track_id,
 				name: track.tracks.name,
@@ -167,7 +124,14 @@ export default function Index() {
 			}))
 	}, [savedTracks, showStatus, user?.id])
 
-	// If user is not logged in, show only the login component centered
+	useEffect(() => {
+		setShowAlbum(window.innerWidth >= 1000)
+
+		const handleResize = () => setShowAlbum(window.innerWidth >= 1000)
+		window.addEventListener('resize', handleResize)
+		return () => window.removeEventListener('resize', handleResize)
+	}, [])
+
 	if (!spotifyProfile) {
 		return (
 			<div className="h-screen flex items-center justify-center p-4">
@@ -178,7 +142,7 @@ export default function Index() {
 
 	// Rest of the component for logged in users
 	return (
-		<div className="max-w-[120rem] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-14">
+		<div className="max-w-[120rem] mx-auto px-2 sm:px-6 lg:px-10 py-6 lg:py-14">
 			<nav className="space-y-6 lg:space-y-10 mb-6 lg:mb-12">
 				<div className="flex flex-col-reverse sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4 lg:pb-8">
 					<div className="w-full sm:w-auto">
@@ -189,7 +153,9 @@ export default function Index() {
 						)}
 					</div>
 					<div className="w-full sm:w-auto flex justify-center sm:justify-end gap-4">
-						<InstructionsButton />
+						<SyncLibraryButton userId={user.id} />
+						<HelpButton />
+						<ConfigButton />
 						<SpotifySignOut />
 					</div>
 				</div>

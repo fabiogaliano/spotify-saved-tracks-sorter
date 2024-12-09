@@ -3,6 +3,7 @@ import { getSupabase } from './db'
 import { SYNC_STATUS, SYNC_TYPES } from '../api.sync_savedtracks'
 
 import { Database } from '../../types/database.types'
+import { PreparedPlaylist } from '../api.sync_playlists'
 
 export type PlaylistInsert = Database['public']['Tables']['playlists']['Insert']
 export type TracksInsert = Database['public']['Tables']['tracks']['Insert']
@@ -11,11 +12,21 @@ export type PlaylistTracksInsert =
 
 const supabase = getSupabase()
 
-export async function insertPlaylists(playlists: PlaylistInsert) {
+export async function insertPlaylists(playlists: PreparedPlaylist[], userId: number) {
+
 	try {
 		const { data, error } = await supabase
 			.from('playlists')
-			.upsert(playlists, { onConflict: 'spotify_playlist_id' })
+			.upsert(playlists.map(
+				playlist => ({
+					user_id: userId,
+					spotify_playlist_id: playlist.spotify_playlist_id,
+					name: playlist.name,
+					description: playlist.description,
+					is_flagged: playlist.is_flagged,
+					updated_at: playlist.updated_at.toISOString(),
+				})
+			), { onConflict: 'spotify_playlist_id' })
 			.select('id, spotify_playlist_id, is_flagged')
 
 		if (error) throw error

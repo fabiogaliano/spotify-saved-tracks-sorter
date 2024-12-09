@@ -1,4 +1,4 @@
-export function Instructions() {
+export function Help() {
   return (
     <div className="bg-gray-50 rounded-2xl p-6 mb-8">
       <h2 className="text-lg font-semibold mb-4">How it works</h2>
