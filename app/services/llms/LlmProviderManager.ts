@@ -8,7 +8,7 @@ export interface ProviderInterface {
 	getAvailableModels: () => string[]
 }
 
-export class ProviderManager {
+export class LlmProviderManager {
 	private provider: ProviderInterface | null = null
 
 	switchProvider(providerName: string, apiKey: string): void {

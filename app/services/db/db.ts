@@ -8,14 +8,12 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 	throw new Error('Missing Supabase environment variables')
 }
 
-let supabaseInstance: SupabaseClient<Database> | null = null
+let supabase: SupabaseClient<Database> | null
 
 export function getSupabase(): SupabaseClient<Database> {
-	if (supabaseInstance) return supabaseInstance
-
-	supabaseInstance = createClient<Database>(
-		SUPABASE_URL as string,
-		SUPABASE_KEY as string
-	)
-	return supabaseInstance
+	if (!supabase) {
+		supabase = createClient<Database>(SUPABASE_URL as string, SUPABASE_KEY as string)
+	}
+	return supabase
 }
+

@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 
 const CLIENT_ACCESS_TOKEN = process.env.GENIUS_CLIENT_TOKEN || "no token for genius"
 
-export class LyricsScraper {
+export class LyricsService {
 	private readonly CLIENT_ACCESS_TOKEN: string;
 	private readonly searchApiGenius: string = "https://api.genius.com";
 
@@ -11,7 +11,7 @@ export class LyricsScraper {
 		this.CLIENT_ACCESS_TOKEN = clientAccessToken;
 	}
 
-	async fetchLyrics(artist: string = "Clairo", song: string = "Juna"): Promise<LyricsResult[]> {
+	async getLyrics(artist: string = "Clairo", song: string = "Juna"): Promise<LyricsResult[]> {
 		try {
 			const songUrl = await this.getSongUrl(artist, song);
 			return await this.parseAndExtractLyrics(songUrl);
