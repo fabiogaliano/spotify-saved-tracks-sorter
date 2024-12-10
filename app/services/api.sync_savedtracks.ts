@@ -1,5 +1,5 @@
-import { getSpotifyApi } from './spotify.server'
-import { fetchSavedTracks } from './spotify.savedtracks.server'
+import { getSpotifyApi } from './spotify/spotify.server'
+import { fetchSavedTracks } from './spotify/spotify.savedtracks.server'
 import {
 	insertTracks,
 	persistSavedTracks,

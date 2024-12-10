@@ -1,5 +1,5 @@
-import { getSpotifyApi } from './spotify.server'
-import { fetchPlaylists, fetchPlaylistTracks } from './spotify.playlists.server'
+import { getSpotifyApi } from './spotify/spotify.server'
+import { fetchPlaylists, fetchPlaylistTracks } from './spotify/spotify.playlists.server'
 import { insertTracks, updateSyncStatus, getLastSyncTime } from './db/savedtracks.server'
 import {
 	insertPlaylists,
