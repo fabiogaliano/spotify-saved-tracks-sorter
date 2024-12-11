@@ -8,8 +8,8 @@ import {
 } from '@remix-run/react';
 import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
-import { authenticator } from '~/services/auth.server';
-import type { SpotifySession } from '~/services/auth.server';
+import { authenticator } from '~/core/auth/auth.server';
+import type { SpotifySession } from '~/core/auth/auth.server';
 import { StrictMode } from 'react';
 
 import './tailwind.css';

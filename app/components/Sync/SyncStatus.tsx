@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { SyncResult } from '~/services/api.sync_savedtracks'
+import { SyncResult } from '~/core/domain/Sync'
 import { SyncNotification } from './SyncNotification'
 
 type SyncStatusProps = {

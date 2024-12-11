@@ -1,7 +1,7 @@
 import { Authenticator, Strategy } from 'remix-auth'
 import { SpotifyStrategy } from 'remix-auth-spotify'
 
-import { sessionStorage } from '~/services/session.server'
+import { sessionStorage } from './session.server'
 
 // Define and export the session type
 export type SpotifySession = {
@@ -49,7 +49,7 @@ export const spotifyStrategy = new SpotifyStrategy(
   },
   async ({ accessToken, refreshToken, extraParams, profile }) => ({
     accessToken,
-    refreshToken,
+    refreshToken: refreshToken!,
     expiresAt: Date.now() + extraParams.expiresIn * 1000,
     tokenType: extraParams.tokenType,
     user: {
@@ -61,9 +61,11 @@ export const spotifyStrategy = new SpotifyStrategy(
   })
 )
 
+// Create an instance of the authenticator
 export const authenticator = new Authenticator(sessionStorage, {
   sessionKey: spotifyStrategy.sessionKey,
   sessionErrorKey: spotifyStrategy.sessionErrorKey,
 })
 
+// Register Spotify strategy
 authenticator.use(spotifyStrategy)

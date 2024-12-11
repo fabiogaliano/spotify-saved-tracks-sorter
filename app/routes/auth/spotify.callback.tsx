@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from '@remix-run/node';
-import { authenticator } from '~/services/auth.server';
-import type { SpotifySession } from '~/services/auth.server';
+import { authenticator } from '~/core/auth/auth.server';
+import type { SpotifySession } from '~/core/auth/auth.server';
 import { initializeSpotifyApi } from '~/services';
 
 export async function loader({ request }: LoaderFunctionArgs) {

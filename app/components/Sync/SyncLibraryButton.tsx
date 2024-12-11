@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useFetcher } from '@remix-run/react'
-import { SyncResult } from '~/services/api.sync_savedtracks'
+import { SyncResult } from '~/core/domain/Sync'
 import { SyncStatus } from './SyncStatus'
 
 type SyncLibraryButtonProps = {
