@@ -17,6 +17,7 @@ import { HelpButton } from '~/components/HelpButton'
 import { SyncLibraryButton } from '~/components/Sync/SyncLibraryButton'
 import { ConfigButton } from '~/components/ConfigButton'
 import { Database } from '~/types/database.types'
+import { Logger } from '~/core/logging/Logger'
 
 export const meta: MetaFunction = () => {
   return [
@@ -28,11 +29,17 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const session = await spotifyStrategy.getSession(request)
+    const logger = Logger.getInstance()
+    if (session?.user?.id) {
+      logger.setDefaultContext({ username: session.user.id });
+    }
     if (!session) {
+      logger.warn('No session found')
       return { spotifyProfile: null, user: null, savedTracks: null }
     }
 
     if (session.expiresAt <= Date.now()) {
+      logger.info('Session expired')
       throw await authenticator.logout(request, { redirectTo: '/login' })
     }
 
@@ -42,13 +49,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       expiresIn: Math.floor((session.expiresAt - Date.now()) / 1000),
     })
 
-    const spotifyService = new SpotifyService()
+
     const spotifyApi = getSpotifyApi()
     const spotifyProfile = await spotifyApi.currentUser.profile()
 
     if (!spotifyProfile?.id) {
+      logger.error('Failed to get Spotify profile')
       throw new Error('Failed to get Spotify profile')
     }
+
+    logger.info('login')
 
     const user = await getOrCreateUserDB(spotifyProfile.id, spotifyProfile.email)
     const savedTracks = user ? await trackRepository.getSavedTracks(user.id) : null

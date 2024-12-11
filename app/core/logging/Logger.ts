@@ -24,6 +24,7 @@ const Colors = {
 export class Logger {
   private static instance: Logger;
   private minLevel: LogLevel = LogLevel.DEBUG;
+  private defaultContext: Record<string, unknown> = {};
 
   private constructor() {}
 
@@ -38,6 +39,14 @@ export class Logger {
     this.minLevel = level;
   }
 
+  setDefaultContext(context: Record<string, unknown>) {
+    this.defaultContext = context;
+  }
+
+  clearDefaultContext() {
+    this.defaultContext = {};
+  }
+
   private formatMessage(level: LogLevel, message: string, context?: Record<string, unknown>): LogContext {
     return {
       timestamp: new Date().toISOString(),
@@ -50,7 +59,10 @@ export class Logger {
   private log(level: LogLevel, message: string, context?: Record<string, unknown>) {
     if (level < this.minLevel) return;
 
-    const logEntry = this.formatMessage(level, message, context);
+    const logEntry = this.formatMessage(level, message, {
+      ...this.defaultContext,
+      ...context,
+    });
     const logString = JSON.stringify(logEntry);
     
     switch (level) {
