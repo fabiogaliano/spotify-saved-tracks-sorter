@@ -3,8 +3,8 @@ import type { TrackRepository } from '../domain/Track'
 import type { PlaylistRepository } from '../domain/Playlist'
 import { mapSpotifyTrackToTrackInsert, mapToSavedTrackInsert } from '../domain/Track'
 import { mapSpotifyPlaylistToPlaylistInsert } from '../domain/Playlist'
-import { AppError } from '../errors'
-import { logger } from '../logging'
+import { AppError } from '~/core/errors/AppError'
+import { logger } from '~/core/logging/Logger'
 
 export interface SyncResult {
   type: 'tracks' | 'playlists'

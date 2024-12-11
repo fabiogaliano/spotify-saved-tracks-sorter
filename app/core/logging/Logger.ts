@@ -1,4 +1,4 @@
-import { AppError } from "../errors/AppError";
+import { AppError } from '~/core/errors/AppError'
 
 export enum LogLevel {
   DEBUG = 0,
@@ -12,6 +12,14 @@ export interface LogContext {
   level: LogLevel;
   [key: string]: unknown;
 }
+
+const Colors = {
+  Reset: "\x1b[0m",
+  Gray: "\x1b[90m",
+  Blue: "\x1b[34m",
+  Yellow: "\x1b[33m",
+  Red: "\x1b[31m",
+} as const;
 
 export class Logger {
   private static instance: Logger;
@@ -47,16 +55,16 @@ export class Logger {
     
     switch (level) {
       case LogLevel.ERROR:
-        console.error(logString);
+        console.error(`${Colors.Red}${logString}${Colors.Reset}`);
         break;
       case LogLevel.WARN:
-        console.warn(logString);
+        console.warn(`${Colors.Yellow}${logString}${Colors.Reset}`);
         break;
       case LogLevel.INFO:
-        console.info(logString);
+        console.info(`${Colors.Blue}${logString}${Colors.Reset}`);
         break;
       default:
-        console.log(logString);
+        console.log(`${Colors.Gray}${logString}${Colors.Reset}`);
     }
   }
 

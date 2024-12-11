@@ -1,9 +1,9 @@
 import { OpenAIProvider } from './providers/OpenAIProvider'
 import { AnthropicProvider } from './providers/AnthropicProvider'
 import { GoogleProvider } from './providers/GoogleProvider'
-import type { ProviderInterface, LlmProviderManager as ILlmProviderManager } from '../../domain/LlmProvider'
-import { ApiError } from '../../errors'
-import { logger } from '../../logging'
+import type { ProviderInterface, LlmProviderManager as ILlmProviderManager } from '~/core/domain/LlmProvider'
+import { ApiError } from '~/core/errors/ApiError'
+import { logger } from '~/core/logging/Logger'
 
 export class LlmProviderManager implements ILlmProviderManager {
   private provider: ProviderInterface | null = null

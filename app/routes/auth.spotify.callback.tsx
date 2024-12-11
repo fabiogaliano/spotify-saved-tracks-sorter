@@ -9,7 +9,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     failureRedirect: '/',
   }) as SpotifySession;
 
-  // Initialize Spotify API if authentication was successful
   if (session) {
     initializeSpotifyApi({
       accessToken: session.accessToken,

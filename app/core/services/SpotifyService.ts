@@ -1,8 +1,8 @@
 import { getSpotifyApi } from '~/core/api/spotify.api'
-import type { SpotifyTrackDTO } from '../domain/Track'
-import type { SpotifyPlaylistDTO } from '../domain/Playlist'
-import { SpotifyApiError } from '../errors'
-import { logger } from '../logging'
+import type { SpotifyTrackDTO } from '~/core/domain/Track'
+import type { SpotifyPlaylistDTO } from '~/core/domain/Playlist'
+import { SpotifyApiError } from  '~/core/errors/ApiError'
+import { logger } from '~/core/logging/Logger'
 
 export class SpotifyService {
   async getLikedTracks(): Promise<SpotifyTrackDTO[]> {

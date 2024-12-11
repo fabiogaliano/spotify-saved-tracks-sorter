@@ -1,7 +1,7 @@
-import type { PlaylistAnalysisService, PlaylistAnalysisResult } from '../../domain/PlaylistAnalysis'
-import type { LlmProviderManager } from '../../domain/LlmProvider'
-import { ApiError } from '../../errors'
-import { logger } from '../../logging'
+import type { PlaylistAnalysisService, PlaylistAnalysisResult } from '~/core/domain/PlaylistAnalysis'
+import type { LlmProviderManager } from '~/core/domain/LlmProvider'
+import { ApiError } from '~/core/errors/ApiError'
+import { logger } from '~/core/logging/Logger'
 
 export class DefaultPlaylistAnalysisService implements PlaylistAnalysisService {
   constructor(private readonly llmProviderManager: LlmProviderManager) {}

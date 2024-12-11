@@ -1,8 +1,8 @@
 import wretch from 'wretch'
 import * as cheerio from 'cheerio'
-import type { LyricsResult, LyricsService } from '../../domain/Lyrics'
-import { ApiError } from '../../errors'
-import { logger } from '../../logging'
+import type { LyricsResult, LyricsService } from '~/core/domain/Lyrics'
+import { ApiError } from '~/core/errors/ApiError'
+import { logger } from '~/core/logging/Logger'
 
 const CLIENT_ACCESS_TOKEN = process.env.GENIUS_CLIENT_TOKEN || "no token for genius"
 
