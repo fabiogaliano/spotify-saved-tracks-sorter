@@ -16,11 +16,11 @@ export class GeniusLyricsService implements LyricsService {
 
   async getLyrics(artist: string, song: string): Promise<LyricsResult[]> {
     try {
-      logger.info('Fetching lyrics', { artist, song })
+      logger.info('fetching lyrics')
       const songUrl = await this.getSongUrl(artist, song)
       return await this.parseAndExtractLyrics(songUrl)
     } catch (error) {
-      logger.error('Failed to fetch lyrics', error as Error, { artist, song })
+      logger.error('fetch lyrics failed', error as Error, { artist, song })
       throw new ApiError(
         `Failed to fetch lyrics for ${artist} - ${song}`,
         'GENIUS_FETCH_ERROR',
@@ -33,13 +33,13 @@ export class GeniusLyricsService implements LyricsService {
   private async getSongUrl(artist: string, song: string): Promise<string> {
     const searchQuery = encodeURIComponent(artist + " " + song)
     try {
-      logger.debug('Searching for song URL', { artist, song, searchQuery })
+      logger.debug('search song URL', { artist, song, searchQuery })
       const geniusApi = wretch(this.searchApiGenius).auth(`Bearer ${this.CLIENT_ACCESS_TOKEN}`)
       const songSearchResult:any = await geniusApi.get("/search?q=" + searchQuery).json()
       const songUrl = songSearchResult.response.hits?.[0]?.result?.url
       
       if (!songUrl) {
-        logger.warn('Song URL not found', { artist, song })
+        logger.warn('song URL not found', { artist, song })
         throw new ApiError(
           'Song URL not found',
           'GENIUS_URL_ERROR',
@@ -48,10 +48,10 @@ export class GeniusLyricsService implements LyricsService {
         )
       }
 
-      logger.debug('Found song URL', { artist, song, songUrl })
+      logger.debug('song URL found', { artist, song, songUrl })
       return songUrl
     } catch (error) {
-      logger.error('Failed to find song URL', error as Error, { artist, song })
+      logger.error('find song URL failed', error as Error, { artist, song })
       throw new ApiError(
         `Failed to find song URL for ${artist} - ${song}`,
         'GENIUS_URL_ERROR',
@@ -63,7 +63,7 @@ export class GeniusLyricsService implements LyricsService {
 
   private async parseAndExtractLyrics(url: string): Promise<LyricsResult[]> {
     try {
-      logger.debug('Fetching and parsing lyrics', { url })
+      logger.debug('parse lyrics', { url })
       const response = await wretch(url).get().text()
       const $ = cheerio.load(response)
       const lyrics: LyricsResult[] = []
@@ -71,7 +71,7 @@ export class GeniusLyricsService implements LyricsService {
       // Find the lyrics container
       const lyricsContainer = $('[data-lyrics-container="true"]')
       if (!lyricsContainer.length) {
-        logger.warn('Lyrics container not found', { url })
+        logger.warn('parse lyrics container not found', { url })
         throw new ApiError(
           'Lyrics container not found',
           'GENIUS_PARSE_ERROR',
@@ -111,14 +111,14 @@ export class GeniusLyricsService implements LyricsService {
         }
       })
 
-      logger.debug('Successfully parsed lyrics', { 
+      logger.debug('lyrics:parse:success', { 
         url, 
         lyricsLength: lyrics.length 
       })
 
       return lyrics
     } catch (error) {
-      logger.error('Failed to parse lyrics', error as Error, { url })
+      logger.error('lyrics:parse:failed', error as Error, { url })
       throw new ApiError(
         'Failed to parse lyrics from Genius',
         'GENIUS_PARSE_ERROR',

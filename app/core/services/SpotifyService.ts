@@ -7,20 +7,20 @@ import { logger } from '~/core/logging/Logger'
 export class SpotifyService {
   async getLikedTracks(): Promise<SpotifyTrackDTO[]> {
     try {
-      logger.info('Fetching liked tracks from Spotify')
+      logger.info('fetch liked tracks')
       const spotifyApi = getSpotifyApi()
       const response = await spotifyApi.currentUser.tracks.savedTracks()
-      logger.debug('Fetched liked tracks', { count: response.items.length })
+      logger.debug('liked tracks fetched', { count: response.items.length })
       return response.items as SpotifyTrackDTO[]
     } catch (error) {
-      logger.error('Failed to fetch liked tracks', error as Error)
+      logger.error('fetch liked tracks failed', error as Error)
       throw new SpotifyApiError('Failed to fetch liked tracks', 500, { error })
     }
   }
 
   async getPlaylists(): Promise<SpotifyPlaylistDTO[]> {
     try {
-      logger.info('Fetching user playlists from Spotify')
+      logger.info('fetch playlists')
       const spotifyApi = getSpotifyApi()
       const currentUser = await spotifyApi.currentUser.profile()
       const playlists = await spotifyApi.playlists.getUsersPlaylists(currentUser.id)
@@ -31,7 +31,7 @@ export class SpotifyService {
         p.description?.toLowerCase().startsWith('ai:')
       )
 
-      logger.debug('Fetched playlists', { 
+      logger.debug('playlists fetched', { 
         totalPlaylists: playlists.items.length,
         filteredPlaylists: filteredPlaylists.length,
         userId: currentUser.id 
@@ -39,7 +39,7 @@ export class SpotifyService {
 
       return filteredPlaylists
     } catch (error) {
-      logger.error('Failed to fetch playlists', error as Error)
+      logger.error('fetch playlists failed', error as Error)
       throw new SpotifyApiError('Failed to fetch playlists', 500, { error })
     }
   }

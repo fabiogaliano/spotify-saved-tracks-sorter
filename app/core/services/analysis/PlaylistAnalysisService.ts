@@ -61,27 +61,21 @@ export class DefaultPlaylistAnalysisService implements PlaylistAnalysisService {
 
   async analyzePlaylist(playlistDescription: string, songTitles: string[]): Promise<PlaylistAnalysisResult> {
     try {
-      logger.info('Starting playlist analysis', { 
-        descriptionLength: playlistDescription.length,
-        songCount: songTitles.length 
-      })
+      logger.info('starting to analyze the playlist')
 
       const [descriptionAnalysis, songAnalysis] = await Promise.all([
         this.analyzePlaylistDescription(playlistDescription),
         this.analyzePlaylistSongs(songTitles)
       ])
 
-      logger.info('Completed playlist analysis')
+      logger.info('finished analyzing the playlist')
 
       return {
         descriptionAnalysis,
         songAnalysis
       }
     } catch (error) {
-      logger.error('Failed to analyze playlist', error as Error, {
-        descriptionLength: playlistDescription.length,
-        songCount: songTitles.length
-      })
+      logger.error('failed to analyze the playlist', error as Error)
       throw new ApiError(
         'Failed to analyze playlist',
         'LLM_ANALYSIS_ERROR',

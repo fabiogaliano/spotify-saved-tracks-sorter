@@ -22,21 +22,20 @@ export class SyncService {
 
   async syncSavedTracks(userId: number): Promise<SyncResult> {
     try {
-      logger.info('Starting saved tracks sync', { userId })
+      logger.info('sync start', { userId })
       const spotifyTracks = await this.spotifyService.getLikedTracks()
       let newTracks = 0
       
-      logger.info(`Processing ${spotifyTracks.length} tracks`, { userId })
+      logger.info('process tracks')
       
       // Process each track
       for (const spotifyTrack of spotifyTracks) {
         try {
-          // First, ensure the track exists in the general tracks table
+          // ensure the track exists in the general tracks table
           let track = await this.trackRepository.getTrackBySpotifyId(spotifyTrack.track.id)
           
           if (!track) {
-            // Insert the track if it doesn't exist
-            logger.debug('Inserting new track', { 
+            logger.debug('insert track', { 
               spotifyId: spotifyTrack.track.id,
               name: spotifyTrack.track.name 
             })
@@ -51,10 +50,9 @@ export class SyncService {
             userId,
             spotifyTrack.added_at
           )
-          
           await this.trackRepository.saveSavedTrack(savedTrackInsert)
         } catch (error) {
-          logger.error('Failed to process track', error as Error, {
+          logger.error('track failed', error as Error, {
             spotifyId: spotifyTrack.track.id,
             name: spotifyTrack.track.name
           })
@@ -62,7 +60,7 @@ export class SyncService {
         }
       }
 
-      logger.info('Completed saved tracks sync', { 
+      logger.info('sync success', { 
         userId,
         totalTracks: spotifyTracks.length,
         newTracks 
@@ -74,7 +72,7 @@ export class SyncService {
         newItems: newTracks
       }
     } catch (error) {
-      logger.error('Failed to sync tracks', error as Error, { userId })
+      logger.error('sync failed', error as Error, { userId })
       throw new AppError(
         'Failed to sync tracks',
         'DB_SYNC_ERROR',
@@ -86,7 +84,7 @@ export class SyncService {
 
   async syncPlaylists(userId: number): Promise<SyncResult> {
     try {
-      logger.info('Starting playlists sync', { userId })
+      logger.info('SyncService.Playlists[UserId:' + userId + '].Start')
       const spotifyPlaylists = await this.spotifyService.getPlaylists()
       const existingPlaylists = await this.playlistRepository.getPlaylists(userId)
       
@@ -95,20 +93,13 @@ export class SyncService {
         mapSpotifyPlaylistToPlaylistInsert(playlist, userId)
       )
       
-      logger.debug('Saving playlists', { 
-        totalPlaylists: playlists.length,
-        existingPlaylists: existingPlaylistIds.size
-      })
+      logger.debug('SyncService.Playlists.Save[Total:' + playlists.length + ',Existing:' + existingPlaylistIds.size + ']')
 
       await this.playlistRepository.savePlaylists(playlists)
 
       const newPlaylists = playlists.filter(p => !existingPlaylistIds.has(p.spotify_playlist_id))
 
-      logger.info('Completed playlists sync', {
-        userId,
-        totalPlaylists: playlists.length,
-        newPlaylists: newPlaylists.length
-      })
+      logger.info('SyncService.Playlists[UserId:' + userId + '].Success[New:' + newPlaylists.length + ']')
 
       return {
         type: 'playlists',
@@ -116,7 +107,7 @@ export class SyncService {
         newItems: newPlaylists.length
       }
     } catch (error) {
-      logger.error('Failed to sync playlists', error as Error, { userId })
+      logger.error('SyncService.Playlists[UserId:' + userId + '].Failed', error as Error)
       throw new AppError(
         'Failed to sync playlists',
         'DB_SYNC_ERROR',

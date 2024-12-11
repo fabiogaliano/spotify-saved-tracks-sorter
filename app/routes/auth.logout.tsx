@@ -7,7 +7,7 @@ import { logger } from '~/core/logging/Logger';
 export async function action({ request }: ActionFunctionArgs) {
   clearSpotifyApi();
   logger.clearDefaultContext();
-  logger.info('User logged out');
+  logger.info('logout');
   return authenticator.logout(request, { redirectTo: '/' });
 }
 

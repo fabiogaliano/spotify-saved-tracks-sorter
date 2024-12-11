@@ -19,6 +19,7 @@ const Colors = {
   Blue: "\x1b[34m",
   Yellow: "\x1b[33m",
   Red: "\x1b[31m",
+  Green: "\x1b[32m", // Adding green color for values
 } as const;
 
 export class Logger {
@@ -63,20 +64,36 @@ export class Logger {
       ...this.defaultContext,
       ...context,
     });
-    const logString = JSON.stringify(logEntry);
+    const color = {
+      [LogLevel.DEBUG]: Colors.Gray,
+      [LogLevel.INFO]: Colors.Blue,
+      [LogLevel.WARN]: Colors.Yellow,
+      [LogLevel.ERROR]: Colors.Red,
+    }[level];
+
+    const logString = JSON.stringify({
+      level: LogLevel[level],
+      message,
+      timestamp: logEntry.timestamp,
+      username: logEntry.username || 'unknown',
+      ...context
+    })
+      .replace(/"(\w+)":/g, `${color}"$1":`) // Color keys and parentheses
+      .replace(/: "(.*?)"/g, `: ${color}"$1"`) // Color values
+      .concat(Colors.Reset); // Reset color at the end
     
     switch (level) {
       case LogLevel.ERROR:
-        console.error(`${Colors.Red}${logString}${Colors.Reset}`);
+        console.error(logString);
         break;
       case LogLevel.WARN:
-        console.warn(`${Colors.Yellow}${logString}${Colors.Reset}`);
+        console.warn(logString);
         break;
       case LogLevel.INFO:
-        console.info(`${Colors.Blue}${logString}${Colors.Reset}`);
+        console.info(logString);
         break;
       default:
-        console.log(`${Colors.Gray}${logString}${Colors.Reset}`);
+        console.log(logString);
     }
   }
 

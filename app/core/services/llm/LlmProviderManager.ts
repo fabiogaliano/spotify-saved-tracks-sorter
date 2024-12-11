@@ -10,7 +10,7 @@ export class LlmProviderManager implements ILlmProviderManager {
 
   switchProvider(providerName: string, apiKey: string): void {
     try {
-      logger.info('Switching LLM provider', { providerName })
+      logger.info('switch llm provider', { providerName })
       switch (providerName) {
         case 'openai':
           this.provider = new OpenAIProvider(apiKey)
@@ -28,12 +28,12 @@ export class LlmProviderManager implements ILlmProviderManager {
             400,
             { providerName }
           )
-          logger.error('Unsupported provider', error, { providerName })
+          logger.error('provider unsupported', error, { providerName })
           throw error
       }
-      logger.debug('Successfully switched provider', { providerName })
+      logger.debug('provider switched', { providerName })
     } catch (error) {
-      logger.error('Failed to switch provider', error as Error, { providerName })
+      logger.error('switch failed', error as Error, { providerName })
       throw new ApiError(
         'Failed to switch provider',
         'LLM_PROVIDER_ERROR',
@@ -55,13 +55,13 @@ export class LlmProviderManager implements ILlmProviderManager {
         throw error
       }
       const models = this.provider.getAvailableModels()
-      logger.debug('Retrieved available models', { 
+      logger.debug('llm:get_models', { 
         provider: this.provider.constructor.name,
         modelCount: models.length 
       })
       return models
     } catch (error) {
-      logger.error('Failed to get available models', error as Error)
+      logger.error('llm:get_models:failed', error as Error)
       throw new ApiError(
         'Failed to get available models',
         'LLM_PROVIDER_ERROR',
@@ -83,27 +83,15 @@ export class LlmProviderManager implements ILlmProviderManager {
         throw error
       }
 
-      logger.info('Generating text', { 
-        provider: this.provider.constructor.name,
-        model,
-        promptLength: prompt.length 
-      })
+      logger.info('LlmProvider.GenerateText[Provider:' + this.provider.constructor.name + ',Model:' + model + '].Start')
 
       const response = await this.provider.generateText(prompt, model)
       
-      logger.debug('Successfully generated text', { 
-        provider: this.provider.constructor.name,
-        model,
-        responseLength: response.length 
-      })
+      logger.debug('LlmProvider.GenerateText[Provider:' + this.provider.constructor.name + ',Model:' + model + '].Success[ResponseLength:' + response.length + ']')
 
       return response
     } catch (error) {
-      logger.error('Failed to generate text', error as Error, { 
-        provider: this.provider?.constructor.name,
-        model,
-        promptLength: prompt.length 
-      })
+      logger.error('LlmProvider.GenerateText[Provider:' + this.provider?.constructor.name + ',Model:' + model + '].Failed', error as Error)
       throw new ApiError(
         'Failed to generate text',
         'LLM_PROVIDER_ERROR',

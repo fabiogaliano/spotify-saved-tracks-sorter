@@ -34,12 +34,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       logger.setDefaultContext({ username: session.user.id });
     }
     if (!session) {
-      logger.warn('No session found')
+      logger.warn('no session')
       return { spotifyProfile: null, user: null, savedTracks: null }
     }
 
     if (session.expiresAt <= Date.now()) {
-      logger.info('Session expired')
+      logger.info('session expired')
       throw await authenticator.logout(request, { redirectTo: '/login' })
     }
 
