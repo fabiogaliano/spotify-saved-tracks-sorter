@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
+import type { ActionFunctionArgs } from '@remix-run/node';
 import { redirect } from '@remix-run/node';
 import { authenticator } from '~/core/auth/auth.server';
 import { clearSpotifyApi } from '~/core/api/spotify.api';
