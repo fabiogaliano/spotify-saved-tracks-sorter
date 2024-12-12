@@ -2,27 +2,39 @@ import { getSupabase } from '~/core/db/db'
 import type { Track, TrackInsert, SavedTrackInsert, SavedTrackRow, TrackRepository } from '../domain/Track'
 import type { Database } from '~/types/database.types'
 
+export const SYNC_STATUS = {
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+} as const
+
+export const SYNC_TYPES = {
+  SONGS: 'songs',
+  PLAYLISTS: 'playlists',
+} as const
+
+export type SyncStatus = typeof SYNC_STATUS[keyof typeof SYNC_STATUS];
+export type SyncType = typeof SYNC_TYPES[keyof typeof SYNC_TYPES];
+
 class SupabaseTrackRepository implements TrackRepository {
-  async getTrackBySpotifyId(spotifyTrackId: string): Promise<Track | null> {
+  async getTracksBySpotifyIds(spotifyTrackIds: string[]): Promise<Track[]> {
     const { data, error } = await getSupabase()
       .from('tracks')
       .select('*')
-      .eq('spotify_track_id', spotifyTrackId)
-      .single()
-
-    if (error && error.code !== 'PGRST116') throw error
-    return data
-  }
-
-  async insertTrack(track: TrackInsert): Promise<Track> {
-    const { data, error } = await getSupabase()
-      .from('tracks')
-      .upsert(track, { onConflict: 'spotify_track_id' })
-      .select()
-      .single()
+      .in('spotify_track_id', spotifyTrackIds)
 
     if (error) throw error
-    if (!data) throw new Error('Failed to insert track')
+    return data || []
+  }
+  
+  async insertTracks(tracks: TrackInsert[]): Promise<Track[]> {
+    const { data, error } = await getSupabase()
+      .from('tracks')
+      .upsert(tracks, { onConflict: 'spotify_track_id' })
+      .select()
+
+    if (error) throw error
+    if (!data) throw new Error('Failed to insert tracks')
     return data
   }
 
@@ -60,6 +72,17 @@ class SupabaseTrackRepository implements TrackRepository {
     if (error) throw error
   }
 
+  async saveSavedTracks(savedTracks: SavedTrackInsert[]): Promise<void> {
+    const { error } = await getSupabase()
+      .from('saved_tracks')
+      .upsert(savedTracks, {
+        onConflict: 'track_id,user_id',
+        ignoreDuplicates: true
+      })
+
+    if (error) throw error
+  }
+
   async updateTrackStatus(
     trackId: number,
     status: Database['public']['Enums']['sorting_status_enum']
@@ -68,6 +91,34 @@ class SupabaseTrackRepository implements TrackRepository {
       .from('saved_tracks')
       .update({ sorting_status: status })
       .eq('track_id', trackId)
+
+    if (error) throw error
+  }
+
+  async getLastSyncTime(userId: number): Promise<string> {
+    const { data, error } = await getSupabase()
+      .from('users')
+      .select('songs_last_sync')
+      .eq('id', userId)
+      .single()
+
+    if (error) throw error
+    return data?.songs_last_sync || ''
+  }
+
+  async updateSyncStatus(userId: number, status: SyncStatus): Promise<void> {
+    const updateData: Record<string, any> = {
+      songs_sync_status: status,
+    }
+
+    if (status === SYNC_STATUS.COMPLETED) {
+      updateData.songs_last_sync = new Date().toISOString()
+    }
+
+    const { error } = await getSupabase()
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
 
     if (error) throw error
   }

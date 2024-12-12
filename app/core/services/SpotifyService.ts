@@ -6,27 +6,43 @@ import { logger } from '~/core/logging/Logger'
 import { MaxInt } from '@fostertheweb/spotify-web-sdk'
 
 export class SpotifyService {
-  async getLikedTracks(): Promise<SpotifyTrackDTO[]> {
+  async getLikedTracks(since?: string | null): Promise<SpotifyTrackDTO[]> {
     const LIMIT: MaxInt<50> = 50;
     let offset = 0;
     const allTracks: SpotifyTrackDTO[] = [];
     let shouldContinue = true;
 
     try {
-      logger.info('fetch liked tracks');
+      logger.info('fetch liked tracks', { since });
       const spotifyApi = getSpotifyApi();
 
       while (shouldContinue) {
         const response = await this.fetchWithRetry(() => spotifyApi.currentUser.tracks.savedTracks(LIMIT, offset));
-        allTracks.push(...response.items as SpotifyTrackDTO[]);
+        
+        // If we have a since date, filter tracks added after that date
+        const tracks = since 
+          ? response.items.filter(track => new Date(track.added_at) > new Date(since))
+          : response.items;
+        
+        allTracks.push(...tracks as SpotifyTrackDTO[]);
 
-        if (response.items.length < LIMIT) {
+        // If we're doing incremental sync and found older tracks, stop paginating
+        if (since && tracks.length < response.items.length) {
           shouldContinue = false;
         }
+        // Otherwise, stop if we've received less than the limit
+        else if (response.items.length < LIMIT) {
+          shouldContinue = false;
+        }
+        
         offset += LIMIT;
       }
 
-      logger.debug('liked tracks fetched', { count: allTracks.length });
+      logger.debug('liked tracks fetched', { 
+        count: allTracks.length,
+        since,
+      });
+      
       return allTracks;
     } catch (error) {
       logger.error('fetch liked tracks failed', error as Error);

@@ -1,4 +1,5 @@
 import type { Database } from '~/types/database.types'
+import type { SyncStatus } from '~/core/repositories/TrackRepository'
 
 export type Track = Database['public']['Tables']['tracks']['Row']
 export type TrackInsert = Database['public']['Tables']['tracks']['Insert']
@@ -54,11 +55,13 @@ export const mapToSavedTrackInsert = (
 
 export interface TrackRepository {
   // Track operations
-  getTrackBySpotifyId(spotifyTrackId: string): Promise<Track | null>
-  insertTrack(track: TrackInsert): Promise<Track>
+  getTracksBySpotifyIds(spotifyTrackIds: string[]): Promise<Track[]>
+  insertTracks(tracks: TrackInsert[]): Promise<Track[]>
   
   // Saved track operations
   getSavedTracks(userId: number): Promise<SavedTrackRow[]>
-  saveSavedTrack(savedTrack: SavedTrackInsert): Promise<void>
+  saveSavedTracks(savedTracks: SavedTrackInsert[]): Promise<void>
   updateTrackStatus(trackId: number, status: Database['public']['Enums']['sorting_status_enum']): Promise<void>
+  updateSyncStatus(userId: number, status: SyncStatus): Promise<void>
+  getLastSyncTime(userId: number): Promise<string | null>
 }
