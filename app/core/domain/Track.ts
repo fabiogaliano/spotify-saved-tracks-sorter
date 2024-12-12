@@ -32,13 +32,36 @@ export type SpotifyTrackDTO = {
   added_at: string
 }
 
-export const mapSpotifyTrackToTrackInsert = (
+export const mapSavedTrackToTrackInsert = (
+  savedTrack: SavedTrackRow
+): TrackInsert => ({
+  spotify_track_id: savedTrack.tracks.spotify_track_id,
+  name: savedTrack.tracks.name,
+  artist: savedTrack.tracks.artist,
+  album: savedTrack.tracks.album,
+  created_at: new Date().toISOString(),
+})
+
+export const mapSpotifyTrackDTOToTrackInsert = (
   spotifyTrack: SpotifyTrackDTO
 ): TrackInsert => ({
   spotify_track_id: spotifyTrack.track.id,
   name: spotifyTrack.track.name,
   artist: spotifyTrack.track.artists[0].name,
   album: spotifyTrack.track.album.name,
+  created_at: new Date().toISOString(),
+})
+
+export const mapPlaylistTrackToTrackInsert = (track: {
+  id: string
+  name: string
+  artists: Array<{ name: string }>
+  album: { name: string }
+}): TrackInsert => ({
+  spotify_track_id: track.id,
+  name: track.name,
+  artist: track.artists[0].name,
+  album: track.album.name,
   created_at: new Date().toISOString(),
 })
 
@@ -57,7 +80,7 @@ export interface TrackRepository {
   // Track operations
   getTracksBySpotifyIds(spotifyTrackIds: string[]): Promise<Track[]>
   insertTracks(tracks: TrackInsert[]): Promise<Track[]>
-  
+
   // Saved track operations
   getSavedTracks(userId: number): Promise<SavedTrackRow[]>
   saveSavedTracks(savedTracks: SavedTrackInsert[]): Promise<void>

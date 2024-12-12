@@ -1,9 +1,9 @@
 import { getSpotifyApi } from '~/core/api/spotify.api'
 import type { SpotifyTrackDTO } from '~/core/domain/Track'
 import type { SpotifyPlaylistDTO } from '~/core/domain/Playlist'
-import { SpotifyApiError } from  '~/core/errors/ApiError'
+import { SpotifyApiError } from '~/core/errors/ApiError'
 import { logger } from '~/core/logging/Logger'
-import { MaxInt } from '@fostertheweb/spotify-web-sdk'
+import { Market, MaxInt } from '@fostertheweb/spotify-web-sdk'
 
 export class SpotifyService {
   async getLikedTracks(since?: string | null): Promise<SpotifyTrackDTO[]> {
@@ -18,12 +18,12 @@ export class SpotifyService {
 
       while (shouldContinue) {
         const response = await this.fetchWithRetry(() => spotifyApi.currentUser.tracks.savedTracks(LIMIT, offset));
-        
+
         // If we have a since date, filter tracks added after that date
-        const tracks = since 
+        const tracks = since
           ? response.items.filter(track => new Date(track.added_at) > new Date(since))
           : response.items;
-        
+
         allTracks.push(...tracks as SpotifyTrackDTO[]);
 
         // If we're doing incremental sync and found older tracks, stop paginating
@@ -34,15 +34,15 @@ export class SpotifyService {
         else if (response.items.length < LIMIT) {
           shouldContinue = false;
         }
-        
+
         offset += LIMIT;
       }
 
-      logger.debug('liked tracks fetched', { 
+      logger.debug('liked tracks fetched', {
         count: allTracks.length,
         since,
       });
-      
+
       return allTracks;
     } catch (error) {
       logger.error('fetch liked tracks failed', error as Error);
@@ -63,10 +63,15 @@ export class SpotifyService {
 
       while (shouldContinue) {
         const playlists = await this.fetchWithRetry(() => spotifyApi.playlists.getUsersPlaylists(currentUser.id, LIMIT, offset));
-        const filteredPlaylists = playlists.items.filter(p => 
-          p.owner.id === currentUser.id && 
-          p.description?.toLowerCase().startsWith('ai:')
-        );
+        const filteredPlaylists = playlists.items
+          .filter(p => p.owner.id === currentUser.id && p.description?.toLowerCase().startsWith('ai:'))
+          .map(p => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            owner: { id: p.owner.id },
+            track_count: p.tracks?.total ?? 0
+          } satisfies SpotifyPlaylistDTO));
 
         allPlaylists.push(...filteredPlaylists);
 
@@ -76,15 +81,50 @@ export class SpotifyService {
         offset += LIMIT;
       }
 
-      logger.debug('playlists fetched', { 
+      logger.debug('playlists fetched', {
         totalPlaylists: allPlaylists.length,
-        userId: currentUser.id 
+        userId: currentUser.id
       });
 
       return allPlaylists;
     } catch (error) {
       logger.error('fetch playlists failed', error as Error);
       throw new SpotifyApiError('Failed to fetch playlists', 500, { error });
+    }
+  }
+
+  async getPlaylistTracks(playlistId: string): Promise<SpotifyTrackDTO[]> {
+    const LIMIT: MaxInt<50> = 50
+    let offset = 0
+    const allTracks: SpotifyTrackDTO[] = []
+    let shouldContinue = true
+
+    try {
+      logger.info('fetch playlist tracks', { playlistId })
+      const spotifyApi = getSpotifyApi()
+      const market = (await spotifyApi.currentUser.profile()).country as Market
+
+      while (shouldContinue) {
+        const response = await this.fetchWithRetry(() => spotifyApi.playlists.getPlaylistItems(playlistId, market, '', LIMIT, offset))
+
+        allTracks.push(...response.items as SpotifyTrackDTO[])
+
+        if (response.items.length < LIMIT) {
+          shouldContinue = false
+        }
+
+        offset += LIMIT
+      }
+
+      logger.debug('playlist tracks fetched', {
+        playlistId,
+        count: allTracks.length
+      })
+
+      return allTracks
+    } catch (error) {
+      logger.error('fetch playlist tracks failed', error as Error)
+      throw new SpotifyApiError('Failed to fetch playlist tracks', 500, { error })
     }
   }
 

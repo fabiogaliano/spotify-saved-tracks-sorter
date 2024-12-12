@@ -158,6 +158,7 @@ export type Database = {
           is_flagged: boolean | null
           name: string
           spotify_playlist_id: string
+          track_count: number
           updated_at: string | null
           user_id: number | null
         }
@@ -168,6 +169,7 @@ export type Database = {
           is_flagged?: boolean | null
           name: string
           spotify_playlist_id: string
+          track_count?: number
           updated_at?: string | null
           user_id?: number | null
         }
@@ -178,6 +180,7 @@ export type Database = {
           is_flagged?: boolean | null
           name?: string
           spotify_playlist_id?: string
+          track_count?: number
           updated_at?: string | null
           user_id?: number | null
         }
@@ -339,7 +342,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      batch_update_playlist_track_counts: {
+        Args: {
+          updates: Json[]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       sorting_status_enum: "unsorted" | "sorted" | "ignored"
