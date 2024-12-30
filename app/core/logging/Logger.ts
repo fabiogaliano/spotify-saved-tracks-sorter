@@ -27,7 +27,7 @@ export class Logger {
   private minLevel: LogLevel = LogLevel.DEBUG;
   private defaultContext: Record<string, unknown> = {};
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): Logger {
     if (!Logger.instance) {
@@ -71,17 +71,32 @@ export class Logger {
       [LogLevel.ERROR]: Colors.Red,
     }[level];
 
-    const logString = JSON.stringify({
+    // Create base log object with required fields
+    const logObject: Record<string, unknown> = {
       level: LogLevel[level],
       message,
       timestamp: logEntry.timestamp,
-      username: logEntry.username || 'unknown',
-      ...context
-    })
-      .replace(/"(\w+)":/g, `${color}"$1":`) // Color keys and parentheses
-      .replace(/: "(.*?)"/g, `: ${color}"$1"`) // Color values
-      .concat(Colors.Reset); // Reset color at the end
-    
+    };
+
+    // Add username only if it exists and isn't 'unknown'
+    if (logEntry.username && logEntry.username !== 'unknown') {
+      logObject.username = logEntry.username;
+    }
+
+    // Add remaining context
+    if (context) {
+      Object.entries(context).forEach(([key, value]) => {
+        if (value !== undefined) {
+          logObject[key] = value;
+        }
+      });
+    }
+
+    const logString = JSON.stringify(logObject)
+      .replace(/"(\w+)":/g, `${color}"$1":`)
+      .replace(/: "(.*?)"/g, `: ${color}"$1"`)
+      .concat(Colors.Reset);
+
     switch (level) {
       case LogLevel.ERROR:
         console.error(logString);

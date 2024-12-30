@@ -1,19 +1,16 @@
+import type { LyricsSection } from "../services/lyrics/types/lyrics.types"
+import { TransformedLyricsBySection } from "../services/lyrics/utils/lyrics-transformer"
+
 export interface LyricsResult {
-  type: 'text' | 'link'
+  type: 'text' | 'link' | 'group'
   content: string
   annotation?: string
+  verified?: boolean
+  votesTotal?: number
 }
 
 export interface LyricsService {
-  getLyrics(artist: string, song: string): Promise<LyricsResult[]>
+  getLyrics(artist: string, song: string): Promise<TransformedLyricsBySection[]>
 }
 
-export interface GeniusResponse {
-  response: {
-    hits: Array<{
-      result: {
-        url: string
-      }
-    }>
-  }
-}
+export type { LyricsSection }
