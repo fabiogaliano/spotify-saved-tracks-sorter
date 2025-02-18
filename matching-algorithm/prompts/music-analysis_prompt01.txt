@@ -1,0 +1,45 @@
+Please analyze this song and provide a structured analysis in the following JSON format:
+{
+  "meaning": {
+    "themes": [
+      {
+        "name": "primary theme",
+        "confidence": 0.0-1.0,
+        "evidence": ["specific lyric or section that supports this theme"],
+        "variations": ["related themes or alternative interpretations"]
+      }
+    ],
+    "interpretation": {
+      "verified": ["verified interpretations from annotations"],
+      "derived": ["LLM-derived interpretations based on analysis"]
+    }
+  },
+  "emotional": {
+    "dominantMood": "primary emotional tone",
+    "progression": [
+      {
+        "section": "verse/chorus/bridge",
+        "mood": "specific mood",
+        "intensity": 0.0-1.0
+      }
+    ]
+  },
+  "context": {
+    "situations": ["appropriate situations for listening"],
+    "activities": ["activities this song would suit"],
+    "temporal": ["time of day/week/year this fits best"],
+    "social": ["social contexts where this fits"]
+  }
+}
+
+Important guidelines:
+- Only include themes that are clearly supported by the lyrics
+- Each theme must have explicit evidence from the text
+- Confidence scores should reflect the strength of available evidence
+- Include only verified artist interpretations that are directly quoted
+- Focus on themes that recur or develop throughout the song
+- Consider both literal and metaphorical meanings where clearly present
+- Analyze how verified themes connect to each other
+- When in doubt, exclude themes rather than speculate
+
+Please provide your analysis solely as valid JSON format only, nothing more.

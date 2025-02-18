@@ -5,8 +5,8 @@ import type { ProviderInterface } from '../../../domain/LlmProvider'
 export class GoogleProvider implements ProviderInterface {
   name = 'google'
   private client
-  private defaultModel = 'gemini-flash-1.5'
-  private availableModels = ['gemini-pro', 'gemini-flash-1.5']
+  private defaultModel = 'gemini-2.0-flash'
+  private availableModels = ['gemini-2.0-flash']
 
   constructor(apiKey: string) {
     this.client = createGoogleGenerativeAI({ apiKey })

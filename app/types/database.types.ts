@@ -239,6 +239,86 @@ export type Database = {
           },
         ]
       }
+      song_analyses: {
+        Row: {
+          content: Json
+          created_at: string | null
+          id: string
+          model_name: string
+          song_id: number
+          version: Database["public"]["Enums"]["analysis_version_enum"]
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          id?: string
+          model_name: string
+          song_id: number
+          version?: Database["public"]["Enums"]["analysis_version_enum"]
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          model_name?: string
+          song_id?: number
+          version?: Database["public"]["Enums"]["analysis_version_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_analyses_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      song_playlist_matches: {
+        Row: {
+          created_at: string | null
+          factors: Json
+          model_name: string
+          playlist_id: number
+          score: number
+          song_id: number
+          version: Database["public"]["Enums"]["analysis_version_enum"]
+        }
+        Insert: {
+          created_at?: string | null
+          factors: Json
+          model_name: string
+          playlist_id: number
+          score: number
+          song_id: number
+          version?: Database["public"]["Enums"]["analysis_version_enum"]
+        }
+        Update: {
+          created_at?: string | null
+          factors?: Json
+          model_name?: string
+          playlist_id?: number
+          score?: number
+          song_id?: number
+          version?: Database["public"]["Enums"]["analysis_version_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_playlist_matches_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "song_playlist_matches_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       track_analyses: {
         Row: {
           analysis: Json
@@ -350,6 +430,7 @@ export type Database = {
       }
     }
     Enums: {
+      analysis_version_enum: "1.0"
       sorting_status_enum: "unsorted" | "sorted" | "ignored"
     }
     CompositeTypes: {

@@ -1,0 +1,60 @@
+Analyze the following song:
+
+Title: {title}
+Artist: {artist}
+
+Lyrics and Annotations:
+{lyrics_with_annotations}
+
+Audio Features:
+Tempo: {tempo}
+Danceability: {danceability}
+Energy: {energy}
+Valence: {valence}
+Instrumentalness: {instrumentalness}
+Acousticness: {acousticness}
+
+Please analyze this song and provide a structured analysis in the following JSON format:
+
+{
+  "meaning": {
+    "themes": [
+      {
+        "name": "primary theme",
+        "confidence": 0.0-1.0,
+        "evidence": ["specific lyric or section that supports this theme"],
+        "variations": ["related themes or alternative interpretations"]
+      }
+    ],
+    "interpretation": {
+      "verified": ["verified interpretations from annotations"],
+      "derived": ["LLM-derived interpretations based on analysis"]
+    }
+  },
+  "emotional": {
+    "dominantMood": "primary emotional tone",
+    "progression": [
+      {
+        "section": "verse/chorus/bridge",
+        "mood": "specific mood",
+        "intensity": 0.0-1.0
+      }
+    ]
+  },
+  "context": {
+    "situations": ["appropriate situations for listening"],
+    "activities": ["activities this song would suit"],
+    "temporal": ["time of day/week/year this fits best"],
+    "social": ["social contexts where this fits"]
+  }
+}
+
+Important guidelines:
+- All themes should be supported by specific evidence from lyrics
+- Confidence scores should reflect certainty based on available evidence
+- Moods should be specific and descriptive
+- Consider both lyrics and musical elements in your analysis
+- Contexts should be practical and specific
+- Base interpretations on both explicit statements and implicit meaning
+
+Please provide your analysis in valid JSON format only.

@@ -1,0 +1,35 @@
+Analyze the following playlist:
+
+Title: {playlist_title}
+Description: {playlist_description}
+Sample Songs: {list_of_sample_songs}
+
+Please analyze this playlist and provide a structured analysis in the following JSON format:
+
+{
+  "profile": {
+    "purpose": {
+      "primary": "main purpose/theme of playlist",
+      "secondary": ["additional purposes/themes"],
+      "intendedContext": ["specific contexts this playlist is designed for"]
+    },
+    "context": {
+      "temporal": ["time-based contexts"],
+      "situational": ["situation-based contexts"],
+      "activity": ["specific activities"],
+      "social": ["social contexts"]
+    },
+    "emotional": {
+      "primaryMoods": ["main emotional tones"],
+      "progression": ["description of emotional flow"]
+    }
+  }
+}
+
+Important guidelines:
+- Focus on the overall theme and purpose
+- Consider the playlist's emotional journey
+- Be specific about intended contexts
+- Consider both individual songs and their collective impact
+
+Please provide your analysis in valid JSON format only.

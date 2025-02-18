@@ -1,0 +1,56 @@
+Artist: {artist}
+Title: {title}
+
+Lyrics and Annotations:
+{lyrics_with_annotations}
+
+Please analyze the following song and provide analysis in this JSON format:
+
+{
+  "meaning": {
+    "themes": [
+      {
+        "name": "primary theme",
+        "confidence": 0.0-1.0,
+        "description": "natural language explanation of this theme and why it matters",
+        "evidence": {
+          "lyrics": ["specific supporting lyrics"],
+          "explanation": "how these lyrics support the theme"
+        },
+        "variations": {
+          "related_themes": ["related themes"],
+          "connection": "explanation of how these themes connect"
+        }
+      }
+    ],
+    "interpretation": {
+      "main_message": "core message of the song",
+      "verified": ["verified interpretations from annotations"],
+      "derived": ["LLM-derived interpretations"]
+    }
+  },
+  "emotional": {
+    "dominantMood": {
+      "mood": "primary mood",
+      "description": "why this is the dominant mood"
+    },
+    "progression": [
+      {
+        "section": "verse/chorus/bridge",
+        "mood": "specific mood",
+        "intensity": 0.0-1.0,
+        "description": "how this section's mood contributes to song's journey"
+      }
+    ]
+  },
+  "context": {
+    "primary_setting": "most fitting scenario with brief why",
+    "situations": {
+      "perfect_for": ["situations"],
+      "why": "explanation of why these situations fit"
+    },
+    "activities": ["activities"],
+    "temporal": ["temporal contexts"],
+    "social": ["social contexts"]
+  }
+}

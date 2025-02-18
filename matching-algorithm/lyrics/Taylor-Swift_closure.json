@@ -1,0 +1,384 @@
+[
+  {
+    "type": "Verse 1",
+    "lines": [
+      {
+        "id": 1,
+        "text": "It's been a long time",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "It has been a long time since the two people (the singer and the other person) talked.",
+            "verified": false,
+            "votes_total": -1,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "And seeing the shape of your name\nStill spells out pain",
+        "range": {
+          "start": 2,
+          "end": 3
+        },
+        "annotations": [
+          {
+            "text": "This is possibly a reference to Scooter Braun. Braun, who manages big names such as Kanye West and Justin Bieber who were instrumental in the public scrutiny Swift was under in 2016 that inspired her Reputation album, bought the rights to Taylor’s discography in 2019, making her unable to own her masters.\n\nIn a statement, condemning both Scooter Braun and her Big Machine label boss Scott Borchetta who sold him the rights after Taylor decided not to stay with the label she, similar to this line, said:\n\n“Any time Scott Borchetta has heard the words ‘Scooter Braun’ escape my lips, it was when I was either crying or trying not to. He knew what he was doing; they both did. Controlling a woman who didn’t want to be associated with them. In perpetuity.”",
+            "verified": false,
+            "votes_total": 52,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "It wasn't right\nThe way it all went down\nLooks like you know that now",
+        "range": {
+          "start": 4,
+          "end": 6
+        },
+        "annotations": [
+          {
+            "text": "The singer implies that the person who is being refered to as “you” didn’t know why and what caused them to separate so suddenly and go their own ways until a more recent time. That is exactly why they sent the singer a letter that is being mentioned in the chorus.",
+            "verified": false,
+            "votes_total": 1,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Yes, I got your letter\nYes, I'm doing better",
+        "range": {
+          "start": 1,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "the repetition of ‘yes’ at the start of multiple lines combined with them being in first person creates a conversational tone in which they sound almost like responses to someone reaching out to Taylor to ask how she’s doing, if she got their letter, etc, after hurting her. the lines sound almost like Taylor is over it, or fed up of being pestered about a closed chapter in her life by the person who caused damage in the past.",
+            "verified": false,
+            "votes_total": 9,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "It cut deep to know ya, right to the bone",
+        "range": {
+          "start": 3,
+          "end": 3
+        },
+        "annotations": [
+          {
+            "text": "This line is reminiscent of both “Death By A Thousand Cuts” and “Cruel Summer,” which appear on Swift’s 2019 album Lover.\n\n“Death By A Thousand Cuts” discusses how losing  someone hurts so much that it feels like you’re bleeding out:\n\nSaying goodbye is death by a thousand cuts\nFlashbacks waking me up\n\nOn “Cruel Summer,” Swift sings about how her lover playing hard to get only makes her want him more, but also how that cuts through her:\n\nI’m always waiting for you just to cut to the bone",
+            "verified": false,
+            "votes_total": 43,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "Yes, I got your letter\nYes, I'm doing better\nI know that it's over, I don't need your",
+        "range": {
+          "start": 4,
+          "end": 6
+        },
+        "annotations": [
+          {
+            "text": "Swift implies that she received a letter from someone who used to be in their life. The singer also describes that they are a lot happier after moving on from that person, recovering and ending the relationship without their help.",
+            "verified": false,
+            "votes_total": 1,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "text": "Closure, your closure",
+        "range": {
+          "start": 7,
+          "end": 7
+        },
+        "annotations": [
+          {
+            "text": "In the official lyrics on Apple Music, the word closure is stylized with quotation marks, so it appears as “closure.” This could mean that Taylor is directly quoting the letter she mentions receiving at the beginning of the chorus. It could also imply sarcasm, as the singer believes that the ex’s definition of the “closure” is, in reality, simply a self-serving way to relieve his guilty conscience, rather than to actually bring closure to the relationship.",
+            "verified": false,
+            "votes_total": 84,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Verse 2",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Don't treat me like\nSome situation that needs to be handled",
+        "range": {
+          "start": 1,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "The lyrics “Don’t treat me like some situation that needs to be handled” from the song “Closure” convey a strong sense of independence and self-assurance. The speaker is expressing a refusal to be seen as a problem that requires resolution or closure from someone else. Instead, they assert their ability to cope with their emotions and difficult experiences on their own terms.\n\nIn the context of the song, the protagonist seems to have received a letter from an ex-partner, indicating that they are doing better without that person in their life. The speaker acknowledges the pain caused by the breakup but emphasizes that they don’t need the sender’s attempt at closure or reconciliation.\n\nThe phrase reflects a desire for autonomy and a determination to find closure within themselves, rather than relying on external validation or attempts to mend the past. It portrays a sense of empowerment and emotional strength, showing that the speaker is capable of handling their feelings without needing someone else’s resolution or reassurance.",
+            "verified": false,
+            "votes_total": 3,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "I'm fine with my spite\nAnd my tears and my beers and my candles",
+        "range": {
+          "start": 3,
+          "end": 4
+        },
+        "annotations": [
+          {
+            "text": "These lyrics were tweeted by Producer Aaron Dessner hours before the release of evermore:\n\nhttps://twitter.com/aaron_dessner/status/1337128833183518726",
+            "verified": false,
+            "votes_total": 56,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "I can feel you",
+        "range": {
+          "start": 5,
+          "end": 5
+        },
+        "annotations": [
+          {
+            "text": "Here’s where you can clearly hear Taylor’s voice distorted. She’s using Bon Iver’s Messina vocal modifier to turn her soft timbre into a barely-contained robotic growl.",
+            "verified": false,
+            "votes_total": 24,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "text": "smoothing me over",
+        "range": {
+          "start": 6,
+          "end": 6
+        },
+        "annotations": [
+          {
+            "text": "The person who hurt her is trying to tell her that it was always her own fault – smoothing something over is another way of making it appear lesser than it actually is, downplaying any potential issues that they had in the relationship as well as blaming those on her.",
+            "verified": false,
+            "votes_total": 20,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Yes, I got your letter\nYes, I'm doing bettеr",
+        "range": {
+          "start": 1,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "It has been speculated that the aforementioned letter is from former friend Karlie Kloss.\nKarlie and Taylor became quick and close friends after Taylor’s first Victoria’s Secret Fashion Show in 2013, however they have not been seen together since 2018.\nKarlie’s old manager Scooter Braun bought Taylor’s masters in 2019 with money from Karlie’s husbands company.\nTaylor ended her friendship with Karlie, giving her no explanation. Karlie wrote Taylor a letter, explaining herself during the ‘lover’ era but Taylor never wrote back – instead leaving her feelings in the song",
+            "verified": false,
+            "votes_total": 1,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "It cut deep to know ya, right to the bone",
+        "range": {
+          "start": 3,
+          "end": 3
+        },
+        "annotations": [
+          {
+            "text": "The saying “cut to the bone” represents being reduced to the bare minimum, reflecting Taylor’s pain of reflecting upon her former relationship.\n\nThis line also mirrors a similar one in “Cruel Summer”:\n\nSo cut the headlights, summer’s a knife\nI’m always waiting for you just to cut to the bone",
+            "verified": false,
+            "votes_total": 20,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "Yes, I got your lеtter\nYes, I'm doing better\nI know that it's over, I don't need your\nClosure, your closure\nYour closure, your closure",
+        "range": {
+          "start": 4,
+          "end": 8
+        },
+        "annotations": [
+          {
+            "text": "The singer has already moved on and feels indifferent about the sender of the letter, however they do not want to be associated with them ever again as the damage that they had done to the singer was too detrimental and the singer is just simply not trusting of the sender.",
+            "verified": false,
+            "votes_total": 0,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Bridge",
+    "lines": [
+      {
+        "id": 1,
+        "text": "I know I'm just a wrinkle in your new life",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "The term “wrinkle” suggests a small, inconspicuous mark on a larger canvas, symbolizing the singer’s recognition of their diminished significance in the other person’s current journey. The use of “new life” evokes a sense of moving forward, signifying that the person the artist is addressing has moved on to a different chapter, leaving the singer behind.\n\nThis acknowledgment of being a “wrinkle” is a pivotal moment of closure for the artist, as it marks the acceptance of the relationship’s end and the understanding that life continues to unfold for both parties independently. The lyrics beautifully encapsulate the notion of letting go and finding peace in the knowledge that their paths have diverged.",
+            "verified": false,
+            "votes_total": 3,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "Staying friends would iron it out so nice",
+        "range": {
+          "start": 2,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "Like the word closure in the chorus, the word friends is also stylized in the Apple Music official lyrics with quotation marks, so it appears as “friends.” This likely implies that the so-called friends being mentioned are, in reality, not truly friends of the singer.\n\nThis draws from the previous line, which suggests that Taylor is still a sore spot for her ex. The ex’s suggestion of being “friends” is really just to help the ex “iron out” the “wrinkle,” which in this case means he could stop feeling guilty and move on from the relationship.",
+            "verified": false,
+            "votes_total": 58,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "Guilty, guilty, reaching out across the sea\nThat you put between you and me",
+        "range": {
+          "start": 3,
+          "end": 4
+        },
+        "annotations": [
+          {
+            "text": "Not only is this “sea” (vast amount of space that the other person put between them) imaginary and made up by this other person in the relationship (not necessarily romantic), it is also up to her to close that gap even though she didn’t choose it.",
+            "verified": false,
+            "votes_total": 16,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "text": "But it's fake and it's oh-so unnecessary",
+        "range": {
+          "start": 5,
+          "end": 5
+        },
+        "annotations": [
+          {
+            "text": "It seems like she’s indicating that the other person believes it to be her responsibility to reach out even though she is clearly stating how it is their fault.\n\nThe anger in the last line captures how she disagrees with the need for a “closure”, saying how it would only be needed for the guilty – the other person.",
+            "verified": false,
+            "votes_total": 19,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Yes, I got your letter\nYes, I'm doing better",
+        "range": {
+          "start": 1,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "The singer has been feeling so much better after being separated from the people who hurt her, who sent them a letter.",
+            "verified": false,
+            "votes_total": 0,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "It cut deep to know ya, right to the bone",
+        "range": {
+          "start": 3,
+          "end": 3
+        },
+        "annotations": [
+          {
+            "text": "This line is reminiscent of both “Death By A Thousand Cuts” and “Cruel Summer,” which appear on Swift’s 2019 album Lover.\n\n“Death By A Thousand Cuts” discusses how losing  someone hurts so much that it feels like you’re bleeding out:\n\nSaying goodbye is death by a thousand cuts\nFlashbacks waking me up\n\nOn “Cruel Summer,” Swift sings about how her lover playing hard to get only makes her want him more, but also how that cuts through her:\n\nI’m always waiting for you just to cut to the bone",
+            "verified": false,
+            "votes_total": 43,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "Yes, I got your letter\nYes, I'm doing better\nI know that it's over, I don't need your\nClosure, closure, your closure",
+        "range": {
+          "start": 4,
+          "end": 7
+        },
+        "annotations": [
+          {
+            "text": "Taylor is referring to the letter that she received from Shamrock Holdings informing her that Scooter Braun sold her master yet again. When she says\" Yes I’m doing better\" she makes it clear that she is still going to re record her old masters so she can now own them.",
+            "verified": false,
+            "votes_total": 45,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "text": "Your closure",
+        "range": {
+          "start": 8,
+          "end": 8
+        },
+        "annotations": [
+          {
+            "text": "Queen",
+            "verified": false,
+            "votes_total": 0,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  }
+]

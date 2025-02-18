@@ -33,12 +33,14 @@
     "wretch": "^2.10.0"
   },
   "devDependencies": {
+    "@clack/prompts": "^0.10.0",
     "@remix-run/dev": "^2.12.0",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "autoprefixer": "^10.4.19",
+    "citty": "^0.1.6",
     "dotenv": "^16.4.5",
     "eslint": "^8.38.0",
     "eslint-config-prettier": "^9.1.0",
@@ -47,9 +49,11 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "langfuse": "^3.35.2",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.1.6",
+    "uuid": "^11.0.5",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1",
     "vitest": "^2.1.2"

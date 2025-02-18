@@ -57,7 +57,6 @@ export class DefaultLyricsService implements LyricsService {
 				throw new GeniusApiError(`Song not found: ${artist} - ${song}`, 404)
 			}
 
-			// Verify artist match
 			if (!firstHit.primary_artist.name.toLowerCase().includes(artist.toLowerCase())) {
 				throw new GeniusApiError(
 					`Found song "${firstHit.title}" but artist "${firstHit.primary_artist.name}" doesn't match "${artist}"`,
