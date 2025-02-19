@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { generateText } from 'ai'
+import { generateText, LanguageModelUsage } from 'ai'
 import type { ProviderInterface } from '../../../domain/LlmProvider'
 
 export class GoogleProvider implements ProviderInterface {
@@ -16,12 +16,14 @@ export class GoogleProvider implements ProviderInterface {
     return this.availableModels
   }
 
-  async generateText(prompt: string, model?: string): Promise<string> {
+  async generateText(prompt: string, model?: string): Promise<{ text: string; usage: LanguageModelUsage }> {
     const selectedModel = model || this.defaultModel
-    const { text } = await generateText({
+
+    const { text, usage } = await generateText({
       model: this.client(selectedModel),
       prompt,
+      temperature: 0.3,
     })
-    return text
+    return { text, usage }
   }
 }

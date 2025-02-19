@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai'
-import { generateText } from 'ai'
+import { generateText, LanguageModelUsage } from 'ai'
 import type { ProviderInterface } from '../../../domain/LlmProvider'
 
 export class OpenAIProvider implements ProviderInterface {
@@ -21,12 +21,12 @@ export class OpenAIProvider implements ProviderInterface {
     return this.availableModels
   }
 
-  async generateText(prompt: string, model?: string): Promise<string> {
+  async generateText(prompt: string, model?: string): Promise<{ text: string; usage: LanguageModelUsage }> {
     const selectedModel = model || this.defaultModel
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model: this.client(selectedModel),
       prompt,
     })
-    return text
+    return { text, usage }
   }
 }

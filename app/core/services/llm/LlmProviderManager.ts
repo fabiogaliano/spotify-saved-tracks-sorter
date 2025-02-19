@@ -4,6 +4,7 @@ import { GoogleProvider } from './providers/GoogleProvider'
 import type { ProviderInterface, LlmProviderManager as ILlmProviderManager } from '~/core/domain/LlmProvider'
 import { ApiError } from '~/core/errors/ApiError'
 import { logger } from '~/core/logging/Logger'
+import { LanguageModelUsage } from 'ai'
 
 export class LlmProviderManager implements ILlmProviderManager {
   private provider: ProviderInterface | null = null
@@ -55,9 +56,9 @@ export class LlmProviderManager implements ILlmProviderManager {
         throw error
       }
       const models = this.provider.getAvailableModels()
-      logger.debug('llm:get_models', { 
+      logger.debug('llm:get_models', {
         provider: this.provider.constructor.name,
-        modelCount: models.length 
+        modelCount: models.length
       })
       return models
     } catch (error) {
@@ -71,7 +72,7 @@ export class LlmProviderManager implements ILlmProviderManager {
     }
   }
 
-  async generateText(prompt: string, model?: string): Promise<string> {
+  async generateText(prompt: string, model?: string): Promise<{ text: string; usage: LanguageModelUsage }> {
     try {
       if (!this.provider) {
         const error = new ApiError(
@@ -86,8 +87,6 @@ export class LlmProviderManager implements ILlmProviderManager {
       logger.info('LlmProvider.GenerateText[Provider:' + this.provider.constructor.name + ',Model:' + model + '].Start')
 
       const response = await this.provider.generateText(prompt, model)
-      
-      logger.debug('LlmProvider.GenerateText[Provider:' + this.provider.constructor.name + ',Model:' + model + '].Success[ResponseLength:' + response.length + ']')
 
       return response
     } catch (error) {
