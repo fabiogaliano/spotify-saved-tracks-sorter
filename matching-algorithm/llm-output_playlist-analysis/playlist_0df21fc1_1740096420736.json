@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-02-21T00:07:00.735Z",
+  "playlist": {
+    "id": "playlist_0df21fc1",
+    "track_ids": [
+      "track_c5ea67ca",
+      "track_d571041f"
+    ],
+    "meaning": {
+      "themes": [
+        {
+          "name": "Self-Care & Rejuvenation",
+          "confidence": 0.95,
+          "description": "The playlist is centered around the act of taking care of oneself, both physically and mentally, to feel refreshed and ready to face the world.",
+          "related_themes": [
+            "Positive Affirmation",
+            "Confidence Boosting",
+            "Relaxation"
+          ],
+          "connection": "These themes are interconnected as self-care rituals often involve positive self-talk, building confidence, and promoting relaxation."
+        },
+        {
+          "name": "Positive Affirmation",
+          "confidence": 0.85,
+          "description": "The playlist aims to instill a sense of positivity and self-belief, encouraging the listener to feel good about themselves.",
+          "related_themes": [
+            "Self-Care & Rejuvenation",
+            "Confidence Boosting"
+          ],
+          "connection": "Positive affirmations are often integrated into self-care routines to enhance their effectiveness and boost self-esteem."
+        },
+        {
+          "name": "Confidence Boosting",
+          "confidence": 0.8,
+          "description": "The music is intended to uplift and empower the listener, fostering a sense of self-assurance and high self-esteem.",
+          "related_themes": [
+            "Self-Care & Rejuvenation",
+            "Positive Affirmation"
+          ],
+          "connection": "Feeling confident is a natural outcome of engaging in self-care practices and reinforcing positive self-perceptions."
+        }
+      ],
+      "main_message": "A feel-good experience designed to promote self-love, relaxation, and a positive mindset."
+    },
+    "emotional": {
+      "dominantMood": {
+        "mood": "Uplifting & Empowering",
+        "description": "The playlist's description emphasizes feeling refreshed, positive, and ready to face the world with high self-esteem, indicating an uplifting and empowering emotional tone."
+      },
+      "intensity_score": 0.8
+    },
+    "context": {
+      "primary_setting": "Home spa day or self-care routine",
+      "situations": {
+        "perfect_for": [
+          "Taking a shower",
+          "Skincare routine",
+          "Relaxing at home",
+          "Preparing for the day"
+        ],
+        "why": "The playlist is designed to complement activities that promote relaxation, self-care, and a positive mindset, making these situations ideal."
+      },
+      "fit_scores": {
+        "morning": 0.9,
+        "working": 0.3,
+        "relaxation": 0.95
+      }
+    },
+    "matchability": {
+      "versatility_score": 0.6,
+      "distinctiveness": 0.7,
+      "adaptability": 0.7
+    }
+  }
+}

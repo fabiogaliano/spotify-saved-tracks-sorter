@@ -1,35 +1,48 @@
-Analyze the following playlist:
-
-Title: {playlist_title}
+Playlist Name: {playlist_name}
 Description: {playlist_description}
-Sample Songs: {list_of_sample_songs}
 
-Please analyze this playlist and provide a structured analysis in the following JSON format:
+Analyze this playlist and provide:
+1. The main themes, moods, and emotions of the playlist.
+2. The ideal listening scenarios and contexts.
+3. A detailed emotional analysis, focusing on the dominant mood.
+4. The adaptability of this playlist to different settings.
 
+Provide analysis in the following JSON format:
 {
-  "profile": {
-    "purpose": {
-      "primary": "main purpose/theme of playlist",
-      "secondary": ["additional purposes/themes"],
-      "intendedContext": ["specific contexts this playlist is designed for"]
+  "meaning": {
+    "themes": [
+      {
+        "name": "primary theme",
+        "confidence": 0.0-1.0,
+        "description": "Explanation of the theme.",
+        "related_themes": ["related themes"],
+        "connection": "How these themes link together."
+      }
+    ],
+    "main_message": "Core vibe of the playlist"
+  },
+  "emotional": {
+    "dominantMood": {
+      "mood": "primary mood",
+      "description": "Why this is the dominant mood"
     },
-    "context": {
-      "temporal": ["time-based contexts"],
-      "situational": ["situation-based contexts"],
-      "activity": ["specific activities"],
-      "social": ["social contexts"]
+    "intensity_score": 0.0-1.0
+  },
+  "context": {
+    "primary_setting": "Most fitting scenario",
+    "situations": {
+      "perfect_for": ["situations"],
+      "why": "Why these situations fit"
     },
-    "emotional": {
-      "primaryMoods": ["main emotional tones"],
-      "progression": ["description of emotional flow"]
+    "fit_scores": {
+      "morning": 0.0-1.0,
+      "working": 0.0-1.0,
+      "relaxation": 0.0-1.0
     }
+  },
+  "matchability": {
+    "versatility_score": 0.0-1.0,
+    "distinctiveness": 0.0-1.0,
+    "adaptability": 0.0-1.0
   }
 }
-
-Important guidelines:
-- Focus on the overall theme and purpose
-- Consider the playlist's emotional journey
-- Be specific about intended contexts
-- Consider both individual songs and their collective impact
-
-Please provide your analysis in valid JSON format only.

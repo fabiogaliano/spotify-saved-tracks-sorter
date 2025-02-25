@@ -1,0 +1,143 @@
+{
+  "timestamp": "2025-02-25T08:20:36.103Z",
+  "track": {
+    "id": "4989f3b1-41e1-4a57-a949-edd1b33e5e17",
+    "artist": "Corinne Bailey",
+    "title": "Put Your Records On"
+  },
+  "analysis": {
+    "meaning": {
+      "themes": [
+        {
+          "name": "Self-Confidence and Empowerment",
+          "confidence": 0.95,
+          "description": "The song's central theme revolves around finding and embracing inner confidence and self-expression. The lyrics encourage listeners to let go of inhibitions and embrace their true selves, particularly through music and self-acceptance. This theme is crucial because it promotes positive self-image and encourages individuality in a world that often pressures conformity.",
+          "related_themes": [
+            "Self-Expression",
+            "Inner Beauty",
+            "Overcoming Insecurities"
+          ],
+          "connection": "These themes connect by highlighting different facets of the journey towards self-acceptance. Self-expression is the tool, inner beauty is the goal, and overcoming insecurities is the obstacle to be conquered."
+        },
+        {
+          "name": "The Power of Music",
+          "confidence": 0.9,
+          "description": "Music serves as a catalyst for confidence and self-discovery. The act of 'putting your records on' is presented as a way to transform from shy and self-conscious to bold and confident. This theme underscores the emotional and transformative power of music in shaping one's identity and mood.",
+          "related_themes": [
+            "Nostalgia",
+            "Personal Identity",
+            "Emotional Release"
+          ],
+          "connection": "Music is a vehicle for nostalgia, helping to define personal identity and providing a means for emotional release, all contributing to the overarching theme of empowerment."
+        },
+        {
+          "name": "Embracing Natural Beauty",
+          "confidence": 0.85,
+          "description": "The lyrics specifically address embracing natural hair, particularly afro hair, and challenging societal beauty standards. This theme promotes self-acceptance and celebrates diversity, encouraging young women of color to love and appreciate their natural features.",
+          "related_themes": [
+            "Cultural Identity",
+            "Challenging Beauty Standards",
+            "Self-Love"
+          ],
+          "connection": "Embracing natural beauty is tied to cultural identity, challenges conventional beauty standards, and ultimately fosters self-love and acceptance."
+        }
+      ],
+      "interpretation": {
+        "main_message": "Find confidence and express yourself through music and self-acceptance, embracing your natural beauty and overcoming insecurities.",
+        "verified": [
+          "Music is an amazing way to find confidence and self expression.",
+          "Putting on music makes you feel invincible and super confident and bold.",
+          "Let your hair down means embracing your natural hair and not conforming to societal beauty standards.",
+          "The song is about becoming bolder and more confident, even when afraid."
+        ],
+        "derived": [
+          "The song encourages listeners to use music as a tool for self-discovery and empowerment.",
+          "It promotes the idea that embracing one's natural self is a path to inner confidence.",
+          "The song suggests that vulnerability and moments of doubt are a natural part of the journey towards self-acceptance."
+        ]
+      }
+    },
+    "emotional": {
+      "dominantMood": {
+        "mood": "Optimistic and Uplifting",
+        "description": "The song's lyrics, particularly the chorus, are inherently encouraging and positive. The references to music and self-expression create a sense of hope and empowerment. The overall tone is designed to lift the listener's spirits and inspire confidence."
+      },
+      "progression": [
+        {
+          "section": "Verse 1",
+          "mood": "Peaceful and Serene",
+          "intensity": 0.6,
+          "description": "The imagery of birds and summer creates a calm and relaxed atmosphere, setting the stage for the song's message of reassurance."
+        },
+        {
+          "section": "Pre-Chorus",
+          "mood": "Reflective and Hopeful",
+          "intensity": 0.7,
+          "description": "The pre-chorus acknowledges that things may not always be perfect but emphasizes the importance of perseverance and growth."
+        },
+        {
+          "section": "Chorus",
+          "mood": "Empowering and Joyful",
+          "intensity": 0.9,
+          "description": "The chorus is the emotional peak of the song, delivering a direct message of encouragement and self-expression with a strong sense of joy and liberation."
+        },
+        {
+          "section": "Verse 2",
+          "mood": "Affirming and Confident",
+          "intensity": 0.8,
+          "description": "The verse reinforces the theme of embracing natural beauty, contributing to the song's overall message of self-acceptance."
+        },
+        {
+          "section": "Post-Chorus",
+          "mood": "Reassuring and Encouraging",
+          "intensity": 0.7,
+          "description": "The post-chorus provides a gentle reminder that self-discovery is a journey and that finding oneself is inevitable."
+        },
+        {
+          "section": "Bridge",
+          "mood": "Vulnerable and Introspective",
+          "intensity": 0.5,
+          "description": "The bridge introduces a moment of vulnerability, acknowledging that self-acceptance is not always easy and that moments of doubt are normal."
+        }
+      ],
+      "intensity_score": 0.75
+    },
+    "context": {
+      "primary_setting": "A personal space where one seeks comfort and self-expression, such as a bedroom or a quiet corner. This is because the song encourages introspection and personal empowerment.",
+      "situations": {
+        "perfect_for": [
+          "Relaxing at home",
+          "Boosting self-esteem",
+          "Celebrating individuality",
+          "Overcoming insecurities"
+        ],
+        "why": "The song's uplifting message and gentle melody make it ideal for moments of relaxation and self-reflection. It's also perfect for situations where one needs a boost of confidence or a reminder to embrace their unique qualities."
+      },
+      "activities": [
+        "Listening to music",
+        "Dancing",
+        "Self-reflection",
+        "Getting ready for the day"
+      ],
+      "temporal": [
+        "Any time of day",
+        "Moments of self-doubt",
+        "Celebratory occasions"
+      ],
+      "social": [
+        "Alone time",
+        "Small gatherings with close friends"
+      ],
+      "fit_scores": {
+        "morning": 0.8,
+        "working": 0.4,
+        "relaxation": 0.9
+      }
+    },
+    "matchability": {
+      "versatility": 0.7,
+      "mood_consistency": 0.85,
+      "uniqueness": 0.6
+    }
+  }
+}

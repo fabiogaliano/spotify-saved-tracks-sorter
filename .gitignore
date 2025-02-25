@@ -6,3 +6,13 @@ node_modules
 supabase
 
 ./tests/spotify.session.json
+
+
+# Python
+venv/
+__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+instance/
+**/*.db

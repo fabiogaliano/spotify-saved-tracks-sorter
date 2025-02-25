@@ -1,0 +1,383 @@
+[
+  {
+    "type": "Verse 1",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Three little birds sat on my window",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "This is a reference to Bob Marley and The Wailers' “Three Little Birds” from the group’s ninth studio album Exodus.",
+            "verified": false,
+            "votes_total": 35,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "And they told me I don't need to worry",
+        "range": {
+          "start": 2,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "In Bob Marley’s “Three Little Birds,” he sings “Don’t worry about a thing.”",
+            "verified": false,
+            "votes_total": 27,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "Summer came like cinnamon, so sweet",
+        "range": {
+          "start": 3,
+          "end": 3
+        },
+        "annotations": [
+          {
+            "text": "Actually cinnamon is not really sweet, but you can use it for sweets… but as Corinne’s father is coming from the West Indies, a region of the Caribbean Basin and North Atlantic Ocean that includes the islands of the Antilles and the Lucayan Archipelago it might be a dedication to the them. Cinnamon grows there and they even have the so called “Mount Cinnamon Resort”.",
+            "verified": false,
+            "votes_total": 10,
+            "pinnedRole": null
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "text": "Little girls double-dutch on the concrete",
+        "range": {
+          "start": 4,
+          "end": 4
+        },
+        "annotations": [
+          {
+            "text": "Double Dutch is a game in which two long jump ropes turning in opposite directions are jumped by one or more players jumping simultaneously.",
+            "verified": false,
+            "votes_total": 14,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Pre-Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Maybe sometimes, we've got it wrong, but it's all right",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "You are afraid, you are overwhelmed but that’s a natural thing to be and sometimes it’s like just do it anyways. I sometimes think that. We really are affected by emotions. You can do things and still be afraid of doing them and that’s kind of how you grow and how you develop. I love the idea of becoming bolder and more confident. I definitely recognize that in this song.",
+            "verified": true,
+            "votes_total": 59,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "The more things seem to change\nThe more they stay the same",
+        "range": {
+          "start": 2,
+          "end": 3
+        },
+        "annotations": [
+          {
+            "text": "This is a reference to a quote near the end of The Color Purple (1985), a movie that shares many similar themes as this song.\n\n\n\nThe quote goes, “the more things change, the more they stay the same.”",
+            "verified": false,
+            "votes_total": 6,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Girl, put your records on",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "I found that as a young person, music was a really amazing way to find confidence and to find self expression. You could always find that song that’s like, “That’s just me. That person knows exactly how I feel.” Certain pop songs. I feel like I just put on music and feel like invincible and super confident and bold and let the music sort of carry you. To me, that’s what my favorite song is doing. It would turn me from being someone that was shy or self conscious or uncomfortable into a feeling really sort of bold and confident while that song is on, you kind of live in the song.",
+            "verified": true,
+            "votes_total": 71,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "Tell me your favorite song",
+        "range": {
+          "start": 2,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "When I was a kid, I loved this Mariah Carey song called “Vision of Love.” And I used to sort of sing that in the mirror with the hairbrush and just be like, “She’s amazing.” My dad had just gotten a CD player so it’s like early ‘90s and I had to put it on repeat and that’s me for like an hour, just listening to that one song.",
+            "verified": true,
+            "votes_total": 35,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "You go ahead, let your hair down\nJust go ahead, let your hair down",
+        "range": {
+          "start": 3,
+          "end": 4
+        },
+        "annotations": [
+          {
+            "text": "I’ve had a few experiences of wearing my hair out and natural for the first time. I used to just tie it back and have it permed and then I’ve had relaxed super straight, probably short and straight hair.\n\nI remember when I first started wearing it out and feeling self conscious and people were making fun of me as well because it’s so different, and living in England, it was against what was considered to be a nice way to have your hair.",
+            "verified": true,
+            "votes_total": 52,
+            "pinnedRole": "Artist"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Verse 2",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Got to love that afro hairdo",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "Corinne says this because how can you not love something that is a part of you. She is trying the encourage young women of color to embrace their hair the way she has.",
+            "verified": false,
+            "votes_total": 34,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Girl, put your records on",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "I found that as a young person, music was a really amazing way to find confidence and to find self expression. You could always find that song that’s like, “That’s just me. That person knows exactly how I feel.” Certain pop songs. I feel like I just put on music and feel like invincible and super confident and bold and let the music sort of carry you. To me, that’s what my favorite song is doing. It would turn me from being someone that was shy or self conscious or uncomfortable into a feeling really sort of bold and confident while that song is on, you kind of live in the song.",
+            "verified": true,
+            "votes_total": 71,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "Tell me your favorite song",
+        "range": {
+          "start": 2,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "When I was a kid, I loved this Mariah Carey song called “Vision of Love.” And I used to sort of sing that in the mirror with the hairbrush and just be like, “She’s amazing.” My dad had just gotten a CD player so it’s like early ‘90s and I had to put it on repeat and that’s me for like an hour, just listening to that one song.",
+            "verified": true,
+            "votes_total": 35,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "You go ahead, let your hair down\nJust go ahead, let your hair down",
+        "range": {
+          "start": 3,
+          "end": 4
+        },
+        "annotations": [
+          {
+            "text": "I’ve had a few experiences of wearing my hair out and natural for the first time. I used to just tie it back and have it permed and then I’ve had relaxed super straight, probably short and straight hair.\n\nI remember when I first started wearing it out and feeling self conscious and people were making fun of me as well because it’s so different, and living in England, it was against what was considered to be a nice way to have your hair.",
+            "verified": true,
+            "votes_total": 52,
+            "pinnedRole": "Artist"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Post-Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "You're gonna find yourself somewhere, somehow",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "Solo Savio",
+            "verified": false,
+            "votes_total": 2,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Bridge",
+    "lines": [
+      {
+        "id": 1,
+        "text": "'Twas more than I could take\nPity for pity's sake\nSome nights kept me awake\nI thought that I was stronger",
+        "range": {
+          "start": 1,
+          "end": 4
+        },
+        "annotations": [
+          {
+            "text": "A lot of the song focuses on being able to embrace inner beauty and being able to be yourself. These lines show that even with positivity, some days make it harder to accept yourself.\n\nMost of the lines in the song show positive and encouraging thoughts but these lines show vulnerability and a hint of sadness.",
+            "verified": false,
+            "votes_total": 23,
+            "pinnedRole": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Girl, put your records on",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "I found that as a young person, music was a really amazing way to find confidence and to find self expression. You could always find that song that’s like, “That’s just me. That person knows exactly how I feel.” Certain pop songs. I feel like I just put on music and feel like invincible and super confident and bold and let the music sort of carry you. To me, that’s what my favorite song is doing. It would turn me from being someone that was shy or self conscious or uncomfortable into a feeling really sort of bold and confident while that song is on, you kind of live in the song.",
+            "verified": true,
+            "votes_total": 71,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "Tell me your favorite song",
+        "range": {
+          "start": 2,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "When I was a kid, I loved this Mariah Carey song called “Vision of Love.” And I used to sort of sing that in the mirror with the hairbrush and just be like, “She’s amazing.” My dad had just gotten a CD player so it’s like early ‘90s and I had to put it on repeat and that’s me for like an hour, just listening to that one song.",
+            "verified": true,
+            "votes_total": 35,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "You go ahead, let your hair down\nJust go ahead, let your hair down",
+        "range": {
+          "start": 3,
+          "end": 4
+        },
+        "annotations": [
+          {
+            "text": "I’ve had a few experiences of wearing my hair out and natural for the first time. I used to just tie it back and have it permed and then I’ve had relaxed super straight, probably short and straight hair.\n\nI remember when I first started wearing it out and feeling self conscious and people were making fun of me as well because it’s so different, and living in England, it was against what was considered to be a nice way to have your hair.",
+            "verified": true,
+            "votes_total": 52,
+            "pinnedRole": "Artist"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Chorus",
+    "lines": [
+      {
+        "id": 1,
+        "text": "Girl, put your records on",
+        "range": {
+          "start": 1,
+          "end": 1
+        },
+        "annotations": [
+          {
+            "text": "I found that as a young person, music was a really amazing way to find confidence and to find self expression. You could always find that song that’s like, “That’s just me. That person knows exactly how I feel.” Certain pop songs. I feel like I just put on music and feel like invincible and super confident and bold and let the music sort of carry you. To me, that’s what my favorite song is doing. It would turn me from being someone that was shy or self conscious or uncomfortable into a feeling really sort of bold and confident while that song is on, you kind of live in the song.",
+            "verified": true,
+            "votes_total": 71,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "text": "Tell me your favorite song",
+        "range": {
+          "start": 2,
+          "end": 2
+        },
+        "annotations": [
+          {
+            "text": "When I was a kid, I loved this Mariah Carey song called “Vision of Love.” And I used to sort of sing that in the mirror with the hairbrush and just be like, “She’s amazing.” My dad had just gotten a CD player so it’s like early ‘90s and I had to put it on repeat and that’s me for like an hour, just listening to that one song.",
+            "verified": true,
+            "votes_total": 35,
+            "pinnedRole": "Artist"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "text": "You go ahead, let your hair down",
+        "range": {
+          "start": 3,
+          "end": 3
+        },
+        "annotations": [
+          {
+            "text": "I’ve had a few experiences of wearing my hair out and natural for the first time. I used to just tie it back and have it permed and then I’ve had relaxed super straight, probably short and straight hair.\n\nI remember when I first started wearing it out and feeling self conscious and people were making fun of me as well because it’s so different, and living in England, it was against what was considered to be a nice way to have your hair.",
+            "verified": true,
+            "votes_total": 52,
+            "pinnedRole": "Artist"
+          }
+        ]
+      }
+    ]
+  }
+]

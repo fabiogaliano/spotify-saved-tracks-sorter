@@ -1,116 +1,109 @@
 {
-  "timestamp": "2025-02-19T12:14:36.266Z",
-  "input": {
-    "prompt": "music-analyis_prompt-nlp01.txt",
-    "lyrics": "Wallows_Are-You-Bored-Yet.json"
+  "timestamp": "2025-02-21T00:06:34.676Z",
+  "track": {
+    "id": "8beae3f8-19ed-4e74-b810-ba70d644a0f9",
+    "artist": "Wallows",
+    "title": "Are You Bored Yet"
   },
   "analysis": {
     "meaning": {
       "themes": [
         {
-          "name": "Relationship Uncertainty and Doubt",
+          "name": "Relationship Uncertainty and Anxiety",
           "confidence": 0.95,
-          "description": "The primary theme revolves around the anxieties and uncertainties within a young relationship. The lyrics explore the fear of boredom, the reluctance to confront difficult emotions, and the potential for the relationship to become a regretful memory. The song captures the internal conflict of wanting the relationship to work while simultaneously questioning its longevity and the individual's own feelings.",
-          "evidence": {
-            "lyrics": [
-              "But I can't help from asking,\"Are you bored yet?\"",
-              "And if you're feeling lonely, you should tell me Before this ends up as another memory",
-              "Will you tell the truth so I don't have to lie?"
-            ],
-            "explanation": "These lyrics directly express the core anxieties of the song: the fear of boredom and loneliness within the relationship, and the desire for honest communication to avoid future regret. The repeated question 'Are you bored yet?' highlights the central concern."
-          },
-          "variations": {
-            "related_themes": [
-              "Fear of the Future",
-              "Communication Breakdown",
-              "Self-Doubt"
-            ],
-            "connection": "The fear of the future fuels the uncertainty about the relationship's longevity. The communication breakdown exacerbates the self-doubt, as the speaker hesitates to express their true feelings and seeks validation from their partner."
-          }
+          "description": "The primary theme revolves around the anxieties and uncertainties within a young relationship. The lyrics explore the fear of boredom, the reluctance to confront difficult emotions, and the potential for the relationship to become stagnant or end. This theme is central because the repeated question, \"Are you bored yet?\" encapsulates the core worry of the narrator.",
+          "related_themes": [
+            "Communication Breakdown",
+            "Fear of the Future",
+            "Youthful Insecurity"
+          ],
+          "connection": "These themes connect by highlighting different facets of the central anxiety. Communication breakdown contributes to the uncertainty, fear of the future fuels the worry about regret, and youthful insecurity amplifies the self-doubt within the relationship."
         }
       ],
       "interpretation": {
-        "main_message": "The song explores the anxieties and uncertainties inherent in young relationships, particularly the fear of boredom, the reluctance to communicate honestly, and the potential for future regret. It's a plea for honesty and a reflection on the fleeting nature of youth and love.",
+        "main_message": "The song captures the internal struggle of someone in a relationship who fears that the spark is fading, but is hesitant to openly address the issue due to fear of confrontation or change.",
         "verified": [
-          "The song is about a couple in bed, one asking 'What's wrong?' and the other lying because they don't want to cause problems.",
-          "The song explores the idea of stalling difficult conversations in a relationship to avoid conflict.",
-          "The song is about the fear of wasting time in a relationship that might not last.",
-          "The song is about the hope that the other person is feeling the same doubts and anxieties, so the speaker doesn't have to be the one to initiate a difficult conversation."
+          "The narrator is lying about not having an answer when asked 'What's wrong?' because they are afraid of causing problems.",
+          "The couple is avoiding talking about serious concerns by pretending to fall asleep.",
+          "The narrator is worried that the relationship is taking up too much time and they will regret not having other experiences.",
+          "The narrator is hoping the other person feels the same way about the relationship nearing its end, so they don't have to be the one to bring it up."
         ],
         "derived": [
-          "The song suggests a power imbalance in the relationship, where one person is more willing to confront difficult emotions than the other.",
-          "The song implies a sense of inevitability, suggesting that the relationship is likely to end, regardless of the efforts to salvage it.",
-          "The song reflects the anxieties of youth, where relationships feel significant but are often transient."
+          "The song suggests a power imbalance, where one person is more aware of the potential issues and is trying to gauge the other person's feelings.",
+          "The lyrics hint at a fear of vulnerability and a desire for the other person to initiate difficult conversations.",
+          "The song explores the tension between wanting to maintain the status quo and acknowledging the need for change or closure."
         ]
       }
     },
     "emotional": {
       "dominantMood": {
         "mood": "Anxious Uncertainty",
-        "description": "The song's lyrics and melancholic tone create a pervasive sense of anxious uncertainty. The repeated questions and hesitant confessions highlight the speaker's internal conflict and fear of the future."
+        "description": "The song's lyrics and tone create a feeling of unease and apprehension. The repeated question and the internal conflict expressed in the verses contribute to this dominant mood."
       },
       "progression": [
         {
           "section": "Verse 1",
-          "mood": "Hesitant Doubt",
+          "mood": "Apprehensive Hesitation",
           "intensity": 0.6,
-          "description": "The verse introduces the underlying tension and the speaker's reluctance to express their true feelings. The lines are questioning and introspective, setting the stage for the central conflict."
+          "description": "The verse establishes the underlying anxiety and the reluctance to communicate openly, setting the stage for the central question."
         },
         {
           "section": "Chorus",
-          "mood": "Anxious Plea",
-          "intensity": 0.8,
-          "description": "The chorus amplifies the anxiety with the repeated question 'Are you bored yet?' and the plea for honesty. The intensity increases as the speaker directly confronts their fears and seeks reassurance from their partner."
+          "mood": "Frustrated Insecurity",
+          "intensity": 0.75,
+          "description": "The chorus amplifies the anxiety with the direct question and the plea for honesty, revealing the narrator's vulnerability."
         },
         {
           "section": "Verse 2",
-          "mood": "Optimistic Hope (Slightly)",
-          "intensity": 0.5,
-          "description": "Clairo's verse offers a glimmer of hope, suggesting that the relationship can be salvaged through open communication. However, this optimism is tempered by the overall tone of the song, making it a fragile and uncertain hope."
+          "mood": "Hopeful Optimism (Slightly)",
+          "intensity": 0.4,
+          "description": "Clairo's verse introduces a contrasting perspective, suggesting the possibility of overcoming the challenges and maintaining the relationship, but it's tinged with the knowledge of the narrator's deeper anxieties."
         },
         {
           "section": "Chorus",
           "mood": "Resigned Anxiety",
           "intensity": 0.7,
-          "description": "The repetition of the chorus reinforces the dominant mood of anxious uncertainty, but with a hint of resignation. The speaker seems to accept the potential for the relationship to end, even while hoping for a different outcome."
+          "description": "The repetition of the chorus reinforces the central anxiety, but with a sense of resignation, as if the narrator is becoming increasingly aware of the potential outcome."
         }
       ],
-      "intensity_score": 0.7
+      "intensity_score": 0.65
     },
     "context": {
-      "primary_setting": "A quiet, intimate setting where a couple is reflecting on their relationship, possibly in bed or during a quiet moment together. The lyrics suggest a sense of closeness and vulnerability, but also underlying tension.",
+      "primary_setting": "A bedroom or quiet space where a couple is spending time together, likely in the evening. This setting fits because the lyrics mention lying in bed and the overall tone suggests intimacy and vulnerability.",
       "situations": {
         "perfect_for": [
-          "Late-night conversations with a partner",
-          "Reflecting on the state of a relationship",
-          "Dealing with feelings of boredom or dissatisfaction in a relationship"
+          "Late-night conversations",
+          "Reflecting on a relationship",
+          "Dealing with relationship anxiety",
+          "Driving alone at night"
         ],
-        "why": "The song's themes of uncertainty, communication breakdown, and fear of the future resonate with these situations. It provides a soundtrack for introspection and honest conversations about the relationship's trajectory."
+        "why": "These situations fit because they involve introspection, vulnerability, and a focus on relationships and emotions."
       },
       "activities": [
-        "Thinking about a relationship",
-        "Having a deep conversation with a partner",
-        "Listening to music while feeling introspective"
+        "Listening while relaxing",
+        "Thinking about relationships",
+        "Journaling"
       ],
       "temporal": [
-        "Late at night",
-        "During a period of relationship uncertainty",
-        "When reflecting on past relationships"
+        "Evening",
+        "Night",
+        "Quiet moments"
       ],
       "social": [
-        "Alone with a partner",
-        "Alone with one's thoughts"
+        "Alone",
+        "With a significant other",
+        "With close friends"
       ],
       "fit_scores": {
         "morning": 0.2,
-        "working": 0.1,
+        "working": 0.3,
         "relaxation": 0.8
       }
     },
     "matchability": {
-      "versatility_score": 0.6,
-      "distinctiveness": 0.7,
-      "adaptability": 0.5
+      "versatility": 0.6,
+      "mood_consistency": 0.8,
+      "uniqueness": 0.7
     }
   }
 }

@@ -1,115 +1,116 @@
 {
-  "timestamp": "2025-02-19T12:19:43.245Z",
-  "input": {
-    "prompt": "music-analyis_prompt-nlp01.txt",
-    "lyrics": "Taylor-Swift_closure.json"
-  },
-  "analysis": {
-    "meaning": {
-      "themes": [
-        {
-          "name": "Rejection of Unwanted Closure",
-          "confidence": 0.95,
-          "description": "The primary theme revolves around the speaker's refusal to accept closure offered by someone who has caused them pain. The song emphasizes the speaker's independence and self-sufficiency in moving on without the other person's input or attempt at reconciliation. This theme is significant because it challenges the conventional notion that closure is always necessary or beneficial, particularly when it comes from the person who inflicted the initial hurt.",
-          "evidence": {
-            "lyrics": [
-              "Yes, I got your letter\nYes, I'm doing better\nI know that it's over, I don't need your\nClosure, your closure",
-              "Don't treat me like\nSome situation that needs to be handled",
-              "But it's fake and it's oh-so unnecessary"
-            ],
-            "explanation": "These lyrics directly express the speaker's rejection of the other person's attempt at closure. The repetition of 'Yes, I'm doing better' reinforces the speaker's independence and ability to heal without external intervention. The line 'But it's fake and it's oh-so unnecessary' highlights the speaker's perception that the other person's attempt at closure is insincere and self-serving."
-          },
-          "variations": {
-            "related_themes": [
-              "Self-Reliance",
-              "Moving On",
-              "Emotional Independence"
-            ],
-            "connection": "These themes are interconnected as they all contribute to the central idea of the speaker's ability to heal and move forward without relying on the person who caused them pain. Self-reliance is the foundation for rejecting unwanted closure, while moving on is the outcome of embracing emotional independence."
-          }
-        }
-      ],
-      "interpretation": {
-        "main_message": "The song conveys the message that true healing comes from within and that unwanted or insincere attempts at closure from those who have caused pain are unnecessary and can even be detrimental to the healing process.",
-        "verified": [
-          "The singer implies that she received a letter from someone who used to be in their life. The singer also describes that they are a lot happier after moving on from that person, recovering and ending the relationship without their help.",
-          "In the official lyrics on Apple Music, the word closure is stylized with quotation marks, so it appears as “closure.” This could mean that Taylor is directly quoting the letter she mentions receiving at the beginning of the chorus. It could also imply sarcasm, as the singer believes that the ex’s definition of the “closure” is, in reality, simply a self-serving way to relieve his guilty conscience, rather than to actually bring closure to the relationship."
-        ],
-        "derived": [
-          "The song suggests that sometimes, the act of seeking closure can be more about the other person's need for absolution than the speaker's actual healing.",
-          "The speaker is asserting their right to define their own healing process and not be dictated by the expectations or desires of the person who caused them pain."
-        ]
-      }
-    },
-    "emotional": {
-      "dominantMood": {
-        "mood": "Resentment",
-        "description": "The dominant mood is resentment towards the person offering 'closure'. While there's a sense of healing and moving on, the underlying tone is one of frustration and anger at the other person's attempt to re-enter the speaker's life and dictate the terms of their healing."
-      },
-      "progression": [
-        {
-          "section": "Verse 1",
-          "mood": "Reflective Pain",
-          "intensity": 0.6,
-          "description": "The verse sets the stage by acknowledging the past pain and the lingering impact of the other person. It establishes the context for the speaker's subsequent rejection of closure."
-        },
-        {
-          "section": "Chorus",
-          "mood": "Assertive Rejection",
-          "intensity": 0.8,
-          "description": "The chorus is the core of the song's emotional message, expressing the speaker's firm rejection of the other person's attempt at closure. The repetition of 'Yes, I'm doing better' reinforces the speaker's confidence and independence."
-        },
-        {
-          "section": "Verse 2",
-          "mood": "Defiant Independence",
-          "intensity": 0.7,
-          "description": "This verse reinforces the speaker's self-sufficiency and refusal to be treated as a problem to be solved. It highlights the speaker's acceptance of their own emotions, even the negative ones, as part of their healing process."
-        },
-        {
-          "section": "Bridge",
-          "mood": "Cynical Disdain",
-          "intensity": 0.9,
-          "description": "The bridge reveals the speaker's cynicism towards the other person's motives, suggesting that their attempt at friendship is insincere and driven by guilt. This section intensifies the overall feeling of resentment."
-        }
-      ],
-      "intensity_score": 0.75
-    },
-    "context": {
-      "primary_setting": "A personal reflection after receiving unwanted communication from someone who caused past hurt, emphasizing the speaker's internal state and their reaction to the external attempt at reconciliation.",
-      "situations": {
-        "perfect_for": [
-          "Dealing with an ex who tries to re-enter your life",
-          "Asserting your independence after a difficult breakup or falling out",
-          "Finding strength in self-reliance and moving on without external validation"
-        ],
-        "why": "These situations align with the song's themes of rejecting unwanted closure, asserting independence, and finding strength in self-reliance. The song provides a soundtrack for navigating these challenging emotional experiences."
-      },
-      "activities": [
-        "Journaling",
-        "Contemplating past relationships",
-        "Practicing self-care",
-        "Expressing emotions through art or music"
-      ],
-      "temporal": [
-        "After a breakup or falling out",
-        "When reflecting on past relationships",
-        "During periods of personal growth and self-discovery"
-      ],
-      "social": [
-        "Alone",
-        "With close friends who offer support",
-        "In therapy or counseling"
-      ],
-      "fit_scores": {
-        "morning": 0.3,
-        "working": 0.2,
-        "relaxation": 0.7
-      }
-    },
-    "matchability": {
-      "versatility_score": 0.6,
-      "distinctiveness": 0.8,
-      "adaptability": 0.5
-    }
-  }
+	"timestamp": "2025-02-19T12:19:43.245Z",
+	"input": {
+		"prompt": "music-analyis_prompt-nlp01.txt",
+		"lyrics": "Taylor-Swift_closure.json"
+	},
+	"track": {
+		"id": "4989f3b1-41e1-4a57-a949-edd1b33e5e17",
+		"artist": "Taylor Swift",
+		"title": "Closure"
+	},
+	"analysis": {
+		"meaning": {
+			"themes": [
+				{
+					"name": "Rejection of Unwanted Closure",
+					"confidence": 0.95,
+					"description": "The primary theme revolves around the speaker's refusal to accept closure offered by someone who has caused them pain. The song emphasizes the speaker's independence and self-sufficiency in moving on without the other person's input or attempt at reconciliation. This theme is significant because it challenges the conventional notion that closure is always necessary or beneficial, particularly when it comes from the person who inflicted the initial hurt.",
+					"evidence": {
+						"lyrics": [
+							"Yes, I got your letter\nYes, I'm doing better\nI know that it's over, I don't need your\nClosure, your closure",
+							"Don't treat me like\nSome situation that needs to be handled",
+							"But it's fake and it's oh-so unnecessary"
+						],
+						"explanation": "These lyrics directly express the speaker's rejection of the other person's attempt at closure. The repetition of 'Yes, I'm doing better' reinforces the speaker's independence and ability to heal without external intervention. The line 'But it's fake and it's oh-so unnecessary' highlights the speaker's perception that the other person's attempt at closure is insincere and self-serving."
+					},
+					"variations": {
+						"related_themes": ["Self-Reliance", "Moving On", "Emotional Independence"],
+						"connection": "These themes are interconnected as they all contribute to the central idea of the speaker's ability to heal and move forward without relying on the person who caused them pain. Self-reliance is the foundation for rejecting unwanted closure, while moving on is the outcome of embracing emotional independence."
+					}
+				}
+			],
+			"interpretation": {
+				"main_message": "The song conveys the message that true healing comes from within and that unwanted or insincere attempts at closure from those who have caused pain are unnecessary and can even be detrimental to the healing process.",
+				"verified": [
+					"The singer implies that she received a letter from someone who used to be in their life. The singer also describes that they are a lot happier after moving on from that person, recovering and ending the relationship without their help.",
+					"In the official lyrics on Apple Music, the word closure is stylized with quotation marks, so it appears as “closure.” This could mean that Taylor is directly quoting the letter she mentions receiving at the beginning of the chorus. It could also imply sarcasm, as the singer believes that the ex’s definition of the “closure” is, in reality, simply a self-serving way to relieve his guilty conscience, rather than to actually bring closure to the relationship."
+				],
+				"derived": [
+					"The song suggests that sometimes, the act of seeking closure can be more about the other person's need for absolution than the speaker's actual healing.",
+					"The speaker is asserting their right to define their own healing process and not be dictated by the expectations or desires of the person who caused them pain."
+				]
+			}
+		},
+		"emotional": {
+			"dominantMood": {
+				"mood": "Resentment",
+				"description": "The dominant mood is resentment towards the person offering 'closure'. While there's a sense of healing and moving on, the underlying tone is one of frustration and anger at the other person's attempt to re-enter the speaker's life and dictate the terms of their healing."
+			},
+			"progression": [
+				{
+					"section": "Verse 1",
+					"mood": "Reflective Pain",
+					"intensity": 0.6,
+					"description": "The verse sets the stage by acknowledging the past pain and the lingering impact of the other person. It establishes the context for the speaker's subsequent rejection of closure."
+				},
+				{
+					"section": "Chorus",
+					"mood": "Assertive Rejection",
+					"intensity": 0.8,
+					"description": "The chorus is the core of the song's emotional message, expressing the speaker's firm rejection of the other person's attempt at closure. The repetition of 'Yes, I'm doing better' reinforces the speaker's confidence and independence."
+				},
+				{
+					"section": "Verse 2",
+					"mood": "Defiant Independence",
+					"intensity": 0.7,
+					"description": "This verse reinforces the speaker's self-sufficiency and refusal to be treated as a problem to be solved. It highlights the speaker's acceptance of their own emotions, even the negative ones, as part of their healing process."
+				},
+				{
+					"section": "Bridge",
+					"mood": "Cynical Disdain",
+					"intensity": 0.9,
+					"description": "The bridge reveals the speaker's cynicism towards the other person's motives, suggesting that their attempt at friendship is insincere and driven by guilt. This section intensifies the overall feeling of resentment."
+				}
+			],
+			"intensity_score": 0.75
+		},
+		"context": {
+			"primary_setting": "A personal reflection after receiving unwanted communication from someone who caused past hurt, emphasizing the speaker's internal state and their reaction to the external attempt at reconciliation.",
+			"situations": {
+				"perfect_for": [
+					"Dealing with an ex who tries to re-enter your life",
+					"Asserting your independence after a difficult breakup or falling out",
+					"Finding strength in self-reliance and moving on without external validation"
+				],
+				"why": "These situations align with the song's themes of rejecting unwanted closure, asserting independence, and finding strength in self-reliance. The song provides a soundtrack for navigating these challenging emotional experiences."
+			},
+			"activities": [
+				"Journaling",
+				"Contemplating past relationships",
+				"Practicing self-care",
+				"Expressing emotions through art or music"
+			],
+			"temporal": [
+				"After a breakup or falling out",
+				"When reflecting on past relationships",
+				"During periods of personal growth and self-discovery"
+			],
+			"social": [
+				"Alone",
+				"With close friends who offer support",
+				"In therapy or counseling"
+			],
+			"fit_scores": {
+				"morning": 0.3,
+				"working": 0.2,
+				"relaxation": 0.7
+			}
+		},
+		"matchability": {
+			"versatility_score": 0.6,
+			"distinctiveness": 0.8,
+			"adaptability": 0.5
+		}
+	}
 }

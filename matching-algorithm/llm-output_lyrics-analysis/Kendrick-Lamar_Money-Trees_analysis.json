@@ -1,0 +1,137 @@
+{
+	"timestamp": "2025-02-20T22:45:36.759Z",
+	"input": {
+		"prompt": "music-analyis_prompt-nlp01.txt",
+		"lyrics": "Kendrick-Lamar_Money-Trees.json"
+	},
+	"track": {
+		"id": "4989f3b1-41e1-4a57-a949-edd1b33e5e17",
+		"artist": "Kendrick Lamar",
+		"title": "Money Trees"
+	},
+	"analysis": {
+		"meaning": {
+			"themes": [
+				{
+					"name": "The Pursuit of Wealth vs. Morality",
+					"confidence": 0.95,
+					"description": "The song explores the complex relationship between the desire for financial security and the moral compromises one might make to achieve it, particularly within the context of poverty and systemic inequality. The lyrics constantly juxtapose the allure of easy money (through illegal activities) with the potential consequences and moral implications of those choices. This theme is central to understanding the internal conflict experienced by the characters in the song.",
+					"related_themes": [
+						"Poverty and Systemic Inequality",
+						"Redemption and Salvation",
+						"The Cycle of Violence"
+					],
+					"connection": "The pursuit of wealth is driven by the realities of poverty and systemic inequality. The potential for redemption is offered as an alternative to the cycle of violence that often accompanies the pursuit of wealth in this context. The 'Halle Berry or Hallelujah' choice encapsulates this connection."
+				},
+				{
+					"name": "Poverty and Systemic Inequality",
+					"confidence": 0.9,
+					"description": "The song vividly portrays the harsh realities of life in impoverished communities like Compton, California. It highlights the lack of opportunities, the prevalence of violence, and the constant struggle for survival. The lyrics depict how these systemic issues can drive individuals to make desperate choices in pursuit of a better life. The constant references to robbery, drug dealing, and gang violence underscore the impact of these factors.",
+					"related_themes": [
+						"The Pursuit of Wealth vs. Morality",
+						"The Cycle of Violence",
+						"Dreams and Aspirations"
+					],
+					"connection": "Poverty and systemic inequality create the environment in which the pursuit of wealth becomes a moral dilemma. The cycle of violence is perpetuated by the lack of opportunities and the desperation for survival. The dreams and aspirations of the characters are often shaped and constrained by these realities."
+				},
+				{
+					"name": "The Cycle of Violence",
+					"confidence": 0.85,
+					"description": "The song depicts the cyclical nature of violence in impoverished communities. The lyrics reference shootings, robberies, and gang warfare, highlighting how these acts of violence perpetuate a cycle of trauma and despair. The death of Uncle Tony and the casual acceptance of violence in Jay Rock's verse exemplify this theme.",
+					"related_themes": [
+						"Poverty and Systemic Inequality",
+						"The Pursuit of Wealth vs. Morality",
+						"Redemption and Salvation"
+					],
+					"connection": "The cycle of violence is a direct consequence of poverty and systemic inequality. The pursuit of wealth through illegal means often leads to violence. Redemption and salvation are presented as potential escapes from this cycle."
+				}
+			],
+			"interpretation": {
+				"main_message": "The song explores the complex and often morally ambiguous choices individuals make in the face of poverty and systemic inequality, highlighting the allure and consequences of pursuing wealth through both legitimate and illegitimate means. It questions whether the ends justify the means and offers a glimmer of hope for redemption amidst the darkness.",
+				"verified": [
+					"That was a metaphor for both. Not saying that I actually had an STD.  But that is the consequences I could have gotten messing with somebody like Sherane.",
+					"You can either go right, or you can go left and get crazy with us. Basically just saying we throw the evils of the world in the air. Now, K. Dot, you can either get with the program or you don’t have to, it’s whatever. Of course, hallelujah being the more good in me and Halle Berry being the actual vice of what’s going down – the lust for the money, the lust for this mission we are about to go on. Pick your poison, tell me what you’re doing. But when you tell me, tell me right now. We ain’t got time to wait.",
+					"Moving out the projects was hard. That’s home. I still got family there and sometimes it feels good to come back. A lot of people that grew up in certain neighborhoods don’t get to come back. But even though I have good days and bad days in the projects, it taught me how to be strong and be a man. It’s gutter, that is all I can say."
+				],
+				"derived": [
+					"The song uses the 'money tree' as a metaphor for the illusion of easy wealth and the temporary comfort it provides, while also hinting at the potential for corruption and moral compromise.",
+					"The chorus's 'Halle Berry or Hallelujah' dichotomy represents the constant choice between worldly pleasures and spiritual fulfillment, a central tension in the characters' lives.",
+					"The skit at the end reinforces the theme of generational struggles and the cyclical nature of poverty and addiction."
+				]
+			}
+		},
+		"emotional": {
+			"dominantMood": {
+				"mood": "Melancholy and Reflective",
+				"description": "The song evokes a sense of melancholy due to its somber portrayal of poverty, violence, and moral compromises. The reflective tone comes from the introspective lyrics that question the choices made in the pursuit of wealth and the consequences of those choices. The overall atmosphere is one of contemplation and a yearning for something better."
+			},
+			"progression": [
+				{
+					"section": "Verse 1",
+					"mood": "Urgency and Temptation",
+					"intensity": 0.7,
+					"description": "The verse establishes the immediate need for money and the temptation to engage in illegal activities. The repetition of 'ya bish' adds a sense of bravado and recklessness."
+				},
+				{
+					"section": "Chorus",
+					"mood": "Dilemma and Resignation",
+					"intensity": 0.8,
+					"description": "The chorus presents the central dilemma of choosing between worldly pleasures and spiritual fulfillment. The lines about 'respect the shooter' and 'one in front of the gun' add a sense of resignation to the realities of violence."
+				},
+				{
+					"section": "Verse 2",
+					"mood": "Loss and Despair",
+					"intensity": 0.75,
+					"description": "The verse delves into the personal consequences of violence and poverty, with the death of Uncle Tony and the inability of material possessions to ease the pain. There's a sense of hopelessness and a longing for escape."
+				},
+				{
+					"section": "Bridge",
+					"mood": "Defiance and Determination",
+					"intensity": 0.6,
+					"description": "The bridge offers a moment of defiance and determination, rejecting the idea of giving up or compromising one's values. It's a brief glimmer of hope amidst the darkness."
+				},
+				{
+					"section": "Verse 3",
+					"mood": "Grim Reality and Acceptance",
+					"intensity": 0.85,
+					"description": "Jay Rock's verse paints a vivid picture of the harsh realities of life in the projects, with drug dealing, violence, and broken promises. There's a sense of acceptance of this reality, even as he dreams of a better life."
+				},
+				{
+					"section": "Skit",
+					"mood": "Despair and Cyclical Nature",
+					"intensity": 0.7,
+					"description": "The skit reinforces the themes of generational struggles and the cyclical nature of poverty and addiction. It leaves the listener with a sense of unease and a reminder of the challenges faced by the characters."
+				}
+			],
+			"intensity_score": 0.75
+		},
+		"context": {
+			"primary_setting": "An impoverished urban neighborhood, specifically Compton, California. This setting is crucial as it provides the backdrop for the characters' struggles and the moral dilemmas they face.",
+			"situations": {
+				"perfect_for": [
+					"Reflecting on life choices",
+					"Understanding social issues",
+					"Experiencing a different perspective"
+				],
+				"why": "The song's introspective lyrics and vivid portrayal of poverty and violence make it suitable for reflecting on life choices and understanding social issues. It also offers a glimpse into a different perspective, allowing listeners to empathize with the characters' struggles."
+			},
+			"activities": [
+				"Listening while driving",
+				"Reflecting alone",
+				"Discussing social issues"
+			],
+			"temporal": ["Late nights", "Rainy days", "Times of introspection"],
+			"social": ["Listening alone", "Small groups", "Discussions about social justice"],
+			"fit_scores": {
+				"morning": 0.3,
+				"working": 0.4,
+				"relaxation": 0.6
+			}
+		},
+		"matchability": {
+			"versatility": 0.6,
+			"mood_consistency": 0.7,
+			"uniqueness": 0.8
+		}
+	}
+}

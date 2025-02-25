@@ -9,45 +9,39 @@ Please analyze the following song and provide analysis in this JSON format. Ensu
   "meaning": {
     "themes": [
       {
-        "name": "primary theme",
+        "name": "Primary Theme",
         "confidence": 0.0-1.0,
-        "description": "natural language explanation of this theme and why it matters",
-        "evidence": {
-          "lyrics": ["specific supporting lyrics"],
-          "explanation": "how these lyrics support the theme"
-        },
-        "variations": {
-          "related_themes": ["related themes"],
-          "connection": "explanation of how these themes connect"
-        }
+        "description": "Natural language explanation of this theme and why it matters.",
+        "related_themes": ["related theme 1", "related theme 2"],
+        "connection": "How these themes connect within the song."
       }
     ],
     "interpretation": {
-      "main_message": "core message of the song",
+      "main_message": "Core message of the song",
       "verified": ["verified interpretations from annotations"],
       "derived": ["LLM-derived interpretations"]
     }
   },
   "emotional": {
     "dominantMood": {
-      "mood": "primary mood",
-      "description": "why this is the dominant mood"
+      "mood": "Primary Mood",
+      "description": "Why this is the dominant mood."
     },
     "progression": [
       {
         "section": "verse/chorus/bridge",
-        "mood": "specific mood",
+        "mood": "Specific mood in this section",
         "intensity": 0.0-1.0,
-        "description": "how this section's mood contributes to song's journey"
+        "description": "How this section's mood contributes to the song's journey."
       }
     ],
     "intensity_score": 0.0-1.0
   },
   "context": {
-    "primary_setting": "most fitting scenario with brief why",
+    "primary_setting": "Most fitting scenario with brief why",
     "situations": {
       "perfect_for": ["situations"],
-      "why": "explanation of why these situations fit"
+      "why": "Explanation of why these situations fit."
     },
     "activities": ["activities"],
     "temporal": ["temporal contexts"],
@@ -59,8 +53,8 @@ Please analyze the following song and provide analysis in this JSON format. Ensu
     }
   },
   "matchability": {
-    "versatility_score": 0.0-1.0,
-    "distinctiveness": 0.0-1.0,
-    "adaptability": 0.0-1.0
+    "versatility": 0.0-1.0,  // How well this song fits multiple contexts
+    "mood_consistency": 0.0-1.0,  // Does it have a clear, consistent emotional tone?
+    "uniqueness": 0.0-1.0  // Is this song distinct enough to add variety to playlists?
   }
 }
