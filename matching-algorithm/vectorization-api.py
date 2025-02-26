@@ -26,8 +26,132 @@ class SentimentResponse(BaseModel):
     negative: float
     neutral: float
 
+def determine_emotional_valence(mood: str, description: str) -> str:
+    """
+    Determine the emotional valence (positive, negative, neutral) based on mood and description.
+    """
+    if not mood and not description:
+        return "NEUTRAL"
+        
+    # Keywords for positive valence
+    positive_keywords = [
+        "happy", "joy", "upbeat", "uplift", "bright", "cheerful", "optimistic", 
+        "energetic", "positive", "confident", "empowering", "uplifting", "calm", 
+        "peaceful", "relaxing", "soothing", "serene", "tranquil", "hopeful",
+        "excited", "blissful", "content", "satisfied", "love", "warm", "gentle"
+    ]
+    
+    # Keywords for negative valence
+    negative_keywords = [
+        "sad", "melancholy", "somber", "dark", "gloomy", "depressing", "depressed",
+        "angry", "aggressive", "tension", "anxious", "fearful", "worried", 
+        "uncertain", "frustrated", "bitter", "regretful", "resentful", "grief",
+        "painful", "struggle", "conflict", "intense", "haunting", "desperate",
+        "longing", "yearning", "lonely", "isolated", "brooding", "moody"
+    ]
+    
+    combined_text = (mood + " " + description).lower()
+    
+    positive_matches = sum(1 for word in positive_keywords if word in combined_text)
+    negative_matches = sum(1 for word in negative_keywords if word in combined_text)
+    
+    # Determine valence based on keyword matches
+    if positive_matches > negative_matches * 1.5:
+        return "POSITIVE"
+    elif negative_matches > positive_matches * 1.5:
+        return "NEGATIVE"
+    elif positive_matches > 0 and negative_matches > 0:
+        return "MIXED"
+    elif positive_matches > 0:
+        return "SLIGHTLY_POSITIVE"
+    elif negative_matches > 0:
+        return "SLIGHTLY_NEGATIVE"
+    else:
+        return "NEUTRAL"
+
+def identify_incompatible_themes(themes: List[Dict[str, Any]]) -> List[str]:
+    """
+    Identify themes that would be incompatible with this playlist/song.
+    """
+    incompatible_themes = []
+    theme_names = [t.get("name", "").lower() for t in themes if "name" in t]
+    
+    # Define opposites based on theme names
+    theme_opposites = {
+        "self-care": ["violence", "struggle", "conflict", "anxiety", "stress", "poverty", "anger"],
+        "relaxation": ["tension", "stress", "anxiety", "conflict", "intense", "pressure", "violence"],
+        "happiness": ["sadness", "depression", "melancholy", "grief", "misery", "struggle"],
+        "confidence": ["doubt", "uncertainty", "insecurity", "fear", "anxiety"],
+        "uplifting": ["depressing", "dark", "negative", "heavy", "downbeat", "gloomy"],
+        "growth": ["stagnation", "regression", "failure", "hopelessness"],
+        "love": ["hate", "anger", "resentment", "bitterness", "violence"],
+        "peace": ["war", "conflict", "violence", "chaos", "disorder"],
+        "hope": ["despair", "hopelessness", "resignation", "defeat"],
+        "justice": ["injustice", "corruption", "inequality", "oppression"],
+        "success": ["failure", "defeat", "poverty", "struggle"],
+        "wealth": ["poverty", "scarcity", "lack", "insufficiency"],
+        "freedom": ["oppression", "confinement", "restriction", "limitation"],
+        "unity": ["division", "separation", "isolation", "fragmentation"],
+        "health": ["illness", "disease", "sickness", "infirmity"],
+        "positive": ["negative", "dark", "depressing", "harmful", "destructive"],
+        "negative": ["positive", "uplifting", "encouraging", "constructive"],
+        "celebration": ["mourning", "grief", "regret", "lamentation"],
+        "trust": ["suspicion", "distrust", "skepticism", "paranoia"]
+    }
+    
+    # For each theme, find its opposites
+    for theme in theme_names:
+        # Find matching keys in the theme_opposites dictionary
+        for key, opposites in theme_opposites.items():
+            if key in theme:
+                incompatible_themes.extend(opposites)
+            # Also check if the theme is in any of the opposites lists
+            if theme in opposites:
+                incompatible_themes.append(key)
+    
+    # Make the list unique and return
+    return list(set(incompatible_themes))
+
+def extract_mood_boundaries(mood: str, description: str) -> List[str]:
+    """
+    Extract mood boundaries and limitations.
+    """
+    boundaries = []
+    
+    # Determine valence
+    valence = determine_emotional_valence(mood, description)
+    
+    # Set boundaries based on valence
+    if valence == "POSITIVE":
+        boundaries.append("STRICTLY_POSITIVE_ONLY")
+    elif valence == "SLIGHTLY_POSITIVE":
+        boundaries.append("POSITIVE_LEANING")
+    elif valence == "NEGATIVE":
+        boundaries.append("SERIOUS_REFLECTIVE_CONTENT")
+    elif valence == "SLIGHTLY_NEGATIVE":
+        boundaries.append("ALLOWS_MELANCHOLY")
+    elif valence == "MIXED":
+        boundaries.append("EMOTIONAL_COMPLEXITY_ALLOWED")
+    
+    # Check for specific mood types in the text
+    combined_text = (mood + " " + description).lower()
+    
+    if any(word in combined_text for word in ["energetic", "lively", "upbeat", "dynamic", "powerful"]):
+        boundaries.append("ENERGETIC_FOCUS")
+    
+    if any(word in combined_text for word in ["calm", "peaceful", "relaxing", "tranquil", "serene"]):
+        boundaries.append("CALM_FOCUS")
+    
+    if any(word in combined_text for word in ["deep", "profound", "introspective", "thoughtful"]):
+        boundaries.append("DEPTH_REQUIRED")
+    
+    if any(word in combined_text for word in ["light", "easy", "fun", "carefree"]):
+        boundaries.append("LIGHT_CONTENT_ONLY")
+    
+    return boundaries
+
 def create_playlist_vector_query(playlist_data: Dict[str, Any]) -> str:
-    """Create a comprehensive query for playlist embedding with higher emphasis on themes and mood."""
+    """Create a comprehensive query for playlist embedding with contradiction detection."""
     # Extract playlist metadata
     playlist_id = playlist_data.get("id", "")
     track_count = len(playlist_data.get("track_ids", []))
@@ -55,6 +179,15 @@ def create_playlist_vector_query(playlist_data: Dict[str, Any]) -> str:
     mood_description = emotional.get("dominantMood", {}).get("description", "")
     intensity = emotional.get("intensity_score", 0)
     
+    # NEW: Determine emotional valence
+    valence = determine_emotional_valence(dominant_mood, mood_description)
+    
+    # NEW: Identify incompatible themes
+    incompatible_themes = identify_incompatible_themes(themes)
+    
+    # NEW: Extract mood boundaries
+    mood_boundaries = extract_mood_boundaries(dominant_mood, mood_description)
+    
     # Extract context elements
     context = playlist_data.get("context", {})
     primary_setting = context.get("primary_setting", "")
@@ -64,14 +197,25 @@ def create_playlist_vector_query(playlist_data: Dict[str, Any]) -> str:
     # Build enhanced query with theme repetition and stronger emphasis
     query = "Represent this playlist for music matching:\n\n"
     
+    # NEW: Add emotional valence and mood boundaries first for emphasis
+    if valence != "NEUTRAL":
+        query += f"EMOTIONAL_VALENCE: {valence}\n"
+    
+    if mood_boundaries:
+        query += f"MOOD_BOUNDARIES: {', '.join(mood_boundaries)}\n"
+    
+    # NEW: Add incompatible themes section
+    if incompatible_themes:
+        query += f"NOT_COMPATIBLE_WITH: {', '.join(incompatible_themes)}\n\n"
+    
     # Add stronger emphasis on playlist qualities
-    query += f"IMPORTANT PLAYLIST THEMES: {theme_names.upper()}\n\n"
+    query += f"IMPORTANT_PLAYLIST_THEMES: {theme_names.upper()}\n\n"
     
     if main_message:
-        query += f"ESSENTIAL MESSAGE: {main_message}\n\n"
+        query += f"ESSENTIAL_MESSAGE: {main_message}\n\n"
     
     # Create a more detailed emotional section
-    query += "EMOTIONAL PROFILE (CRITICAL FOR MATCHING):\n"
+    query += "EMOTIONAL_PROFILE (CRITICAL FOR MATCHING):\n"
     if dominant_mood:
         query += f"Must have this mood: {dominant_mood.upper()}\n"
     if mood_description:
@@ -81,10 +225,10 @@ def create_playlist_vector_query(playlist_data: Dict[str, Any]) -> str:
     
     # Repeat theme descriptions for emphasis
     if theme_description_text:
-        query += f"\nTHEME DETAILS (MUST MATCH):\n{theme_description_text}\n"
+        query += f"\nTHEME_DETAILS (MUST MATCH):\n{theme_description_text}\n"
     
     # Context is still important but secondary
-    query += "\nLISTENING CONTEXT:\n"
+    query += "\nLISTENING_CONTEXT:\n"
     if primary_setting:
         query += f"Setting: {primary_setting}\n"
     if perfect_for:
@@ -120,6 +264,12 @@ def create_song_vector_query(song_analysis: Dict[str, Any]) -> str:
     mood_description = emotional.get("dominantMood", {}).get("description", "")
     intensity = emotional.get("intensity_score", 0)
     
+    # NEW: Determine emotional valence
+    valence = determine_emotional_valence(dominant_mood, mood_description)
+    
+    # NEW: Identify potentially problematic themes
+    problematic_themes = identify_incompatible_themes(themes)
+    
     # Extract lyrical content if available (add this field to your song analysis)
     lyrics_summary = analysis.get("lyrics_summary", "")
     
@@ -134,8 +284,16 @@ def create_song_vector_query(song_analysis: Dict[str, Any]) -> str:
         if artist and title:
             query += f"Song: {title} by {artist}\n\n"
     
+    # NEW: Add emotional valence first for emphasis
+    if valence != "NEUTRAL":
+        query += f"EMOTIONAL_VALENCE: {valence}\n\n"
+    
+    # NEW: Add problematic themes if any
+    if problematic_themes:
+        query += f"CONTAINS_THEMES_OF: {', '.join(problematic_themes)}\n\n"
+    
     # Themes section with greater emphasis
-    query += "THEMES AND MEANING:\n"
+    query += "THEMES_AND_MEANING:\n"
     if theme_names:
         query += f"Primary themes: {theme_names.upper()}\n"
     if main_message:
@@ -144,7 +302,7 @@ def create_song_vector_query(song_analysis: Dict[str, Any]) -> str:
         query += f"Theme details: {theme_descriptions}\n"
     
     # Emotional section with equal emphasis
-    query += "\nEMOTIONAL PROFILE:\n"
+    query += "\nEMOTIONAL_PROFILE:\n"
     if dominant_mood:
         query += f"Primary mood: {dominant_mood.upper()}\n"
     if mood_description:
@@ -154,7 +312,7 @@ def create_song_vector_query(song_analysis: Dict[str, Any]) -> str:
     
     # Add lyrics summary if available
     if lyrics_summary:
-        query += f"\nLYRICS SUMMARY: {lyrics_summary}\n"
+        query += f"\nLYRICS_SUMMARY: {lyrics_summary}\n"
     
     # Context with lower emphasis
     context = analysis.get("context", {})
@@ -162,7 +320,7 @@ def create_song_vector_query(song_analysis: Dict[str, Any]) -> str:
     perfect_for = ", ".join(context.get("situations", {}).get("perfect_for", []))
     
     if primary_setting or perfect_for:
-        query += "\nLISTENING CONTEXT:\n"
+        query += "\nLISTENING_CONTEXT:\n"
         if primary_setting:
             query += f"Setting: {primary_setting}\n"
         if perfect_for:
@@ -322,7 +480,7 @@ async def root():
     """Root endpoint that provides API information."""
     return {
         "service": "Music-Playlist Vectorization API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "endpoints": {
             "/vectorize/song": "Generate embeddings for songs",
             "/vectorize/playlist": "Generate embeddings for playlists",
@@ -335,5 +493,5 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     PORT = 8000
-    print(f"🚀 Vectorization Server starting on http://localhost:{PORT}")
+    print(f"🚀 Enhanced Vectorization Server starting on http://localhost:{PORT}")
     uvicorn.run(app, host="0.0.0.0", port=PORT)

@@ -16,3 +16,5 @@ __pycache__/
 **/*.pyd
 instance/
 **/*.db
+
+CLAUDE.md
