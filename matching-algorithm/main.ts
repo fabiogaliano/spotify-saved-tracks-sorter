@@ -1,4 +1,6 @@
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { execSync } from 'child_process';
+import { join } from 'path';
 import {
   matchSongsToPlaylist,
   Song,
@@ -37,6 +39,9 @@ async function main() {
 
     // Display results in a table format
     displayResults(matches, [song1, song2, song3, song4, song5]);
+
+    // Save results for evaluation
+    saveResultsForEvaluation(matches, [song1, song2, song3, song4, song5], playlist);
 
   } catch (error) {
     console.error('❌ Error:', error);
@@ -116,6 +121,80 @@ function displayResults(matches: MatchResult[], songs: Song[]) {
 
   console.log('-'.repeat(100));
   console.log('\n✨ Enhanced matching algorithm completed successfully!');
+}
+
+/**
+ * Get the current git commit hash
+ */
+function getCurrentCommitHash(): string {
+  try {
+    return execSync('git rev-parse HEAD').toString().trim().substring(0, 8);
+  } catch (error) {
+    console.error('Failed to get git commit hash:', error);
+    return 'unknown';
+  }
+}
+
+/**
+ * Save matching results to a JSON file with the commit hash in the filename
+ */
+function saveResultsForEvaluation(matches: MatchResult[], songs: Song[], playlist: Playlist): void {
+  // Create evaluation directory if it doesn't exist
+  const evalDir = './algorithm_evaluation_results';
+  if (!existsSync(evalDir)) {
+    mkdirSync(evalDir);
+  }
+
+  // Get current commit hash for the filename
+  const commitHash = getCurrentCommitHash();
+  
+  // Start with index 0 and increment if file exists
+  let fileIndex = 0;
+  let filename = `results_${commitHash}_${fileIndex}.json`;
+  let filePath = join(evalDir, filename);
+  
+  // Check if file exists and increment index if needed
+  while (existsSync(filePath)) {
+    fileIndex++;
+    filename = `results_${commitHash}_${fileIndex}.json`;
+    filePath = join(evalDir, filename);
+  }
+  
+  // Prepare results in a structured format
+  const results = {
+    commit_hash: commitHash,
+    timestamp: new Date().toISOString(),
+    playlist: {
+      id: playlist.id || 'unknown',
+      name: playlist.name || 'unknown',
+      dominant_mood: playlist.emotional?.dominantMood?.mood || 'unknown'
+    },
+    matches: matches.map(match => {
+      // Find the corresponding song for additional details
+      const song = songs.find(s => 
+        s.track.title === match.track_info.title && 
+        s.track.artist === match.track_info.artist
+      );
+      
+      return {
+        track: {
+          title: match.track_info.title,
+          artist: match.track_info.artist
+        },
+        final_score: match.similarity,
+        component_scores: match.component_scores,
+        song_mood: song?.analysis.emotional?.dominantMood?.mood || 'unknown'
+      };
+    })
+  };
+  
+  // Write to file
+  try {
+    writeFileSync(filePath, JSON.stringify(results, null, 2));
+    console.log(`\n✅ Evaluation results saved to ${filePath}`);
+  } catch (error) {
+    console.error('Failed to save evaluation results:', error);
+  }
 }
 
 main();

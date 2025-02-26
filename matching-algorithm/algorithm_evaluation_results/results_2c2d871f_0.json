@@ -1,0 +1,101 @@
+{
+  "commit_hash": "2c2d871f",
+  "timestamp": "2025-02-26T20:06:33.853Z",
+  "playlist": {
+    "id": "playlist_0df21fc1",
+    "name": "unknown",
+    "dominant_mood": "Uplifting & Empowering"
+  },
+  "matches": [
+    {
+      "track": {
+        "title": "Put Your Records On",
+        "artist": "Corinne Bailey"
+      },
+      "final_score": 0.7279127666082202,
+      "component_scores": {
+        "theme_similarity": 0.6324568570261034,
+        "mood_similarity": 0.6027844260196161,
+        "mood_compatibility": 0.6630628686215778,
+        "sentiment_compatibility": 1,
+        "intensity_match": 0.95,
+        "activity_match": 0.3491026149308504,
+        "fit_score_similarity": 0.9670168093799901,
+        "thematic_contradiction": 0
+      },
+      "song_mood": "Optimistic and Uplifting"
+    },
+    {
+      "track": {
+        "title": "California",
+        "artist": "Lana Del Rey"
+      },
+      "final_score": 0.4204832643467207,
+      "component_scores": {
+        "theme_similarity": 0.5139137809063775,
+        "mood_similarity": 0.47006307905054595,
+        "mood_compatibility": 0.5170693869556006,
+        "sentiment_compatibility": 1,
+        "intensity_match": 0.85,
+        "activity_match": 0.1896905391179721,
+        "fit_score_similarity": 0.8757162916254898,
+        "thematic_contradiction": 0
+      },
+      "song_mood": "Nostalgic Longing"
+    },
+    {
+      "track": {
+        "title": "Money Trees",
+        "artist": "Kendrick Lamar"
+      },
+      "final_score": 0.21623328217962473,
+      "component_scores": {
+        "theme_similarity": 0.5250693525028176,
+        "mood_similarity": 0.45625424748274707,
+        "mood_compatibility": 0.5018796722310218,
+        "sentiment_compatibility": 0.421939926349903,
+        "intensity_match": 0.95,
+        "activity_match": 0.2436342818693818,
+        "fit_score_similarity": 0.7074783436912556,
+        "thematic_contradiction": 0
+      },
+      "song_mood": "Melancholy and Reflective"
+    },
+    {
+      "track": {
+        "title": "Closure",
+        "artist": "Taylor Swift"
+      },
+      "final_score": 0.16593211367390728,
+      "component_scores": {
+        "theme_similarity": 0.5755619143927818,
+        "mood_similarity": 0.39388519435156516,
+        "mood_compatibility": 0.4332737137867217,
+        "sentiment_compatibility": 0.3983172654690543,
+        "intensity_match": 0.95,
+        "activity_match": 0.2040897996038086,
+        "fit_score_similarity": 0.775495070320465,
+        "thematic_contradiction": 0
+      },
+      "song_mood": "Resentment"
+    },
+    {
+      "track": {
+        "title": "Are You Bored Yet",
+        "artist": "Wallows"
+      },
+      "final_score": 0,
+      "component_scores": {
+        "theme_similarity": 0.5269210914779594,
+        "mood_similarity": 0.5096445671650478,
+        "mood_compatibility": 0.06,
+        "sentiment_compatibility": 0.4057709707166208,
+        "intensity_match": 0.85,
+        "activity_match": 0.20442049047973038,
+        "fit_score_similarity": 0.8129520200549301,
+        "thematic_contradiction": 0
+      },
+      "song_mood": "Anxious Uncertainty"
+    }
+  ]
+}
