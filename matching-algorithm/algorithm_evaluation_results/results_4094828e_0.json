@@ -1,0 +1,106 @@
+{
+  "commit_hash": "4094828e",
+  "timestamp": "2025-02-26T23:06:16.783Z",
+  "playlist": {
+    "id": "playlist_0df21fc1",
+    "name": "unknown",
+    "dominant_mood": "Uplifting & Empowering"
+  },
+  "matches": [
+    {
+      "track": {
+        "title": "Put Your Records On",
+        "artist": "Corinne Bailey"
+      },
+      "final_score": 0.7311033176561599,
+      "component_scores": {
+        "theme_similarity": 0.6373534665151099,
+        "mood_similarity": 0.6072118017508478,
+        "mood_compatibility": 0.6679329819259326,
+        "sentiment_compatibility": 1,
+        "intensity_match": 0.95,
+        "activity_match": 0.34961785175269383,
+        "fit_score_similarity": 0.9670168093799901,
+        "thematic_contradiction": 0
+      },
+      "veto_applied": false,
+      "veto_reason": null
+    },
+    {
+      "track": {
+        "title": "California",
+        "artist": "Lana Del Rey"
+      },
+      "final_score": 0.4262121151605939,
+      "component_scores": {
+        "theme_similarity": 0.5151366116594677,
+        "mood_similarity": 0.47440311754590436,
+        "mood_compatibility": 0.5218434293004949,
+        "sentiment_compatibility": 1,
+        "intensity_match": 0.85,
+        "activity_match": 0.18968788072249335,
+        "fit_score_similarity": 0.8757162916254898,
+        "thematic_contradiction": 0
+      },
+      "veto_applied": true,
+      "veto_reason": "Poor mood compatibility (52%)"
+    },
+    {
+      "track": {
+        "title": "Money Trees",
+        "artist": "Kendrick Lamar"
+      },
+      "final_score": 0.2181662720191054,
+      "component_scores": {
+        "theme_similarity": 0.527820407089625,
+        "mood_similarity": 0.45897842375320924,
+        "mood_compatibility": 0.5048762661285302,
+        "sentiment_compatibility": 0.421939926349903,
+        "intensity_match": 0.95,
+        "activity_match": 0.24368246990667974,
+        "fit_score_similarity": 0.7074783436912556,
+        "thematic_contradiction": 0
+      },
+      "veto_applied": true,
+      "veto_reason": "Poor mood compatibility (50%)"
+    },
+    {
+      "track": {
+        "title": "Closure",
+        "artist": "Taylor Swift"
+      },
+      "final_score": 0.16463368352179603,
+      "component_scores": {
+        "theme_similarity": 0.5767830333317576,
+        "mood_similarity": 0.39198863216948054,
+        "mood_compatibility": 0.43118749538642864,
+        "sentiment_compatibility": 0.3983172654690543,
+        "intensity_match": 0.95,
+        "activity_match": 0.20432915167538476,
+        "fit_score_similarity": 0.775495070320465,
+        "thematic_contradiction": 0
+      },
+      "veto_applied": true,
+      "veto_reason": "Poor mood compatibility (43%)"
+    },
+    {
+      "track": {
+        "title": "Are You Bored Yet",
+        "artist": "Wallows"
+      },
+      "final_score": 0,
+      "component_scores": {
+        "theme_similarity": 0.5303695871565038,
+        "mood_similarity": 0.5089559481309678,
+        "mood_compatibility": 0.06,
+        "sentiment_compatibility": 0.4057709707166208,
+        "intensity_match": 0.85,
+        "activity_match": 0.20419483974583655,
+        "fit_score_similarity": 0.8129520200549301,
+        "thematic_contradiction": 0
+      },
+      "veto_applied": true,
+      "veto_reason": "Poor mood compatibility (6%)"
+    }
+  ]
+}

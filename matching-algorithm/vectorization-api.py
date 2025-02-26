@@ -27,11 +27,6 @@ class SentimentResponse(BaseModel):
     negative: float
     neutral: float
 
-class MoodDimensionsResponse(BaseModel):
-    valence: float
-    arousal: float
-    dominance: float
-
 # Mean Pooling - Take attention mask into account for correct averaging
 def mean_pooling(model_output, attention_mask):
     token_embeddings = model_output[0] # First element of model_output contains all token embeddings
@@ -478,118 +473,6 @@ async def vectorize_playlist(request: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/analyze/mood_dimensions")
-async def analyze_mood_dimensions(request: TextRequest) -> MoodDimensionsResponse:
-    """
-    Analyze mood dimensions based on the VAD (Valence-Arousal-Dominance) model.
-    
-    - Valence: Positive to negative (pleasure-displeasure)
-    - Arousal: Active to passive (alertness-tiredness)
-    - Dominance: Dominant to submissive (control-lack of control)
-    """
-    if not request.text:
-        raise HTTPException(status_code=400, detail="Empty text provided")
-    
-    # First get the sentiment analysis as baseline for valence
-    sentiment_result = await analyze_sentiment(request)
-    
-    # Calculate valence from sentiment (positive - negative)
-    # Scale from -1 to 1, then normalize to 0-1
-    valence_raw = sentiment_result.positive - sentiment_result.negative
-    valence = (valence_raw + 1) / 2  # Convert from [-1,1] to [0,1]
-    
-    # Generate embedding to extract other dimensions
-    text_embedding = await vectorize_text(request)
-    
-    # Keywords for high arousal/energy
-    high_arousal_keywords = [
-        "energetic", "intense", "exciting", "loud", "fast", "powerful",
-        "strong", "dynamic", "active", "lively", "upbeat", "passionate",
-        "aggressive", "angry", "anxious", "nervous", "tense", "wild"
-    ]
-    
-    # Keywords for low arousal/energy
-    low_arousal_keywords = [
-        "calm", "peaceful", "relaxing", "gentle", "slow", "quiet", "soft",
-        "mellow", "soothing", "sleepy", "dreamy", "tranquil", "serene"
-    ]
-    
-    # Keywords for high dominance
-    high_dominance_keywords = [
-        "powerful", "confident", "strong", "dominant", "bold", "brave",
-        "decisive", "triumphant", "victorious", "commanding", "assertive",
-        "controlling", "empowering", "authoritative"
-    ]
-    
-    # Keywords for low dominance
-    low_dominance_keywords = [
-        "vulnerable", "submissive", "weak", "helpless", "fragile", "unsure",
-        "uncertain", "doubtful", "fearful", "anxious", "dependent", "yielding"
-    ]
-    
-    # Vectorize the keyword lists
-    async def get_keyword_embeddings(keywords):
-        embeddings = []
-        for keyword in keywords:
-            keyword_request = TextRequest(text=keyword)
-            keyword_embedding = await vectorize_text(keyword_request)
-            embeddings.append(keyword_embedding)
-        return embeddings
-    
-    # Calculate similarity to each keyword group
-    def calculate_average_similarity(target_embedding, keyword_embeddings):
-        similarities = []
-        for emb in keyword_embeddings:
-            # Cosine similarity
-            dot_product = sum(a * b for a, b in zip(target_embedding, emb))
-            magnitude1 = sum(a * a for a in target_embedding) ** 0.5
-            magnitude2 = sum(b * b for b in emb) ** 0.5
-            similarity = dot_product / (magnitude1 * magnitude2) if magnitude1 > 0 and magnitude2 > 0 else 0
-            similarities.append(similarity)
-        return sum(similarities) / len(similarities) if similarities else 0
-    
-    # Get embeddings for arousal and dominance keywords
-    high_arousal_embeddings = await get_keyword_embeddings(high_arousal_keywords)
-    low_arousal_embeddings = await get_keyword_embeddings(low_arousal_keywords)
-    high_dominance_embeddings = await get_keyword_embeddings(high_dominance_keywords)
-    low_dominance_embeddings = await get_keyword_embeddings(low_dominance_keywords)
-    
-    # Calculate arousal and dominance scores
-    high_arousal_similarity = calculate_average_similarity(text_embedding, high_arousal_embeddings)
-    low_arousal_similarity = calculate_average_similarity(text_embedding, low_arousal_embeddings)
-    
-    high_dominance_similarity = calculate_average_similarity(text_embedding, high_dominance_embeddings)
-    low_dominance_similarity = calculate_average_similarity(text_embedding, low_dominance_embeddings)
-    
-    # Calculate final arousal and dominance scores (0-1 scale)
-    arousal_score = high_arousal_similarity / (high_arousal_similarity + low_arousal_similarity)
-    dominance_score = high_dominance_similarity / (high_dominance_similarity + low_dominance_similarity)
-    
-    # Lexical analysis as additional signal
-    text_lower = request.text.lower()
-    
-    # Count keyword matches for additional weighting
-    high_arousal_count = sum(1 for word in high_arousal_keywords if word in text_lower)
-    low_arousal_count = sum(1 for word in low_arousal_keywords if word in text_lower)
-    
-    high_dominance_count = sum(1 for word in high_dominance_keywords if word in text_lower)
-    low_dominance_count = sum(1 for word in low_dominance_keywords if word in text_lower)
-    
-    # Blend lexical analysis with embedding similarity
-    if high_arousal_count + low_arousal_count > 0:
-        lexical_arousal = high_arousal_count / (high_arousal_count + low_arousal_count)
-        arousal_score = 0.7 * arousal_score + 0.3 * lexical_arousal
-    
-    if high_dominance_count + low_dominance_count > 0:
-        lexical_dominance = high_dominance_count / (high_dominance_count + low_dominance_count)
-        dominance_score = 0.7 * dominance_score + 0.3 * lexical_dominance
-    
-    return MoodDimensionsResponse(
-        valence=valence,
-        arousal=arousal_score,
-        dominance=dominance_score
-    )
-
 @app.get("/")
 async def root():
     """Root endpoint that provides API information."""
@@ -601,7 +484,6 @@ async def root():
             "/vectorize/playlist": "Generate embeddings for playlists",
             "/vectorize/text": "Generate embeddings for arbitrary text",
             "/analyze/sentiment": "Analyze text sentiment with 5-class model",
-            "/analyze/mood_dimensions": "Analyze mood dimensions (VAD model)",
             "/": "This information"
         }
     }

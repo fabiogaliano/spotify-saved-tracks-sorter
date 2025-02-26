@@ -24,12 +24,6 @@ export type Mood = {
   description: string;
 };
 
-export type MoodDimensions = {
-  valence: number;  // 0-1 scale (negative to positive)
-  arousal: number;  // 0-1 scale (calming to energetic)
-  dominance: number;  // 0-1 scale (submissive to dominant)
-};
-
 export type Context = {
   primary_setting?: string;
   situations?: {
@@ -1463,12 +1457,11 @@ export function applyVetoLogic(scores: MatchScores): {
 }
 
 /**
- * ENHANCED: Calculate final match score with non-linear transformations and context-aware weighting
+ * ENHANCED: Calculate final match score with non-linear transformations
  */
 export function calculateFinalScore(
   scores: MatchScores,
-  playlistType: 'mood' | 'activity' | 'theme' | 'general' = 'general',
-  song?: Song
+  playlistType: 'mood' | 'activity' | 'theme' | 'general' = 'general'
 ): number {
   // Different weighting profiles for different playlist types
   const weights: Record<string, Record<keyof MatchScores, number>> = {
@@ -1514,14 +1507,6 @@ export function calculateFinalScore(
     }
   };
 
-  // Get base weights for this playlist type
-  const baseWeights = weights[playlistType];
-  
-  // If song is provided, apply context-aware weighting
-  const finalWeights = song 
-    ? calculateContextAwareWeights(playlistType, song, baseWeights) 
-    : baseWeights;
-
   // Apply non-linear transformations to component scores
   const transformedScores: Partial<MatchScores> = {};
 
@@ -1542,7 +1527,7 @@ export function calculateFinalScore(
   let weightedSum = 0;
   let totalWeight = 0;
 
-  Object.entries(finalWeights).forEach(([key, weight]) => {
+  Object.entries(weights[playlistType]).forEach(([key, weight]) => {
     if (weight > 0) {
       weightedSum += (transformedScores[key as keyof MatchScores] || 0) * weight;
       totalWeight += weight;
@@ -1626,98 +1611,6 @@ export function determinePlaylistType(playlist: Playlist): 'mood' | 'activity' |
 
   // Otherwise, use general weighting
   return 'general';
-}
-
-/**
- * NEW: Context-Aware Weighting function that adjusts weights based on song's release date and cultural context
- */
-export function calculateContextAwareWeights(
-  playlistType: 'mood' | 'activity' | 'theme' | 'general',
-  song: Song,
-  baseWeights: Record<keyof MatchScores, number>
-): Record<keyof MatchScores, number> {
-  // Clone the base weights to avoid modifying the original
-  const adjustedWeights = { ...baseWeights };
-  
-  // Get current year for comparison
-  const currentYear = new Date().getFullYear();
-  
-  // Extract release year from the song if available
-  let releaseYear: number | undefined;
-  
-  // Parse year from timestamp if available (assuming format like "2022-01-01")
-  if (song.timestamp && !isNaN(parseInt(song.timestamp.substring(0, 4)))) {
-    releaseYear = parseInt(song.timestamp.substring(0, 4));
-  }
-  
-  // If we have a release year, adjust weights based on era differences
-  if (releaseYear) {
-    const yearDifference = currentYear - releaseYear;
-    
-    // For older songs (20+ years), emphasize thematic matching more than mood
-    if (yearDifference > 20) {
-      // Reduce mood weight and increase theme weight for older songs
-      adjustedWeights.mood_compatibility *= 0.85;
-      adjustedWeights.theme_similarity *= 1.15;
-      
-      // Cultural context shifts mean sentiment analysis needs adjustment
-      adjustedWeights.sentiment_compatibility *= 0.9;
-    }
-    // For songs from 5-20 years ago, make smaller adjustments
-    else if (yearDifference > 5) {
-      adjustedWeights.mood_compatibility *= 0.95;
-      adjustedWeights.theme_similarity *= 1.05;
-    }
-  }
-  
-  // Adjust weights based on cultural context inferred from themes
-  const lowercaseThemes = song.analysis.meaning.themes
-    .map(theme => theme.name.toLowerCase());
-    
-  // If culture-specific or era-specific themes are detected, adjust weights
-  const culturalThemes = [
-    'jazz', 'blues', 'classical', 'folk', 'traditional', 
-    'regional', 'historical', 'cultural', 'heritage'
-  ];
-  
-  const hasCulturalContext = lowercaseThemes.some(theme => 
-    culturalThemes.some(culturalTheme => theme.includes(culturalTheme))
-  );
-  
-  if (hasCulturalContext) {
-    // For songs with strong cultural context, adjust weights
-    adjustedWeights.theme_similarity *= 1.1;
-    adjustedWeights.mood_compatibility *= 0.9;
-  }
-  
-  // Normalize weights to ensure they sum to the same total
-  const originalSum = Object.values(baseWeights).reduce((a, b) => a + b, 0);
-  const adjustedSum = Object.values(adjustedWeights).reduce((a, b) => a + b, 0);
-  
-  // Only normalize if the sum has changed
-  if (Math.abs(originalSum - adjustedSum) > 0.01) {
-    const normalizationFactor = originalSum / adjustedSum;
-    
-    for (const key in adjustedWeights) {
-      adjustedWeights[key as keyof MatchScores] *= normalizationFactor;
-    }
-  }
-  
-  return adjustedWeights;
-}
-
-/**
- * Helper function to get top themes from a song or playlist
- */
-function getTopThemes(item: Song | Playlist, count: number): string[] {
-  if (!item.meaning?.themes || item.meaning.themes.length === 0) {
-    return ['unknown'];
-  }
-  
-  return item.meaning.themes
-    .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
-    .slice(0, count)
-    .map(theme => theme.name);
 }
 
 /**
@@ -1840,7 +1733,7 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
     };
 
     // Calculate final score with enhanced calculation
-    const similarity = calculateFinalScore(component_scores, playlistType, song);
+    const similarity = calculateFinalScore(component_scores, playlistType);
 
     // Check if veto was applied
     const { finalScore: vetoScore, vetoApplied, vetoReason } = applyVetoLogic(component_scores);
@@ -1875,223 +1768,4 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
 
   // Sort by similarity score (highest first)
   return results.sort((a, b) => b.similarity - a.similarity);
-}
-
-/**
- * Get dimensional mood analysis using the new API endpoint
- */
-export async function getMoodDimensions(text: string): Promise<MoodDimensions> {
-  try {
-    const response = await fetch(`${API_URL}/analyze/mood_dimensions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ text })
-    });
-
-    if (!response.ok) {
-      console.error(`Error from mood dimensions API: ${response.status}`);
-      // Return default values in case of error
-      return { valence: 0.5, arousal: 0.5, dominance: 0.5 };
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error getting mood dimensions:', error);
-    // Return default values in case of error
-    return { valence: 0.5, arousal: 0.5, dominance: 0.5 };
-  }
-}
-
-/**
- * Calculate mood compatibility using dimensional VAD model 
- * This provides a more nuanced view of mood than categorical models
- */
-export async function calculateDimensionalMoodCompatibility(
-  playlistMoodText: string,
-  songMoodText: string,
-  playlistType: 'mood' | 'activity' | 'theme' | 'general' = 'general'
-): Promise<number> {
-  // Get the dimensional mood analyses
-  const playlistDimensions = await getMoodDimensions(playlistMoodText);
-  const songDimensions = await getMoodDimensions(songMoodText);
-
-  // Calculate Euclidean distance in 3D VAD space (normalized to 0-1)
-  const valenceDistance = Math.abs(playlistDimensions.valence - songDimensions.valence);
-  const arousalDistance = Math.abs(playlistDimensions.arousal - songDimensions.arousal);
-  const dominanceDistance = Math.abs(playlistDimensions.dominance - songDimensions.dominance);
-
-  // Different weights for different dimensions based on playlist type
-  let valenceWeight = 1.0;
-  let arousalWeight = 1.0;
-  let dominanceWeight = 1.0;
-
-  // Adjust weights based on playlist type
-  switch (playlistType) {
-    case 'mood':
-      // For mood playlists, valence (positive/negative) is most important
-      valenceWeight = 1.5;
-      arousalWeight = 1.0;
-      dominanceWeight = 0.8;
-      break;
-    case 'activity':
-      // For activity playlists, arousal (energy) matters most
-      valenceWeight = 0.8;
-      arousalWeight = 1.5;
-      dominanceWeight = 1.0;
-      break;
-    case 'theme':
-      // For theme playlists, all dimensions are about equally important
-      valenceWeight = 1.0;
-      arousalWeight = 1.0;
-      dominanceWeight = 1.0;
-      break;
-    default:
-      // For general playlists, valence and arousal are slightly more important
-      valenceWeight = 1.2;
-      arousalWeight = 1.1;
-      dominanceWeight = 0.9;
-  }
-
-  // Calculate weighted distance
-  const weightedSum = 
-    valenceDistance * valenceWeight + 
-    arousalDistance * arousalWeight + 
-    dominanceDistance * dominanceWeight;
-  
-  const totalWeight = valenceWeight + arousalWeight + dominanceWeight;
-  const weightedDistance = weightedSum / totalWeight;
-
-  // Convert distance to similarity (0 distance = 1 similarity)
-  const similarity = 1 - weightedDistance;
-
-  // Apply non-linear transformation to emphasize good matches
-  // This gives extra weight to very close matches
-  return Math.pow(similarity, 0.7);
-}
-
-/**
- * Generate human-readable explanations for why a song matches or doesn't match a playlist
- */
-export function generateMatchExplanation(
-  scores: MatchScores,
-  song: Song,
-  playlist: Playlist,
-  playlistType: 'mood' | 'activity' | 'theme' | 'general'
-): string {
-  // Identify the strongest match components
-  const scoreEntries = Object.entries(scores) as [keyof MatchScores, number][];
-  // Filter out contradiction score which is inverted (higher is worse)
-  const positiveScores = scoreEntries.filter(([key]) => key !== 'thematic_contradiction');
-  // Sort by score (highest first)
-  const sortedScores = positiveScores.sort((a, b) => b[1] - a[1]);
-  
-  // Get top 3 reasons for the match
-  const topReasons = sortedScores.slice(0, 3);
-  
-  // Identify any potential mismatches (low scores)
-  const lowScores = positiveScores.filter(([_, score]) => score < 0.4);
-  const hasLowScores = lowScores.length > 0;
-  
-  // Check if veto was applied
-  const vetoResult = applyVetoLogic(scores);
-  const vetoApplied = vetoResult.vetoApplied;
-  
-  let explanation = '';
-  
-  // Generate opening statement
-  if (vetoApplied) {
-    explanation = `"${song.track.title}" by ${song.track.artist} is not a good match for this playlist. `;
-    explanation += `${vetoResult.vetoReason}. `;
-  } else if (hasLowScores && sortedScores[0][1] < 0.6) {
-    explanation = `"${song.track.title}" by ${song.track.artist} is a moderate match for this playlist. `;
-  } else {
-    explanation = `"${song.track.title}" by ${song.track.artist} is a good match for this playlist. `;
-  }
-  
-  // Add top reasons for matching
-  if (!vetoApplied) {
-    explanation += 'The song matches because: ';
-    
-    topReasons.forEach(([key, score], index) => {
-      if (score > 0.5) { // Only include meaningful matches
-        if (index > 0) explanation += ', ';
-        
-        switch(key) {
-          case 'theme_similarity':
-            explanation += `the themes (${getTopThemes(song, 2).join(", ")}) align well with the playlist's themes (${getTopThemes(playlist, 2).join(", ")})`;
-            break;
-            
-          case 'mood_similarity':
-            explanation += `the mood "${song.analysis.emotional?.dominantMood?.mood || 'unknown'}" complements the playlist's mood "${playlist.emotional?.dominantMood?.mood || 'unknown'}"`;
-            break;
-            
-          case 'mood_compatibility':
-            explanation += `the emotional tone is compatible with the playlist`;
-            break;
-            
-          case 'sentiment_compatibility':
-            explanation += `the sentiment aligns with the playlist's emotional direction`;
-            break;
-            
-          case 'intensity_match':
-            explanation += `the song's energy level matches the playlist's intensity`;
-            break;
-            
-          case 'activity_match':
-            explanation += `the activities or settings associated with the song fit the playlist context`;
-            break;
-            
-          case 'fit_score_similarity':
-            explanation += `the situational context is appropriate for this playlist`;
-            break;
-        }
-      }
-    });
-  }
-  
-  // Add information about mismatches if relevant
-  if (hasLowScores && !vetoApplied) {
-    explanation += ' However, there are some mismatches: ';
-    
-    lowScores.forEach(([key, score], index) => {
-      if (index > 0) explanation += ', ';
-      
-      switch(key) {
-        case 'theme_similarity':
-          explanation += `the themes differ from the playlist's focus`;
-          break;
-          
-        case 'mood_similarity':
-          explanation += `the mood "${song.analysis.emotional?.dominantMood?.mood || 'unknown'}" is different from the playlist's mood "${playlist.emotional?.dominantMood?.mood || 'unknown'}"`;
-          break;
-          
-        case 'mood_compatibility':
-          explanation += `the emotional tone contrasts with the playlist's overall mood`;
-          break;
-          
-        case 'sentiment_compatibility':
-          explanation += `the sentiment doesn't fully align with the playlist's emotional direction`;
-          break;
-          
-        case 'intensity_match':
-          explanation += `the song's energy level is ${score < 0.3 ? 'very' : 'somewhat'} different from the playlist's intensity`;
-          break;
-          
-        case 'activity_match':
-          explanation += `the activities or settings associated with the song don't strongly match the playlist context`;
-          break;
-          
-        case 'fit_score_similarity':
-          explanation += `the situational context isn't ideal for this playlist`;
-          break;
-      }
-    });
-  }
-  
-  // Add playlist type context
-  explanation += ` This is primarily a ${playlistType}-focused playlist.`;
-  
-  return explanation;
 }
