@@ -1,0 +1,61 @@
+{
+  "model_name": "nomic-ai/nomic-embed-text-v2-moe",
+  "timestamp": "2025-02-26 18:55:14",
+  "matches": [
+    {
+      "track": {
+        "artist": "Corinne Bailey Rae",
+        "title": "Put Your Records On"
+      },
+      "similarity": 0.7234165668487549,
+      "ground_truth": {
+        "score": 0.9,
+        "notes": "Perfect match for the playlist's uplifting mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Kendrick Lamar",
+        "title": "Money Trees"
+      },
+      "similarity": 0.553523063659668,
+      "ground_truth": {
+        "score": 0.54,
+        "notes": "Poor match - thematically and emotionally different"
+      }
+    },
+    {
+      "track": {
+        "artist": "Wallows",
+        "title": "Are You Bored Yet"
+      },
+      "similarity": 0.5097711086273193,
+      "ground_truth": {
+        "score": 0.18,
+        "notes": "Very poor match - anxiety contrasts with playlist's positive mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Taylor Swift",
+        "title": "Closure"
+      },
+      "similarity": 0.5069450736045837,
+      "ground_truth": {
+        "score": 0.52,
+        "notes": "Poor match - negative emotions contrast with playlist mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Lana Del Rey",
+        "title": "California"
+      },
+      "similarity": 0.4831165671348572,
+      "ground_truth": {
+        "score": 0.85,
+        "notes": "Good match despite different mood, shares themes of hope"
+      }
+    }
+  ]
+}

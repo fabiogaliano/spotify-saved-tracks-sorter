@@ -3,13 +3,14 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
 import json
 import torch
+import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
 
 app = FastAPI(title="Music-Playlist Vectorization API")
 
-# Load models using Transformers library
-embedding_tokenizer = AutoTokenizer.from_pretrained("intfloat/multilingual-e5-large-instruct")
-embedding_model = AutoModel.from_pretrained("intfloat/multilingual-e5-large-instruct")
+# Load embedding model - updated to use the better performing model
+embedding_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 
 # Load multilingual sentiment analysis model
 sentiment_tokenizer = AutoTokenizer.from_pretrained("tabularisai/multilingual-sentiment-analysis")
@@ -25,6 +26,12 @@ class SentimentResponse(BaseModel):
     positive: float
     negative: float
     neutral: float
+
+# Mean Pooling - Take attention mask into account for correct averaging
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output[0] # First element of model_output contains all token embeddings
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 def determine_emotional_valence(mood: str, description: str) -> str:
     """
@@ -343,14 +350,11 @@ async def vectorize_text(request: TextRequest) -> Dict[str, Any]:
         with torch.no_grad():
             outputs = embedding_model(**inputs)
             
-        # Mean pooling to get sentence representation
-        attention_mask = inputs["attention_mask"]
-        token_embeddings = outputs.last_hidden_state
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        sentence_embedding = torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+        # Use mean pooling to get sentence representation
+        sentence_embedding = mean_pooling(outputs, inputs["attention_mask"])
         
         # Normalize embeddings
-        sentence_embedding = torch.nn.functional.normalize(sentence_embedding, p=2, dim=1)
+        sentence_embedding = F.normalize(sentence_embedding, p=2, dim=1)
         
         # Convert to list for JSON serialization
         embedding = sentence_embedding[0].tolist()
@@ -417,14 +421,11 @@ async def vectorize_song(request: AnalysisRequest) -> Dict[str, Any]:
             with torch.no_grad():
                 outputs = embedding_model(**inputs)
                 
-            # Mean pooling to get sentence representation
-            attention_mask = inputs["attention_mask"]
-            token_embeddings = outputs.last_hidden_state
-            input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-            sentence_embedding = torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+            # Use mean pooling to get sentence representation
+            sentence_embedding = mean_pooling(outputs, inputs["attention_mask"])
             
             # Normalize embeddings
-            sentence_embedding = torch.nn.functional.normalize(sentence_embedding, p=2, dim=1)
+            sentence_embedding = F.normalize(sentence_embedding, p=2, dim=1)
             
             # Get track info if available
             track_info = song_analysis.get("track", {})
@@ -457,14 +458,11 @@ async def vectorize_playlist(request: Dict[str, Any]) -> Dict[str, Any]:
         with torch.no_grad():
             outputs = embedding_model(**inputs)
             
-        # Mean pooling to get sentence representation
-        attention_mask = inputs["attention_mask"]
-        token_embeddings = outputs.last_hidden_state
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        sentence_embedding = torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+        # Use mean pooling to get sentence representation
+        sentence_embedding = mean_pooling(outputs, inputs["attention_mask"])
         
         # Normalize embeddings
-        sentence_embedding = torch.nn.functional.normalize(sentence_embedding, p=2, dim=1)
+        sentence_embedding = F.normalize(sentence_embedding, p=2, dim=1)
         
         # Return the embedding with playlist info
         return {

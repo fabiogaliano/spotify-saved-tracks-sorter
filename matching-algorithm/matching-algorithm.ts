@@ -198,9 +198,307 @@ export function categorizeTheme(theme: string): string[] {
 }
 
 /**
- * NEW: Detect contradictory themes between playlist and song
+ * Enhanced thematic contradiction detection using vectorization and semantic analysis
+ * Relies entirely on API for contradiction detection
  */
-export function detectThematicContradictions(
+export async function detectThematicContradictions(
+  playlistThemes: Theme[],
+  songThemes: Theme[]
+): Promise<{ score: number; contradictions: string[] }> {
+  // Extract theme names and descriptions for richer context
+  const playlistThemeNames = playlistThemes
+    .map(t => t.name)
+    .filter(Boolean);
+
+  const songThemeNames = songThemes
+    .map(t => t.name)
+    .filter(Boolean);
+
+  // Extract descriptions for more context
+  const playlistDescriptions = playlistThemes
+    .map(t => t.description)
+    .filter(Boolean);
+
+  const songDescriptions = songThemes
+    .map(t => t.description)
+    .filter(Boolean);
+
+  // Combine names and descriptions for better semantic analysis
+  const playlistThemeTexts = [
+    ...playlistThemeNames.map(name => `Theme: ${name}`),
+    ...playlistDescriptions.map(desc => `Description: ${desc}`)
+  ];
+
+  const songThemeTexts = [
+    ...songThemeNames.map(name => `Theme: ${name}`),
+    ...songDescriptions.map(desc => `Description: ${desc}`)
+  ];
+
+  // Skip processing if we don't have enough theme data
+  if (playlistThemeTexts.length === 0 || songThemeTexts.length === 0) {
+    return { score: 0, contradictions: [] };
+  }
+
+  // Detect contradictions using vector-based approach
+  const detectedContradictions: string[] = [];
+  let totalContradictionScore = 0;
+
+  // 1. Check each playlist theme against all song themes for compatibility
+  for (let i = 0; i < playlistThemeNames.length; i++) {
+    const playlistTheme = playlistThemeNames[i];
+    const playlistDescription = playlistDescriptions[i] || '';
+
+    // Get sentiment for playlist theme
+    const playlistSentiment = await getSentimentScores(
+      `${playlistTheme}: ${playlistDescription}`
+    );
+
+    for (let j = 0; j < songThemeNames.length; j++) {
+      const songTheme = songThemeNames[j];
+      const songDescription = songDescriptions[j] || '';
+
+      // 1A. Get vector embeddings of each theme pair to check semantic similarity
+      const response1 = await fetch(`${API_URL}/vectorize/text`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `Theme: ${playlistTheme}. Description: ${playlistDescription}`
+        })
+      });
+
+      const response2 = await fetch(`${API_URL}/vectorize/text`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `Theme: ${songTheme}. Description: ${songDescription}`
+        })
+      });
+
+      const embedding1 = await response1.json();
+      const embedding2 = await response2.json();
+
+      // Calculate semantic similarity
+      const similarity = calculateEnhancedSimilarity(
+        embedding1.embedding,
+        embedding2.embedding
+      );
+
+      // 1B. Get sentiment for song theme
+      const songSentiment = await getSentimentScores(
+        `${songTheme}: ${songDescription}`
+      );
+
+      // 1C. Determine if there's a sentiment polarity mismatch
+      const playlistPolarity = getHighestSentiment(playlistSentiment);
+      const songPolarity = getHighestSentiment(songSentiment);
+
+      // 1D. Check if themes are contradictory
+      let contradictionFound = false;
+      let contradictionLevel = 0;
+
+      // Low semantic similarity with opposite sentiment - strong contradiction
+      if (similarity < 0.3 &&
+        ((playlistPolarity === 'positive' && songPolarity === 'negative') ||
+          (playlistPolarity === 'negative' && songPolarity === 'positive'))) {
+        contradictionFound = true;
+        contradictionLevel = 0.9;
+        detectedContradictions.push(
+          `"${playlistTheme}" (${playlistPolarity}) contradicts "${songTheme}" (${songPolarity})`
+        );
+      }
+      // Moderate semantic distance with sentiment mismatch - moderate contradiction
+      else if (similarity < 0.4 &&
+        playlistPolarity !== songPolarity &&
+        playlistPolarity !== 'neutral' &&
+        songPolarity !== 'neutral') {
+        contradictionFound = true;
+        contradictionLevel = 0.7;
+        detectedContradictions.push(
+          `"${playlistTheme}" has different emotional tone than "${songTheme}"`
+        );
+      }
+      // Extreme semantic distance - possible thematic contradiction
+      else if (similarity < 0.25) {
+        contradictionFound = true;
+        contradictionLevel = 0.5;
+        detectedContradictions.push(
+          `"${playlistTheme}" is semantically distant from "${songTheme}"`
+        );
+      }
+
+      // Add to total contradiction score
+      if (contradictionFound) {
+        totalContradictionScore += contradictionLevel *
+          (playlistThemes[i].confidence || 0.5) *
+          (songThemes[j].confidence || 0.5);
+      }
+    }
+  }
+
+  // Calculate final score based on detected contradictions
+  const contradictionCount = detectedContradictions.length;
+  const averageThemeCount = (playlistThemeNames.length + songThemeNames.length) / 2;
+
+  // Normalize the contradiction score
+  let normalizedScore = 0;
+  if (contradictionCount > 0) {
+    // Normalize by the number of theme pairs and their severities
+    normalizedScore = Math.min(1, totalContradictionScore / (averageThemeCount * 0.7));
+  }
+
+  return {
+    score: normalizedScore,
+    contradictions: detectedContradictions
+  };
+}
+
+/**
+ * Get the dominant sentiment from sentiment scores
+ */
+function getHighestSentiment(sentiment: SentimentScore): 'positive' | 'negative' | 'neutral' {
+  if (sentiment.positive > sentiment.negative && sentiment.positive > sentiment.neutral) {
+    return 'positive';
+  }
+  if (sentiment.negative > sentiment.positive && sentiment.negative > sentiment.neutral) {
+    return 'negative';
+  }
+  return 'neutral';
+}
+
+/**
+ * Check if two specific themes contradict each other based on known opposites
+ */
+function checkSpecificThemeContradiction(theme1: string, theme2: string): {
+  isContradiction: boolean;
+  level: number;
+  reason: string;
+} {
+  // Define specific contradictory theme pairs with higher severity levels
+  const contradictionPairs: [string, string, string, number][] = [
+    // [theme1, theme2, reason, severity(0-1)]
+    // Original pairs with increased severity
+    ['self-care', 'violence', 'Self-care vs. violence', 0.95],
+    ['self-care', 'conflict', 'Self-care vs. conflict', 0.9],
+    ['self-care', 'destruction', 'Self-care vs. destruction', 0.95],
+    ['relaxation', 'anxiety', 'Relaxation vs. anxiety', 0.9],
+    ['relaxation', 'tension', 'Relaxation vs. tension', 0.9],
+    ['relaxation', 'stress', 'Relaxation vs. stress', 0.9],
+    ['positive', 'negative', 'Positive vs. negative', 0.95],
+    ['uplifting', 'depressing', 'Uplifting vs. depressing', 0.95],
+    ['hope', 'despair', 'Hope vs. despair', 0.95],
+    ['confidence', 'doubt', 'Confidence vs. doubt', 0.9],
+    ['confidence', 'insecurity', 'Confidence vs. insecurity', 0.9],
+    ['empowerment', 'defeat', 'Empowerment vs. defeat', 0.95],
+    ['empowerment', 'helplessness', 'Empowerment vs. helplessness', 0.95],
+    ['peace', 'conflict', 'Peace vs. conflict', 0.95],
+    ['peace', 'war', 'Peace vs. war', 0.95],
+    ['joy', 'sorrow', 'Joy vs. sorrow', 0.9],
+    ['triumph', 'failure', 'Triumph vs. failure', 0.9],
+    ['growth', 'stagnation', 'Growth vs. stagnation', 0.85],
+    ['clarity', 'confusion', 'Clarity vs. confusion', 0.85],
+    ['hope', 'resignation', 'Hope vs. resignation', 0.9],
+    ['inspiring', 'disappointing', 'Inspiring vs. disappointing', 0.9],
+    ['acceptance', 'rejection', 'Acceptance vs. rejection', 0.85],
+    ['comfort', 'discomfort', 'Comfort vs. discomfort', 0.85],
+    ['optimism', 'pessimism', 'Optimism vs. pessimism', 0.9],
+    ['success', 'failure', 'Success vs. failure', 0.9],
+
+    // New pairs with high severity
+    ['uplifting', 'struggle', 'Uplifting vs. struggle', 0.8],
+    ['self-care', 'hardship', 'Self-care vs. hardship', 0.85],
+    ['healing', 'violence', 'Healing vs. violence', 0.95],
+    ['healing', 'conflict', 'Healing vs. conflict', 0.9],
+    ['wellness', 'suffering', 'Wellness vs. suffering', 0.9],
+    ['self-love', 'self-criticism', 'Self-love vs. self-criticism', 0.9],
+    ['self-love', 'self-hatred', 'Self-love vs. self-hatred', 0.95],
+    ['peaceful', 'violent', 'Peaceful vs. violent', 0.95],
+    ['calm', 'chaotic', 'Calm vs. chaotic', 0.9],
+    ['support', 'abandonment', 'Support vs. abandonment', 0.9],
+    ['confidence', 'shame', 'Confidence vs. shame', 0.95],
+    ['positivity', 'negativity', 'Positivity vs. negativity', 0.95],
+    ['positivity', 'cynicism', 'Positivity vs. cynicism', 0.9],
+    ['joy', 'misery', 'Joy vs. misery', 0.95],
+    ['happiness', 'suffering', 'Happiness vs. suffering', 0.95],
+    ['motivation', 'apathy', 'Motivation vs. apathy', 0.9],
+    ['motivation', 'resignation', 'Motivation vs. resignation', 0.9],
+    ['inspiration', 'disillusionment', 'Inspiration vs. disillusionment', 0.9],
+    ['uplifting', 'violent', 'Uplifting vs. violent', 0.95],
+    ['uplifting', 'poverty', 'Uplifting vs. poverty', 0.8],
+    ['uplifting', 'crime', 'Uplifting vs. crime', 0.9],
+    ['empowerment', 'oppression', 'Empowerment vs. oppression', 0.95],
+    ['self-care', 'crime', 'Self-care vs. crime', 0.9],
+    ['self-care', 'poverty', 'Self-care vs. poverty', 0.8],
+    ['happy', 'brutal', 'Happy vs. brutal', 0.95],
+    ['joyful', 'violent', 'Joyful vs. violent', 0.95],
+    ['carefree', 'struggle', 'Carefree vs. struggle', 0.85]
+  ];
+
+  // Check for direct contradictions
+  for (const [oppositeA, oppositeB, reason, level] of contradictionPairs) {
+    // Check both directions
+    if ((theme1.includes(oppositeA) && theme2.includes(oppositeB)) ||
+      (theme1.includes(oppositeB) && theme2.includes(oppositeA))) {
+      return {
+        isContradiction: true,
+        level: level,
+        reason: reason
+      };
+    }
+  }
+
+  // Check for partial contradictions using theme categories
+  const categoryMap: Record<string, string[]> = {
+    'positive': ['happy', 'joy', 'uplift', 'inspir', 'empower', 'confiden', 'optim', 'success', 'self-care', 'wellness', 'healing'],
+    'negative': ['sad', 'depress', 'dark', 'gloomy', 'melanchol', 'anxiety', 'fear', 'doubt', 'struggle', 'hardship', 'suffering', 'pain', 'violent', 'crime', 'poverty'],
+    'energetic': ['energy', 'activ', 'dynamic', 'power', 'vigor', 'vitality', 'motion'],
+    'calm': ['calm', 'relax', 'peace', 'tranquil', 'serene', 'gentle', 'quiet', 'still'],
+    'growth': ['growth', 'develop', 'progress', 'advance', 'improve', 'evolve', 'better'],
+    'struggle': ['struggle', 'conflict', 'fight', 'battl', 'challeng', 'obstacle', 'hardship', 'poverty', 'crime', 'violence', 'war']
+  };
+
+  // Get categories for each theme
+  const getCategories = (theme: string): string[] => {
+    return Object.entries(categoryMap)
+      .filter(([_, keywords]) =>
+        keywords.some(keyword => theme.includes(keyword)))
+      .map(([category, _]) => category);
+  };
+
+  const categories1 = getCategories(theme1);
+  const categories2 = getCategories(theme2);
+
+  // Define category contradictions with higher severity
+  const categoryContradictions: [string, string, string, number][] = [
+    ['positive', 'negative', 'Positive vs. negative themes', 0.9],
+    ['energetic', 'calm', 'Energetic vs. calm themes', 0.7],
+    ['growth', 'struggle', 'Growth vs. struggle themes', 0.8],
+    ['calm', 'struggle', 'Calm vs. struggle themes', 0.85]
+  ];
+
+  // Check for category contradictions
+  for (const [catA, catB, reason, level] of categoryContradictions) {
+    if ((categories1.includes(catA) && categories2.includes(catB)) ||
+      (categories1.includes(catB) && categories2.includes(catA))) {
+      return {
+        isContradiction: true,
+        level: level,
+        reason: reason
+      };
+    }
+  }
+
+  // No contradiction found
+  return {
+    isContradiction: false,
+    level: 0,
+    reason: ''
+  };
+}
+
+/**
+ * Fallback function for theme contradiction detection
+ */
+function fallbackThemeContradictionDetection(
   playlistThemes: Theme[],
   songThemes: Theme[]
 ): { score: number; contradictions: string[] } {
@@ -209,7 +507,10 @@ export function detectThematicContradictions(
     ['positive', 'negative'],
     ['relaxing', 'energetic'],
     ['spiritual', 'material'],
-    ['positive', 'conflict']
+    ['positive', 'conflict'],
+    ['self-care', 'violence'],
+    ['healing', 'conflict'],
+    ['peace', 'struggle']
   ];
 
   // Extract all theme names
@@ -237,53 +538,330 @@ export function detectThematicContradictions(
   }
 
   // Calculate a contradiction score (0 = no contradictions, 1 = severe contradictions)
-  // More contradictions and higher confidence themes get higher contradiction scores
   let contradictionScore = 0;
 
   if (contradictions.length > 0) {
     // Base score based on number of contradictions
-    const baseScore = Math.min(contradictions.length * 0.3, 0.9);
-
-    // Find the highest confidence contradictory themes
-    let highestPlaylistConfidence = 0;
-    let highestSongConfidence = 0;
-
-    // For each contradiction, find themes associated with it
-    for (const contradiction of contradictions) {
-      const [catA, catB] = contradiction.split(' vs ');
-
-      // Check playlist themes
-      for (const theme of playlistThemes) {
-        const categories = categorizeTheme(theme.name);
-        if (categories.includes(catA) || categories.includes(catB)) {
-          highestPlaylistConfidence = Math.max(
-            highestPlaylistConfidence,
-            theme.confidence || 0.5
-          );
-        }
-      }
-
-      // Check song themes
-      for (const theme of songThemes) {
-        const categories = categorizeTheme(theme.name);
-        if (categories.includes(catA) || categories.includes(catB)) {
-          highestSongConfidence = Math.max(
-            highestSongConfidence,
-            theme.confidence || 0.5
-          );
-        }
-      }
-    }
-
-    // Weight contradiction score by theme confidence
-    const confidenceWeight = (highestPlaylistConfidence + highestSongConfidence) / 2;
-    contradictionScore = baseScore * confidenceWeight;
+    contradictionScore = Math.min(contradictions.length * 0.3, 0.9);
   }
 
   return {
     score: contradictionScore,
     contradictions
   };
+}
+
+/**
+ * Detect mood contradictions using sentiment analysis and vector embeddings
+ * Relies entirely on API for contradiction detection without fallbacks
+ */
+export async function detectMoodContradictions(
+  playlistMood: string,
+  songMood: string
+): Promise<{ score: number; explanation: string }> {
+  // Skip if we don't have both moods
+  if (!playlistMood || !songMood) {
+    return { score: 0, explanation: "Missing mood data" };
+  }
+
+  // Get sentiment for both moods
+  const playlistSentiment = await getSentimentScores(playlistMood);
+  const songSentiment = await getSentimentScores(songMood);
+
+  // Determine dominant sentiment for each
+  const playlistDominantSentiment = getHighestSentiment(playlistSentiment);
+  const songDominantSentiment = getHighestSentiment(songSentiment);
+
+  // Calculate contradiction strength based on sentiment differences
+  let contradictionStrength = 0;
+  let explanation = "";
+
+  // 1. Check for direct sentiment polarity opposition
+  if (
+    (playlistDominantSentiment === "positive" && songDominantSentiment === "negative") ||
+    (playlistDominantSentiment === "negative" && songDominantSentiment === "positive")
+  ) {
+    contradictionStrength = 0.8;
+    explanation = `Opposing sentiment polarities: ${playlistDominantSentiment} vs ${songDominantSentiment}`;
+  }
+
+  // 2. Check semantic similarity using vector embeddings
+  // Fetch embeddings for both moods
+  const response1 = await fetch(`${API_URL}/vectorize/text`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: playlistMood })
+  });
+
+  const response2 = await fetch(`${API_URL}/vectorize/text`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: songMood })
+  });
+
+  const embedding1 = await response1.json();
+  const embedding2 = await response2.json();
+
+  // Calculate semantic similarity between the two moods
+  const similarity = calculateEnhancedSimilarity(
+    embedding1.embedding,
+    embedding2.embedding
+  );
+
+  // 3. Semantic distance indicates potential contradiction
+  if (similarity < 0.3) {
+    // Stronger contradiction if sentiment analysis also shows opposition
+    if (contradictionStrength > 0) {
+      contradictionStrength = Math.max(contradictionStrength, 0.9);
+      explanation = `${playlistMood} and ${songMood} are semantically different with opposing sentiment`;
+    } else {
+      contradictionStrength = 0.7;
+      explanation = `${playlistMood} and ${songMood} are semantically distant (${similarity.toFixed(2)} similarity)`;
+    }
+  }
+  // 4. Moderate semantic distance
+  else if (similarity < 0.5) {
+    // If sentiment analysis showed some opposition, increase strength
+    if (contradictionStrength > 0) {
+      // Keep existing contradiction strength
+      explanation = `${explanation} with moderate semantic distance`;
+    } else if (playlistDominantSentiment !== songDominantSentiment &&
+      playlistDominantSentiment !== "neutral" &&
+      songDominantSentiment !== "neutral") {
+      contradictionStrength = 0.5;
+      explanation = `${playlistMood} and ${songMood} have different emotional tones`;
+    }
+  }
+
+  // If no contradiction found through any method
+  if (contradictionStrength === 0) {
+    explanation = `No significant contradiction between ${playlistMood} and ${songMood}`;
+  }
+
+  return {
+    score: contradictionStrength,
+    explanation
+  };
+}
+
+/**
+ * Check if two moods belong to contradictory categories
+ */
+function checkMoodCategoryContradiction(moodA: string, moodB: string): boolean {
+  // Map moods to emotional categories
+  const categorize = (mood: string): string[] => {
+    const categories: string[] = [];
+
+    // Positive categories
+    if (mood.includes('happy') || mood.includes('joy') ||
+      mood.includes('upbeat') || mood.includes('cheerful') ||
+      mood.includes('optimistic') || mood.includes('uplift') ||
+      mood.includes('hopeful') || mood.includes('enthusiastic') ||
+      mood.includes('love') || mood.includes('positive')) {
+      categories.push('positive');
+    }
+
+    // Negative categories
+    if (mood.includes('sad') || mood.includes('depress') ||
+      mood.includes('melancholy') || mood.includes('gloomy') ||
+      mood.includes('somber') || mood.includes('despair') ||
+      mood.includes('grief') || mood.includes('bitter') ||
+      mood.includes('resentment') || mood.includes('angry') ||
+      mood.includes('frustrated') || mood.includes('negative')) {
+      categories.push('negative');
+    }
+
+    // Energetic categories
+    if (mood.includes('energetic') || mood.includes('dynamic') ||
+      mood.includes('lively') || mood.includes('excited') ||
+      mood.includes('passionate') || mood.includes('intense') ||
+      mood.includes('vigor') || mood.includes('power')) {
+      categories.push('energetic');
+    }
+
+    // Calm categories
+    if (mood.includes('calm') || mood.includes('relax') ||
+      mood.includes('peaceful') || mood.includes('tranquil') ||
+      mood.includes('serene') || mood.includes('gentle') ||
+      mood.includes('soothing')) {
+      categories.push('calm');
+    }
+
+    // Specific high-impact contradictions
+    if (mood.includes('resent')) categories.push('resentment');
+    if (mood.includes('uplift')) categories.push('uplifting');
+    if (mood.includes('empower')) categories.push('empowering');
+    if (mood.includes('anxious') || mood.includes('anxiety')) categories.push('anxious');
+    if (mood.includes('confiden')) categories.push('confident');
+    if (mood.includes('content')) categories.push('content');
+    if (mood.includes('nostalg')) categories.push('nostalgic');
+
+    return categories;
+  };
+
+  const aCats = categorize(moodA);
+  const bCats = categorize(moodB);
+
+  // Define contradictory category pairs
+  const contradictions: [string, string][] = [
+    ['positive', 'negative'],
+    ['energetic', 'calm'],
+    ['resentment', 'uplifting'],
+    ['resentment', 'empowering'],
+    ['anxious', 'confident'],
+    ['anxious', 'content']
+  ];
+
+  // Check if any category from A contradicts any from B
+  for (const [cat1, cat2] of contradictions) {
+    if ((aCats.includes(cat1) && bCats.includes(cat2)) ||
+      (aCats.includes(cat2) && bCats.includes(cat1))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Fallback method for mood contradiction detection
+ */
+function fallbackMoodContradictionCheck(
+  moodA: string,
+  moodB: string
+): { contradictionLevel: number, opposite: boolean } {
+  const moodALower = moodA.toLowerCase();
+  const moodBLower = moodB.toLowerCase();
+
+  // Direct opposites (expanded list of mood contradictions)
+  const directOpposites: [string, string][] = [
+    // Original pairs
+    ['happy', 'sad'],
+    ['joy', 'sorrow'],
+    ['optimistic', 'pessimistic'],
+    ['energetic', 'lethargic'],
+    ['calm', 'agitated'],
+    ['peaceful', 'turbulent'],
+    ['love', 'hate'],
+    ['hopeful', 'despairing'],
+    ['confident', 'insecure'],
+    ['uplifting', 'depressing'],
+    ['resentment', 'forgiveness'],
+
+    // Added more direct opposites
+    ['uplifting', 'resentment'],
+    ['empowering', 'resentment'],
+    ['cheerful', 'angry'],
+    ['joyful', 'resentful'],
+    ['optimistic', 'bitter'],
+    ['positive', 'negative'],
+    ['happy', 'angry'],
+    ['upbeat', 'melancholy'],
+    ['enthusiastic', 'apathetic'],
+    ['bright', 'dark'],
+    ['light', 'heavy'],
+    ['uplifting', 'discouraging'],
+    ['uplifting', 'heavy'],
+    ['empowering', 'discouraging'],
+    ['hopeful', 'cynical'],
+    ['cheerful', 'depressed'],
+    ['confident', 'doubtful'],
+    ['peaceful', 'aggressive'],
+    ['upbeat', 'downbeat'],
+    ['contented', 'dissatisfied'],
+    ['satisfied', 'frustrated'],
+    ['relaxed', 'tense'],
+    ['soothing', 'disturbing'],
+    ['comforting', 'distressing'],
+    ['motivating', 'draining'],
+    ['calm', 'chaotic'],
+    ['serene', 'tumultuous'],
+    ['tranquil', 'turbulent'],
+    ['confident', 'fearful'],
+    ['safe', 'threatened'],
+    ['secure', 'insecure'],
+    ['inspiring', 'discouraging']
+  ];
+
+  // Check direct opposites
+  for (const [opp1, opp2] of directOpposites) {
+    if ((moodALower.includes(opp1) && moodBLower.includes(opp2)) ||
+      (moodALower.includes(opp2) && moodBLower.includes(opp1))) {
+      return { contradictionLevel: 0.95, opposite: true }; // Increased from 0.9
+    }
+  }
+
+  // Partial contradictions (expanded list with higher contradiction levels)
+  const partialContradictions: [string, string][] = [
+    // Original pairs
+    ['happy', 'melancholy'],
+    ['cheerful', 'serious'],
+    ['optimistic', 'worried'],
+    ['relaxed', 'tense'],
+    ['uplifting', 'melancholy'],
+    ['empowering', 'uncertain'],
+
+    // Added more partial opposites
+    ['positive', 'somber'],
+    ['upbeat', 'serious'],
+    ['energetic', 'calm'],
+    ['passionate', 'detached'],
+    ['enthusiastic', 'reserved'],
+    ['joyful', 'pensive'],
+    ['cheerful', 'reflective'],
+    ['celebratory', 'nostalgic'],
+    ['uplifting', 'nostalgic'],
+    ['empowering', 'reflective'],
+    ['confident', 'cautious'],
+    ['determined', 'hesitant'],
+    ['carefree', 'careful'],
+    ['light', 'thoughtful'],
+    ['playful', 'mature'],
+    ['fun', 'serious']
+  ];
+
+  // Check partial contradictions
+  for (const [opp1, opp2] of partialContradictions) {
+    if ((moodALower.includes(opp1) && moodBLower.includes(opp2)) ||
+      (moodALower.includes(opp2) && moodBLower.includes(opp1))) {
+      return { contradictionLevel: 0.8, opposite: false }; // Increased from 0.7
+    }
+  }
+
+  // Check for general mood categories that might conflict
+  const categorize = (mood: string): string[] => {
+    const categories: string[] = [];
+
+    // Positive valence moods
+    if (mood.includes('happy') || mood.includes('joy') || mood.includes('uplift') ||
+      mood.includes('positive') || mood.includes('optimistic') || mood.includes('cheerful') ||
+      mood.includes('bright') || mood.includes('light') || mood.includes('confident') ||
+      mood.includes('empower')) {
+      categories.push('positive');
+    }
+
+    // Negative valence moods
+    if (mood.includes('sad') || mood.includes('depress') || mood.includes('melanchol') ||
+      mood.includes('angry') || mood.includes('resentment') || mood.includes('bitter') ||
+      mood.includes('dark') || mood.includes('heavy') || mood.includes('negative') ||
+      mood.includes('somber') || mood.includes('gloomy')) {
+      categories.push('negative');
+    }
+
+    return categories;
+  };
+
+  const moodACats = categorize(moodALower);
+  const moodBCats = categorize(moodBLower);
+
+  // If one mood is clearly positive and the other clearly negative, that's a contradiction
+  if ((moodACats.includes('positive') && moodBCats.includes('negative')) ||
+    (moodACats.includes('negative') && moodBCats.includes('positive'))) {
+    return { contradictionLevel: 0.9, opposite: true };
+  }
+
+  // No clear contradiction
+  return { contradictionLevel: 0, opposite: false };
 }
 
 /**
@@ -318,73 +896,6 @@ export function classifyMood(moodText: string): string[] {
     .map(([mood, _]) => mood);
 
   return matchedMoods.length > 0 ? matchedMoods : ['neutral'];
-}
-
-/**
- * NEW: Detect contradictory moods with enhanced algorithm
- */
-export function detectMoodContradictions(
-  moodA: string,
-  moodB: string
-): { contradictionLevel: number, opposite: boolean } {
-  // Define directly opposing mood pairs (strong contradictions)
-  const directOpposites: [string, string][] = [
-    ['happy', 'sad'],
-    ['energetic', 'calm'],
-    ['confident', 'uncertain'],
-    ['hopeful', 'anxious'],
-    ['uplifting', 'melancholy'],
-    ['bright', 'dark'],
-    ['positive', 'negative'],
-    ['optimistic', 'pessimistic']
-  ];
-
-  // Define partial contradictions (moderate)
-  const partialContradictions: [string, string][] = [
-    ['happy', 'contemplative'],
-    ['energetic', 'reflective'],
-    ['calm', 'anxious'],
-    ['confident', 'melancholy'],
-    ['dark', 'inspirational'],
-    ['angry', 'romantic']
-  ];
-
-  // Clean and normalize moods
-  const cleanedA = moodA.toLowerCase().trim();
-  const cleanedB = moodB.toLowerCase().trim();
-
-  // Check for direct opposites (exact words or classified categories)
-  const moodsA = classifyMood(cleanedA);
-  const moodsB = classifyMood(cleanedB);
-
-  // Check if any mood from A directly opposes any mood from B
-  for (const [opposite1, opposite2] of directOpposites) {
-    const aHasOpposite1 = moodsA.includes(opposite1) || cleanedA.includes(opposite1);
-    const aHasOpposite2 = moodsA.includes(opposite2) || cleanedA.includes(opposite2);
-    const bHasOpposite1 = moodsB.includes(opposite1) || cleanedB.includes(opposite1);
-    const bHasOpposite2 = moodsB.includes(opposite2) || cleanedB.includes(opposite2);
-
-    // If A has opposite1 and B has opposite2, or vice versa
-    if ((aHasOpposite1 && bHasOpposite2) || (aHasOpposite2 && bHasOpposite1)) {
-      return { contradictionLevel: 0.9, opposite: true };
-    }
-  }
-
-  // Check for partial contradictions
-  for (const [partial1, partial2] of partialContradictions) {
-    const aHasPartial1 = moodsA.includes(partial1) || cleanedA.includes(partial1);
-    const aHasPartial2 = moodsA.includes(partial2) || cleanedA.includes(partial2);
-    const bHasPartial1 = moodsB.includes(partial1) || cleanedB.includes(partial1);
-    const bHasPartial2 = moodsB.includes(partial2) || cleanedB.includes(partial2);
-
-    // If A has partial1 and B has partial2, or vice versa
-    if ((aHasPartial1 && bHasPartial2) || (aHasPartial2 && bHasPartial1)) {
-      return { contradictionLevel: 0.6, opposite: false };
-    }
-  }
-
-  // No contradictions found
-  return { contradictionLevel: 0, opposite: false };
 }
 
 /**
@@ -501,7 +1012,7 @@ export async function calculateEnhancedMoodCompatibility(
   const songMoodText = songMood.mood.toLowerCase();
 
   // 1. Check for direct mood contradictions using enhanced detection
-  const moodContradiction = detectMoodContradictions(
+  const moodContradiction = await detectMoodContradictions(
     playlistMoodText,
     songMoodText
   );
@@ -515,12 +1026,13 @@ export async function calculateEnhancedMoodCompatibility(
   // 3. Apply contradiction penalties
   let finalScore;
 
-  if (moodContradiction.opposite) {
+  // Check for severe contradictions based on score
+  if (moodContradiction.score > 0.7) {
     // Direct opposites get severe penalty
-    finalScore = Math.max(0, 0.3 - (moodContradiction.contradictionLevel * 0.3));
-  } else if (moodContradiction.contradictionLevel > 0) {
+    finalScore = Math.max(0, 0.3 - (moodContradiction.score * 0.3));
+  } else if (moodContradiction.score > 0) {
     // Partial contradictions get moderate penalty
-    finalScore = Math.max(0, 0.55 - (moodContradiction.contradictionLevel * 0.15));
+    finalScore = Math.max(0, 0.55 - (moodContradiction.score * 0.15));
   } else {
     // No contradictions - use vector similarity with slight boost for similar moods
     finalScore = vectorSimilarity * 1.1;
@@ -733,8 +1245,8 @@ export function calculateActivityMatch(
  * Calculate fit score similarity between playlist and song
  */
 export function calculateFitScoreSimilarity(
-  playlistFitScores?: { [key: string]: number },
-  songFitScores?: { [key: string]: number }
+  playlistFitScores?: { [key: string]: number | undefined },
+  songFitScores?: { [key: string]: number | undefined }
 ): number {
   if (!playlistFitScores || !songFitScores) {
     // Return progressive values based on partial information
@@ -770,6 +1282,7 @@ export function calculateFitScoreSimilarity(
   };
 
   for (const context of allContexts) {
+    // Handle undefined values by defaulting to 0
     const playlistScore = playlistFitScores[context] ?? 0;
     const songScore = songFitScores[context] ?? 0;
 
@@ -878,42 +1391,68 @@ export async function getPlaylistEmbedding(playlist: Playlist): Promise<number[]
 }
 
 /**
- * NEW: Apply veto logic to song matches based on critical incompatibilities
+ * Apply dynamic veto logic based on song-playlist compatibility analysis
+ * Uses proportional scoring instead of fixed thresholds
  */
-export function applyVetoLogic(
-  scores: MatchScores
-): { score: number; vetoApplied: boolean; vetoReason?: string } {
-  // Collect potential veto reasons
-  const vetoReasons: string[] = [];
-  let finalScore = 1.0; // Start with full score and apply caps
+export function applyVetoLogic(scores: MatchScores): {
+  finalScore: number;
+  vetoApplied: boolean;
+  vetoReason: string
+} {
+  // Start with a perfect score
+  let finalScore = 1.0;
+  let vetoApplied = false;
+  let vetoReason = '';
 
-  // Veto based on thematic contradiction
-  if (scores.thematic_contradiction > 0.5) {
-    finalScore = Math.min(finalScore, 0.3);
-    vetoReasons.push("Contradictory themes detected");
+  // Apply proportional contradiction penalties rather than fixed caps
+  // Thematic contradictions - scale penalty by contradiction severity
+  if (scores.thematic_contradiction > 0) {
+    // Proportionally reduce score based on contradiction severity
+    const reductionFactor = scores.thematic_contradiction * 1.5; // Amplify the effect
+    finalScore *= (1 - reductionFactor);
+
+    // Only count as veto if significant reduction
+    if (reductionFactor > 0.5) {
+      vetoApplied = true;
+      vetoReason = `Thematic contradiction detected (${(scores.thematic_contradiction * 100).toFixed(0)}% severity)`;
+    }
   }
 
-  // Veto based on mood compatibility
-  if (scores.mood_compatibility < 0.4) {
-    finalScore = Math.min(finalScore, 0.5);
-    vetoReasons.push("Incompatible moods");
+  // Mood compatibility issues - scale penalty by compatibility gap
+  const moodGap = 1 - scores.mood_compatibility;
+  if (moodGap > 0.3) { // Only apply if significant gap
+    const moodPenalty = moodGap * 1.2; // Amplify the effect
+    finalScore *= (1 - moodPenalty);
+
+    // Only count as veto if significant reduction
+    if (moodPenalty > 0.5) {
+      vetoApplied = true;
+      if (vetoReason) vetoReason += ' & ';
+      vetoReason += `Poor mood compatibility (${(scores.mood_compatibility * 100).toFixed(0)}%)`;
+    }
   }
 
-  // Veto based on sentiment compatibility
-  if (scores.sentiment_compatibility < 0.3) {
-    finalScore = Math.min(finalScore, 0.4);
-    vetoReasons.push("Opposing emotional sentiment");
+  // Sentiment contradictions - scale penalty by compatibility gap
+  const sentimentGap = 1 - scores.sentiment_compatibility;
+  if (sentimentGap > 0.4) { // Higher threshold for sentiment
+    const sentimentPenalty = sentimentGap * 0.8; // Reduce effect (less important than mood)
+    finalScore *= (1 - sentimentPenalty);
+
+    // Only count as veto if significant reduction
+    if (sentimentPenalty > 0.4 && !vetoApplied) {
+      vetoApplied = true;
+      if (vetoReason) vetoReason += ' & ';
+      vetoReason += `Sentiment mismatch (${(scores.sentiment_compatibility * 100).toFixed(0)}%)`;
+    }
   }
 
-  // When multiple veto conditions are met, apply stricter cap
-  if (vetoReasons.length > 1) {
-    finalScore = Math.min(finalScore, 0.2);
-  }
+  // Ensure score is limited to a valid range
+  finalScore = Math.max(0, Math.min(1, finalScore));
 
   return {
-    score: finalScore,
-    vetoApplied: vetoReasons.length > 0,
-    vetoReason: vetoReasons.length > 0 ? vetoReasons.join(", ") : undefined
+    finalScore,
+    vetoApplied,
+    vetoReason
   };
 }
 
@@ -927,83 +1466,84 @@ export function calculateFinalScore(
   // Different weighting profiles for different playlist types
   const weights: Record<string, Record<keyof MatchScores, number>> = {
     'mood': {
-      theme_similarity: 0.10,
-      mood_similarity: 0.10,
-      mood_compatibility: 0.30,
-      sentiment_compatibility: 0.20,
-      intensity_match: 0.15,
+      theme_similarity: 0.20,
+      mood_similarity: 0.15,
+      mood_compatibility: 0.35,  // Increased from 0.30
+      sentiment_compatibility: 0.10,  // Decreased from 0.20
+      intensity_match: 0.10,
       activity_match: 0.05,
       fit_score_similarity: 0.05,
-      thematic_contradiction: 0.05 // Lower weight as it's also used as a veto
+      thematic_contradiction: 0.00
     },
     'activity': {
-      theme_similarity: 0.15,
-      mood_similarity: 0.10,
-      mood_compatibility: 0.15,
-      sentiment_compatibility: 0.10,
-      intensity_match: 0.10,
-      activity_match: 0.30,
-      fit_score_similarity: 0.05,
-      thematic_contradiction: 0.05
-    },
-    'theme': {
-      theme_similarity: 0.35,
-      mood_similarity: 0.05,
-      mood_compatibility: 0.15,
-      sentiment_compatibility: 0.10,
-      intensity_match: 0.10,
-      activity_match: 0.10,
-      fit_score_similarity: 0.05,
-      thematic_contradiction: 0.10
-    },
-    'general': {
       theme_similarity: 0.20,
       mood_similarity: 0.10,
-      mood_compatibility: 0.20,
-      sentiment_compatibility: 0.15,
+      mood_compatibility: 0.20,  // Increased from 0.15
+      sentiment_compatibility: 0.05,  // Decreased from 0.10
+      intensity_match: 0.10,
+      activity_match: 0.30,  // Slightly decreased from 0.35
+      fit_score_similarity: 0.05,
+      thematic_contradiction: 0.00
+    },
+    'theme': {
+      theme_similarity: 0.40,  // Increased from 0.35
+      mood_similarity: 0.10,
+      mood_compatibility: 0.20,  // Increased from 0.15
+      sentiment_compatibility: 0.05,  // Decreased from 0.10
       intensity_match: 0.10,
       activity_match: 0.10,
       fit_score_similarity: 0.05,
-      thematic_contradiction: 0.10
+      thematic_contradiction: 0.00
+    },
+    'general': {
+      theme_similarity: 0.30,  // Increased from 0.25
+      mood_similarity: 0.15,
+      mood_compatibility: 0.30,  // Increased from 0.25
+      sentiment_compatibility: 0.10,  // Decreased from 0.20
+      intensity_match: 0.05,
+      activity_match: 0.05,
+      fit_score_similarity: 0.05,
+      thematic_contradiction: 0.00
     }
   };
 
   // Apply non-linear transformations to component scores
   const transformedScores: Partial<MatchScores> = {};
 
-  // Apply more aggressive power functions to emotional components
-  transformedScores.mood_compatibility = Math.pow(scores.mood_compatibility, 1.5);
-  transformedScores.sentiment_compatibility = Math.pow(scores.sentiment_compatibility, 1.4);
+  // Transform mood compatibility score with stronger non-linear curve
+  transformedScores.mood_compatibility = Math.pow(scores.mood_compatibility, 0.6);  // More aggressive curve (was 0.7)
 
-  // Linear transformations for other components
-  transformedScores.theme_similarity = scores.theme_similarity;
-  transformedScores.mood_similarity = scores.mood_similarity;
-  transformedScores.intensity_match = scores.intensity_match;
-  transformedScores.activity_match = scores.activity_match;
-  transformedScores.fit_score_similarity = scores.fit_score_similarity;
-  transformedScores.thematic_contradiction = scores.thematic_contradiction;
+  // Similarly transform sentiment compatibility
+  transformedScores.sentiment_compatibility = Math.pow(scores.sentiment_compatibility, 0.8);
 
-  // Calculate weighted score using the appropriate weights
-  const selectedWeights = weights[playlistType];
-  let weightedScore = 0;
-
-  for (const [component, weight] of Object.entries(selectedWeights)) {
-    const score = transformedScores[component as keyof MatchScores] ??
-      scores[component as keyof MatchScores];
-
-    if (component === 'thematic_contradiction') {
-      // Contradiction is inverted (higher is worse)
-      weightedScore += (1 - score) * weight;
-    } else {
-      weightedScore += score * weight;
+  // Use linear scale for other scores
+  Object.keys(scores).forEach(key => {
+    if (!transformedScores[key as keyof MatchScores]) {
+      transformedScores[key as keyof MatchScores] = scores[key as keyof MatchScores];
     }
-  }
+  });
 
-  // Apply veto logic to cap the final score
-  const { score: cappedScore, vetoApplied } = applyVetoLogic(scores);
+  // Calculate weighted sum
+  let weightedSum = 0;
+  let totalWeight = 0;
 
-  // Use the more restrictive of the weighted score or the veto-capped score
-  return vetoApplied ? Math.min(weightedScore, cappedScore) : weightedScore;
+  Object.entries(weights[playlistType]).forEach(([key, weight]) => {
+    if (weight > 0) {
+      weightedSum += (transformedScores[key as keyof MatchScores] || 0) * weight;
+      totalWeight += weight;
+    }
+  });
+
+  const rawScore = totalWeight > 0 ? weightedSum / totalWeight : 0;
+
+  // Apply veto logic - this will now act as a strict cap rather than a blending factor
+  const { finalScore: vetoScore, vetoApplied } = applyVetoLogic(scores);
+
+  // If veto was applied, use the veto score directly rather than blending
+  // This enforces the "deal breaker" requirement
+  const finalScore = vetoApplied ? vetoScore : rawScore;
+
+  return Math.min(1, Math.max(0, finalScore));
 }
 
 /**
@@ -1074,18 +1614,18 @@ export function determinePlaylistType(playlist: Playlist): 'mood' | 'activity' |
 }
 
 /**
- * COMPLETELY REDESIGNED: matchSongsToPlaylist with contradiction detection
- * This is the main algorithm that implements all the improvements
+ * Main function to match songs to a playlist with enhanced contradiction detection
  */
 export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): Promise<MatchResult[]> {
   console.log('\n🔄 Matching songs to playlist...');
 
-  // Determine playlist type to use appropriate weighting profile
+  // Determine playlist type for optimal weighting
   const playlistType = determinePlaylistType(playlist);
   console.log(`Playlist Type: ${playlistType}`);
-  console.log(`Playlist: ${playlist.id}`);
+  console.log(`Playlist: ${playlist.id || 'Unknown'}`);
+  console.log(`Playlist Mood: ${playlist.emotional?.dominantMood?.mood || 'Unknown'}`);
 
-  // Get playlist embeddings and metadata
+  // Get playlist embeddings 
   const playlistEmbedding = await getPlaylistEmbedding(playlist);
   const playlistMood = playlist.emotional?.dominantMood;
   const playlistIntensity = playlist.emotional?.intensity_score;
@@ -1098,15 +1638,11 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
   const playlistMoodVector = extractFeatureVector(playlistEmbedding, 'mood');
   const playlistActivityVector = extractFeatureVector(playlistEmbedding, 'activity');
 
-  console.log(`Playlist Mood: ${playlistMood?.mood || 'Unknown'}`);
-
-  // Get playlist sentiment
+  // Get playlist sentiment scores for compatibility checks
   const playlistSentiment = await getSentimentScores(
     `${playlistThemeText} ${playlistMoodText}`
   );
 
-  // Calculate matches for each song
-  const matches: MatchResult[] = [];
   const matchPromises = songs.map(async (song, index) => {
     // Get song embedding and metadata
     const songEmbedding = await getSongEmbedding(song);
@@ -1132,8 +1668,8 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
       songMoodVector
     );
 
-    // NEW: Detect thematic contradictions
-    const thematicContradiction = detectThematicContradictions(
+    // NEW: Detect thematic contradictions with async method
+    const thematicContradiction = await detectThematicContradictions(
       playlist.meaning.themes,
       song.analysis.meaning.themes
     );
@@ -1180,8 +1716,8 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
 
     // Calculate fit score similarity
     const fit_score_similarity = calculateFitScoreSimilarity(
-      playlist.context?.fit_scores,
-      song.analysis.context?.fit_scores
+      playlist.context?.fit_scores as { [key: string]: number } | undefined,
+      song.analysis.context?.fit_scores as { [key: string]: number } | undefined
     );
 
     // Store component scores for detailed reporting
@@ -1200,7 +1736,7 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
     const similarity = calculateFinalScore(component_scores, playlistType);
 
     // Check if veto was applied
-    const { vetoApplied, vetoReason } = applyVetoLogic(component_scores);
+    const { finalScore: vetoScore, vetoApplied, vetoReason } = applyVetoLogic(component_scores);
 
     // Log detailed results
     console.log(`\nEvaluating: ${song.track.title} by ${song.track.artist}`);
@@ -1216,10 +1752,8 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
     if (vetoApplied) {
       console.log(`  ⚠️ VETO APPLIED: ${vetoReason}`);
     }
+    console.log(`FINAL SCORE: ${similarity.toFixed(2)}${vetoApplied ? ` (Veto applied: ${vetoReason})` : ''}`);
 
-    console.log(`  FINAL SCORE: ${similarity.toFixed(2)}`);
-
-    // Add contradictions found to the result
     return {
       track_info: song.track,
       similarity,
@@ -1229,10 +1763,9 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
     };
   });
 
-  // Resolve all promises and sort by similarity
+  // Wait for all matching to complete
   const results = await Promise.all(matchPromises);
-  matches.push(...results);
-  matches.sort((a, b) => b.similarity - a.similarity);
 
-  return matches;
+  // Sort by similarity score (highest first)
+  return results.sort((a, b) => b.similarity - a.similarity);
 }

@@ -1,0 +1,61 @@
+{
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "timestamp": "2025-02-26 18:40:20",
+  "matches": [
+    {
+      "track": {
+        "artist": "Corinne Bailey Rae",
+        "title": "Put Your Records On"
+      },
+      "similarity": 0.6737406849861145,
+      "ground_truth": {
+        "score": 0.9,
+        "notes": "Perfect match for the playlist's uplifting mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Taylor Swift",
+        "title": "Closure"
+      },
+      "similarity": 0.44699621200561523,
+      "ground_truth": {
+        "score": 0.52,
+        "notes": "Poor match - negative emotions contrast with playlist mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Lana Del Rey",
+        "title": "California"
+      },
+      "similarity": 0.41250401735305786,
+      "ground_truth": {
+        "score": 0.85,
+        "notes": "Good match despite different mood, shares themes of hope"
+      }
+    },
+    {
+      "track": {
+        "artist": "Kendrick Lamar",
+        "title": "Money Trees"
+      },
+      "similarity": 0.38800978660583496,
+      "ground_truth": {
+        "score": 0.54,
+        "notes": "Poor match - thematically and emotionally different"
+      }
+    },
+    {
+      "track": {
+        "artist": "Wallows",
+        "title": "Are You Bored Yet"
+      },
+      "similarity": 0.3544931411743164,
+      "ground_truth": {
+        "score": 0.18,
+        "notes": "Very poor match - anxiety contrasts with playlist's positive mood"
+      }
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "model_name": "BAAI/bge-m3",
+  "timestamp": "2025-02-26 18:56:30",
+  "matches": [
+    {
+      "track": {
+        "artist": "Corinne Bailey Rae",
+        "title": "Put Your Records On"
+      },
+      "similarity": 0.879939079284668,
+      "ground_truth": {
+        "score": 0.9,
+        "notes": "Perfect match for the playlist's uplifting mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Kendrick Lamar",
+        "title": "Money Trees"
+      },
+      "similarity": 0.8239542245864868,
+      "ground_truth": {
+        "score": 0.54,
+        "notes": "Poor match - thematically and emotionally different"
+      }
+    },
+    {
+      "track": {
+        "artist": "Taylor Swift",
+        "title": "Closure"
+      },
+      "similarity": 0.8175535202026367,
+      "ground_truth": {
+        "score": 0.52,
+        "notes": "Poor match - negative emotions contrast with playlist mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Lana Del Rey",
+        "title": "California"
+      },
+      "similarity": 0.8100206851959229,
+      "ground_truth": {
+        "score": 0.85,
+        "notes": "Good match despite different mood, shares themes of hope"
+      }
+    },
+    {
+      "track": {
+        "artist": "Wallows",
+        "title": "Are You Bored Yet"
+      },
+      "similarity": 0.7951516509056091,
+      "ground_truth": {
+        "score": 0.18,
+        "notes": "Very poor match - anxiety contrasts with playlist's positive mood"
+      }
+    }
+  ]
+}

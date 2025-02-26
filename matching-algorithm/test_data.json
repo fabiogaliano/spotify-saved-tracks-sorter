@@ -1,0 +1,187 @@
+{
+  "playlist": {
+    "id": "playlist_0df21fc1",
+    "meaning": {
+      "themes": [
+        {
+          "name": "Self-Care & Rejuvenation",
+          "confidence": 0.95,
+          "description": "The playlist is centered around the act of taking care of oneself, both physically and mentally, to feel refreshed and ready to face the world."
+        },
+        {
+          "name": "Positive Affirmation",
+          "confidence": 0.85,
+          "description": "The playlist aims to instill a sense of positivity and self-belief, encouraging the listener to feel good about themselves."
+        },
+        {
+          "name": "Confidence Boosting",
+          "confidence": 0.8,
+          "description": "The music is intended to uplift and empower the listener, fostering a sense of self-assurance and high self-esteem."
+        }
+      ]
+    },
+    "emotional": {
+      "dominantMood": {
+        "mood": "Optimistic and Uplifting",
+        "description": "The playlist's description emphasizes feeling refreshed, positive, and ready to face the world with high self-esteem, indicating an uplifting and empowering emotional tone."
+      },
+      "intensity_score": 0.8
+    }
+  },
+  "songs": [
+    {
+      "track": {
+        "artist": "Corinne Bailey Rae",
+        "title": "Put Your Records On"
+      },
+      "analysis": {
+        "meaning": {
+          "themes": [
+            {
+              "name": "Self-Acceptance",
+              "description": "The song encourages embracing one's natural beauty and identity without conforming to external pressures."
+            },
+            {
+              "name": "Freedom and Joy",
+              "description": "Celebrates the liberating feeling of letting go and enjoying life's simple pleasures."
+            }
+          ]
+        },
+        "emotional": {
+          "dominantMood": {
+            "mood": "Optimistic and Uplifting",
+            "description": "The song has a warm, sunny disposition that radiates positivity and encouragement."
+          }
+        }
+      },
+      "ground_truth": {
+        "score": 0.90,
+        "notes": "Perfect match for the playlist's uplifting mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Lana Del Rey",
+        "title": "California"
+      },
+      "analysis": {
+        "meaning": {
+          "themes": [
+            {
+              "name": "Nostalgia",
+              "description": "Reflects on past relationships and experiences with a sense of longing."
+            },
+            {
+              "name": "Reconciliation",
+              "description": "Offers forgiveness and a chance to start anew despite past hurts."
+            }
+          ]
+        },
+        "emotional": {
+          "dominantMood": {
+            "mood": "Nostalgic Longing",
+            "description": "A bittersweet emotional tone that balances hope with melancholy."
+          }
+        }
+      },
+      "ground_truth": {
+        "score": 0.85,
+        "notes": "Good match despite different mood, shares themes of hope"
+      }
+    },
+    {
+      "track": {
+        "artist": "Kendrick Lamar",
+        "title": "Money Trees"
+      },
+      "analysis": {
+        "meaning": {
+          "themes": [
+            {
+              "name": "The Pursuit of Wealth vs. Morality",
+              "description": "The song explores the complex relationship between the desire for financial security and the moral compromises one might make to achieve it."
+            },
+            {
+              "name": "Poverty and Systemic Inequality",
+              "description": "The song vividly portrays the harsh realities of life in impoverished communities."
+            },
+            {
+              "name": "The Cycle of Violence",
+              "description": "The song depicts the cyclical nature of violence in impoverished communities."
+            }
+          ]
+        },
+        "emotional": {
+          "dominantMood": {
+            "mood": "Melancholy and Reflective",
+            "description": "The song evokes a sense of melancholy due to its somber portrayal of poverty, violence, and moral compromises."
+          }
+        }
+      },
+      "ground_truth": {
+        "score": 0.54,
+        "notes": "Poor match - thematically and emotionally different"
+      }
+    },
+    {
+      "track": {
+        "artist": "Taylor Swift",
+        "title": "Closure"
+      },
+      "analysis": {
+        "meaning": {
+          "themes": [
+            {
+              "name": "Rejection of Forced Closure",
+              "description": "The song rejects the idea that one must provide or accept closure to move on from a relationship."
+            },
+            {
+              "name": "Anger and Resentment",
+              "description": "Expresses lingering anger towards someone who caused pain and now seeks to resolve it on their terms."
+            }
+          ]
+        },
+        "emotional": {
+          "dominantMood": {
+            "mood": "Resentment",
+            "description": "The song conveys a strong sense of resentment and refusal to conform to others' expectations of healing."
+          }
+        }
+      },
+      "ground_truth": {
+        "score": 0.52,
+        "notes": "Poor match - negative emotions contrast with playlist mood"
+      }
+    },
+    {
+      "track": {
+        "artist": "Wallows",
+        "title": "Are You Bored Yet"
+      },
+      "analysis": {
+        "meaning": {
+          "themes": [
+            {
+              "name": "Relationship Uncertainty",
+              "description": "Explores the anxiety of wondering if a partner is losing interest in the relationship."
+            },
+            {
+              "name": "Fear of Abandonment",
+              "description": "Deals with the fear that a partner may leave due to boredom or disinterest."
+            }
+          ]
+        },
+        "emotional": {
+          "dominantMood": {
+            "mood": "Anxious Uncertainty",
+            "description": "The song conveys a sense of unease and insecurity about the future of a relationship."
+          }
+        }
+      },
+      "ground_truth": {
+        "score": 0.18,
+        "notes": "Very poor match - anxiety contrasts with playlist's positive mood"
+      }
+    }
+  ]
+}
