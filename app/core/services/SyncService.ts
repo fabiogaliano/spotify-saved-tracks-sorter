@@ -46,29 +46,22 @@ export class SyncService {
 
       logger.info('process tracks', { trackCount: spotifyTracks.length })
 
-
-      // Get all spotify track IDs
       const spotifyTrackIds = spotifyTracks.map(t => t.track.id)
 
-      // Fetch existing tracks
       const existingTracks = await this.trackRepository.getTracksBySpotifyIds(spotifyTrackIds)
       const existingTrackMap = new Map(existingTracks.map(t => [t.spotify_track_id, t]))
 
-      // Prepare new tracks for insertion
       const newTracks = spotifyTracks
         .filter(t => !existingTrackMap.has(t.track.id))
         .map(t => mapSpotifyTrackDTOToTrackInsert(t))
 
-      // Insert new tracks in batch
       const insertedTracks = newTracks.length > 0
         ? await this.trackRepository.insertTracks(newTracks)
         : []
 
-      // Create map of all tracks (existing + newly inserted)
       const allTracksMap = new Map(existingTracks.map(t => [t.spotify_track_id, t]))
       insertedTracks.forEach(t => allTracksMap.set(t.spotify_track_id, t))
 
-      // Prepare saved track associations
       const savedTracks = spotifyTracks.map(spotifyTrack =>
         mapToSavedTrackInsert(
           allTracksMap.get(spotifyTrack.track.id)!.id,
@@ -97,7 +90,6 @@ export class SyncService {
     } catch (error) {
       logger.error('sync saved tracks failed', error as Error, { userId })
 
-      // Update sync status to failed
       await this.trackRepository.updateSyncStatus(userId, SYNC_STATUS.FAILED)
 
       throw new AppError(

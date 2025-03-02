@@ -90,15 +90,15 @@ export const action: ActionFunction = async ({ request }) => {
 
       return json({
         savedTracks: {
-          success: !tracksResult.error,
-          message: tracksResult.error
-            ? tracksResult.error
+          success: Boolean(tracksResult.success),
+          message: tracksResult.message
+            ? tracksResult.message
             : `Processed ${tracksResult.totalProcessed} tracks, ${tracksResult.newItems} new`
         },
         playlists: {
-          success: !playlistsResult.error,
-          message: playlistsResult.error
-            ? playlistsResult.error
+          success: Boolean(playlistsResult.success),
+          message: playlistsResult.message
+            ? playlistsResult.message
             : `Processed ${playlistsResult.totalProcessed} playlists, ${playlistsResult.newItems} new`
         }
       })
