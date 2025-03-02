@@ -1,19 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useTrackSortingStore, TrackStatus } from '~/core/stores/trackSortingStore'
 
 interface TrackActionsProps {
   userId: string
   trackId: string
 }
 
-type Status = 'ignored' | 'unsorted' | 'sorted'
-
 export function TrackActions({ userId, trackId }: TrackActionsProps) {
-  const [status, setStatus] = useState<Status>('unsorted')
+  const { getTrackStatus, setTrackStatus } = useTrackSortingStore()
+  const storeStatus = useTrackSortingStore(state => state.getTrackStatus(trackId))
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
-  const [offsetX, setOffsetX] = useState(0)
+  const [offsetX, setOffsetX] = useState(() => {
+    // Initialize offset based on the status from the store
+    const initialStatus = getTrackStatus(trackId)
+    return initialStatus === 'sorted' ? 40 : initialStatus === 'ignored' ? -40 : 0
+  })
 
-  const getStatusFromPosition = (position: number): Status => {
+  const getStatusFromPosition = (position: number): TrackStatus => {
     if (position < -33) return 'ignored'
     if (position > 33) return 'sorted'
     return 'unsorted'
@@ -27,13 +31,13 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
     const totalWidth = rect.width
 
     if (clickX < totalWidth / 3) {
-      setStatus('ignored')
+      setTrackStatus(trackId, 'ignored')
       setOffsetX(-40)
     } else if (clickX > (totalWidth * 2) / 3) {
-      setStatus('sorted')
+      setTrackStatus(trackId, 'sorted')
       setOffsetX(40)
     } else {
-      setStatus('unsorted')
+      setTrackStatus(trackId, 'unsorted')
       setOffsetX(0)
     }
   }
@@ -50,8 +54,8 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
     setOffsetX(newOffset)
     
     const newStatus = getStatusFromPosition(newOffset)
-    if (newStatus !== status) {
-      setStatus(newStatus)
+    if (newStatus !== storeStatus) {
+      setTrackStatus(trackId, newStatus)
     }
   }
 
@@ -59,7 +63,7 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
     if (!isDragging) return
     
     setIsDragging(false)
-    setOffsetX(status === 'sorted' ? 40 : status === 'ignored' ? -40 : 0)
+    setOffsetX(storeStatus === 'sorted' ? 40 : storeStatus === 'ignored' ? -40 : 0)
   }
 
   return (
@@ -94,9 +98,9 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
         <div
           className={`absolute top-1 left-1/2 w-6 h-6 rounded-full shadow-sm transform -translate-x-1/2 transition-all duration-150 
             ${isDragging ? '' : 'transition-all duration-300'}
-            ${status === 'sorted' 
+            ${storeStatus === 'sorted' 
               ? 'bg-emerald-50 border-2 border-emerald-200 scale-110' 
-              : status === 'ignored' 
+              : storeStatus === 'ignored' 
                 ? 'bg-rose-50 border-2 border-rose-200 scale-110' 
                 : 'bg-white border border-gray-200'
             }
@@ -108,19 +112,19 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
         >
           {/* Dynamic inner content */}
           <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200
-            ${status === 'sorted' ? 'opacity-100' : 'opacity-0'}`}>
+            ${storeStatus === 'sorted' ? 'opacity-100' : 'opacity-0'}`}>
             <svg className="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200
-            ${status === 'ignored' ? 'opacity-100' : 'opacity-0'}`}>
+            ${storeStatus === 'ignored' ? 'opacity-100' : 'opacity-0'}`}>
             <svg className="w-3 h-3 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200
-            ${status === 'unsorted' ? 'opacity-100' : 'opacity-0'}`}>
+            ${storeStatus === 'unsorted' ? 'opacity-100' : 'opacity-0'}`}>
             <svg className="w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14m8-14v14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>

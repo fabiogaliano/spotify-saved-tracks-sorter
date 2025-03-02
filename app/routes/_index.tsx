@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs, MetaFunction, ActionFunction } from '@remix-run/node'
-import { useActionData, useLoaderData, useFetcher, json } from '@remix-run/react'
+import { useActionData, useLoaderData, useFetcher, json, Link } from '@remix-run/react'
 import { useState, useMemo, useEffect } from 'react'
+import { useTrackSortingStore } from '~/core/stores/trackSortingStore'
 import { SpotifyService } from '~/core/services/SpotifyService'
 import { SyncService } from '~/core/services/SyncService'
 import { trackRepository } from '~/core/repositories/TrackRepository'
@@ -126,6 +127,7 @@ export default function Index() {
   )
   const [showAlbum, setShowAlbum] = useState(false)
   const [showAddedDate, setShowAddedDate] = useState(false)
+  const sortedTracksCount = useTrackSortingStore(state => state.getSortedTracksCount())
 
   // Memoized table data to prevent unnecessary recalculations
   const tableData = useMemo(() => {
@@ -173,6 +175,14 @@ export default function Index() {
             )}
           </div>
           <div className="w-full sm:w-auto flex justify-center sm:justify-end gap-4">
+            {sortedTracksCount > 0 && (
+              <Link
+                to="/matching"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Match Songs <span className="ml-2 px-2 py-1 text-xs bg-blue-800 rounded-full">{sortedTracksCount}</span>
+              </Link>
+            )}
             <SyncLibraryButton userId={user.id} />
             <HelpButton />
             <ConfigButton />

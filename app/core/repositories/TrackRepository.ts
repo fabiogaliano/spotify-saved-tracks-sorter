@@ -17,6 +17,15 @@ export type SyncStatus = typeof SYNC_STATUS[keyof typeof SYNC_STATUS];
 export type SyncType = typeof SYNC_TYPES[keyof typeof SYNC_TYPES];
 
 class SupabaseTrackRepository implements TrackRepository {
+  async getAllTracks(): Promise<Track[]> {
+    const { data, error } = await getSupabase()
+      .from('tracks')
+      .select('*')
+    
+    if (error) throw error
+    return data || []
+  }
+
   async getTracksBySpotifyIds(spotifyTrackIds: string[]): Promise<Track[]> {
     const { data, error } = await getSupabase()
       .from('tracks')

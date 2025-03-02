@@ -78,6 +78,7 @@ export const mapToSavedTrackInsert = (
 
 export interface TrackRepository {
   // Track operations
+  getAllTracks(): Promise<Track[]>
   getTracksBySpotifyIds(spotifyTrackIds: string[]): Promise<Track[]>
   insertTracks(tracks: TrackInsert[]): Promise<Track[]>
 
