@@ -141,8 +141,7 @@ export default defineCommand({
     const s = spinner()
     s.start('Analyzing playlist...')
 
-    const llmManager = new LlmProviderManager()
-    llmManager.switchProvider('google', process.env.GOOGLE_API_KEY!)
+    const llmManager = new LlmProviderManager('google', process.env.GOOGLE_API_KEY!)
 
     try {
       const generation = trace?.generation({

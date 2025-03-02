@@ -5,7 +5,7 @@ import type { ProviderInterface } from '../../../domain/LlmProvider'
 export class OpenAIProvider implements ProviderInterface {
   name = 'openai'
   private client
-  private defaultModel = 'gpt-4o-mini'
+  private activeModel = 'gpt-4o-mini'
   private availableModels = [
     'gpt-4o-mini',
     'gpt-3.5-turbo',
@@ -21,8 +21,20 @@ export class OpenAIProvider implements ProviderInterface {
     return this.availableModels
   }
 
+  getActiveModel() {
+    return this.activeModel
+  }
+
+  setActiveModel(model: string) {
+    if (!this.availableModels.includes(model)) {
+      throw new Error(`Model ${model} is not available for OpenAI provider`)
+    }
+    this.activeModel = model
+  }
+
   async generateText(prompt: string, model?: string): Promise<{ text: string; usage: LanguageModelUsage }> {
-    const selectedModel = model || this.defaultModel
+    // If model is provided, temporarily use it without changing the active model
+    const selectedModel = model || this.activeModel
     const { text, usage } = await generateText({
       model: this.client(selectedModel),
       prompt,

@@ -5,7 +5,7 @@ import type { ProviderInterface } from '../../../domain/LlmProvider'
 export class GoogleProvider implements ProviderInterface {
   name = 'google'
   private client
-  private defaultModel = 'gemini-2.0-flash'
+  private activeModel = 'gemini-2.0-flash'
   private availableModels = ['gemini-2.0-flash']
 
   constructor(apiKey: string) {
@@ -16,8 +16,20 @@ export class GoogleProvider implements ProviderInterface {
     return this.availableModels
   }
 
+  getActiveModel() {
+    return this.activeModel
+  }
+
+  setActiveModel(model: string) {
+    if (!this.availableModels.includes(model)) {
+      throw new Error(`Model ${model} is not available for Google provider`)
+    }
+    this.activeModel = model
+  }
+
   async generateText(prompt: string, model?: string): Promise<{ text: string; usage: LanguageModelUsage }> {
-    const selectedModel = model || this.defaultModel
+    // If model is provided, temporarily use it without changing the active model
+    const selectedModel = model || this.activeModel
 
     const { text, usage } = await generateText({
       model: this.client(selectedModel),

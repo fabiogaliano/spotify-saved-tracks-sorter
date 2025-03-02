@@ -70,7 +70,8 @@ export class SpotifyService {
             name: p.name,
             description: p.description,
             owner: { id: p.owner.id },
-            track_count: p.tracks?.total ?? 0
+            track_count: p.tracks?.total ?? 0,
+            is_flagged: !!(p.description?.toLowerCase().startsWith('ai:'))
           } satisfies SpotifyPlaylistDTO));
 
         allPlaylists.push(...filteredPlaylists);

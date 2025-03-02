@@ -13,6 +13,7 @@ export type SpotifyPlaylistDTO = {
   id: string
   name: string
   description: string | null
+  is_flagged: boolean
   owner: {
     id: string
   }
@@ -39,6 +40,7 @@ export const mapSpotifyPlaylistToPlaylistInsert = (
   user_id: userId,
   name: playlist.name,
   description: playlist.description || '',
+  is_flagged: playlist.is_flagged,
   track_count: playlist.tracks?.total ?? 0,
   updated_at: new Date().toISOString()
 })

@@ -1,0 +1,60 @@
+Artist: {artist}
+Title: {title}
+Lyrics and Annotations:
+{lyrics_with_annotations}
+
+Please analyze the following song and provide analysis in this JSON format. Ensure all numerical scores are floating point numbers between 0.0-1.0, where 0.0 represents the lowest possible value and 1.0 represents the highest. Provide detailed reasoning for any score above 0.8 or below 0.2.
+
+{
+  "meaning": {
+    "themes": [
+      {
+        "name": "Primary Theme",
+        "confidence": 0.0-1.0,
+        "description": "Natural language explanation of this theme and why it matters.",
+        "related_themes": ["related theme 1", "related theme 2"],
+        "connection": "How these themes connect within the song."
+      }
+    ],
+    "interpretation": {
+      "main_message": "Core message of the song",
+      "verified": ["verified interpretations from annotations"],
+      "derived": ["LLM-derived interpretations"]
+    }
+  },
+  "emotional": {
+    "dominantMood": {
+      "mood": "Primary Mood",
+      "description": "Why this is the dominant mood."
+    },
+    "progression": [
+      {
+        "section": "verse/chorus/bridge",
+        "mood": "Specific mood in this section",
+        "intensity": 0.0-1.0,
+        "description": "How this section's mood contributes to the song's journey."
+      }
+    ],
+    "intensity_score": 0.0-1.0
+  },
+  "context": {
+    "primary_setting": "Most fitting scenario with brief why",
+    "situations": {
+      "perfect_for": ["situations"],
+      "why": "Explanation of why these situations fit."
+    },
+    "activities": ["activities"],
+    "temporal": ["temporal contexts"],
+    "social": ["social contexts"],
+    "fit_scores": {
+      "morning": 0.0-1.0,
+      "working": 0.0-1.0,
+      "relaxation": 0.0-1.0
+    }
+  },
+  "matchability": {
+    "versatility": 0.0-1.0,  // How well this song fits multiple contexts
+    "mood_consistency": 0.0-1.0,  // Does it have a clear, consistent emotional tone?
+    "uniqueness": 0.0-1.0  // Is this song distinct enough to add variety to playlists?
+  }
+}
