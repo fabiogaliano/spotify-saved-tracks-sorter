@@ -1,86 +1,112 @@
-import type { PlaylistAnalysisService, PlaylistAnalysisResult } from '~/core/domain/PlaylistAnalysis'
+import type {
+  PlaylistAnalysisService,
+} from '~/core/domain/PlaylistAnalysis'
 import type { LlmProviderManager } from '~/core/domain/LlmProvider'
 import { ApiError } from '~/core/errors/ApiError'
 import { logger } from '~/core/logging/Logger'
 
-export class DefaultPlaylistAnalysisService implements PlaylistAnalysisService {
-  constructor(private readonly llmProviderManager: LlmProviderManager) {}
+const PLAYLIST_ANALYSIS_PROMPT = `Playlist Name: {playlist_name}
+Description: {playlist_description}
 
-  async analyzePlaylistDescription(playlistDescription: string): Promise<string> {
-    try {
-      logger.info('Analyzing playlist description')
-      const prompt = `Analyze the following playlist description and identify the mood or theme: ${playlistDescription}`
-      const analysis = await this.llmProviderManager.generateText(prompt)
-      logger.debug('Successfully analyzed playlist description', { analysis })
-      return analysis
-    } catch (error) {
-      logger.error('Failed to analyze playlist description', error as Error, { playlistDescription })
-      throw new ApiError(
-        'Failed to analyze playlist description',
-        'LLM_ANALYSIS_ERROR',
-        500,
-        { cause: error, playlistDescription }
-      )
+Analyze this playlist and provide:
+1. The main themes, moods, and emotions of the playlist.
+2. The ideal listening scenarios and contexts.
+3. A detailed emotional analysis, focusing on the dominant mood.
+4. The adaptability of this playlist to different settings.
+
+Provide analysis in the following JSON format:
+{
+  "meaning": {
+    "themes": [
+      {
+        "name": "primary theme",
+        "confidence": 0.0-1.0,
+        "description": "Explanation of the theme.",
+        "related_themes": ["related themes"],
+        "connection": "How these themes link together."
+      }
+    ],
+    "main_message": "Core vibe of the playlist"
+  },
+  "emotional": {
+    "dominantMood": {
+      "mood": "primary mood",
+      "description": "Why this is the dominant mood"
+    },
+    "intensity_score": 0.0-1.0
+  },
+  "context": {
+    "primary_setting": "Most fitting scenario",
+    "situations": {
+      "perfect_for": ["situations"],
+      "why": "Why these situations fit"
+    },
+    "fit_scores": {
+      "morning": 0.0-1.0,
+      "working": 0.0-1.0,
+      "relaxation": 0.0-1.0
     }
+  },
+  "matchability": {
+    "versatility_score": 0.0-1.0,
+    "distinctiveness": 0.0-1.0,
+    "adaptability": 0.0-1.0
   }
+}`
 
-  async analyzePlaylistSongs(songTitles: string[]): Promise<string[]> {
+export class DefaultPlaylistAnalysisService implements PlaylistAnalysisService {
+  constructor(private readonly llmProviderManager: LlmProviderManager) { }
+
+  async analyzePlaylistWithPrompt(
+    playlistName: string,
+    playlistDescription: string
+  ): Promise<{ model: string; analysisJson: any }> {
     try {
-      logger.info('Analyzing playlist songs', { songCount: songTitles.length })
-      const results: string[] = []
-      
-      for (const songTitle of songTitles) {
-        try {
-          logger.debug('Analyzing song', { songTitle })
-          const prompt = `Analyze the lyrics and theme of this song: ${songTitle}`
-          const analysis = await this.llmProviderManager.generateText(prompt)
-          results.push(analysis)
-        } catch (error) {
-          logger.error('Failed to analyze song', error as Error, { songTitle })
-          // Continue with other songs even if one fails
-          results.push(`Failed to analyze: ${songTitle}`)
+      const filledPrompt = PLAYLIST_ANALYSIS_PROMPT.replace(
+        '{playlist_name}',
+        playlistName
+      ).replace(
+        '{playlist_description}',
+        playlistDescription || 'No description provided'
+      )
+
+      const result = await this.llmProviderManager.generateText(filledPrompt)
+
+      if (!result) {
+        throw new Error('Failed to generate analysis: No response from LLM provider')
+      }
+
+      let analysisJson
+      try {
+        analysisJson = JSON.parse(result.text)
+      } catch (parseError) {
+        const jsonMatch = result.text.match(/```(?:json)?(\n|\r\n|\r)?(.*?)```/s)
+        if (jsonMatch && jsonMatch[2]) {
+          try {
+            analysisJson = JSON.parse(jsonMatch[2].trim())
+          } catch (extractError) {
+            throw new Error('Failed to parse extracted content as JSON')
+          }
+        } else {
+          throw new Error(
+            'Failed to parse analysis result as JSON - no JSON code block found'
+          )
         }
       }
 
-      logger.debug('Successfully analyzed songs', { 
-        totalSongs: songTitles.length,
-        analyzedSongs: results.length 
-      })
-      
-      return results
-    } catch (error) {
-      logger.error('Failed to analyze playlist songs', error as Error, { songCount: songTitles.length })
-      throw new ApiError(
-        'Failed to analyze playlist songs',
-        'LLM_ANALYSIS_ERROR',
-        500,
-        { cause: error, songTitles }
-      )
-    }
-  }
-
-  async analyzePlaylist(playlistDescription: string, songTitles: string[]): Promise<PlaylistAnalysisResult> {
-    try {
-      logger.info('starting to analyze the playlist')
-
-      const [descriptionAnalysis, songAnalysis] = await Promise.all([
-        this.analyzePlaylistDescription(playlistDescription),
-        this.analyzePlaylistSongs(songTitles)
-      ])
-
-      logger.info('finished analyzing the playlist')
-
       return {
-        descriptionAnalysis,
-        songAnalysis
+        model: this.llmProviderManager.getCurrentModel(),
+        analysisJson,
       }
     } catch (error) {
-      logger.error('failed to analyze the playlist', error as Error)
+      logger.error('Failed to analyze playlist with prompt', error as Error, {
+        playlistName,
+      })
       throw new ApiError(
-        'Failed to analyze playlist',
+        'Failed to analyze playlist with prompt',
         'LLM_ANALYSIS_ERROR',
         500,
-        { cause: error, descriptionLength: playlistDescription.length, songCount: songTitles.length }
+        { cause: error, playlistName }
       )
     }
   }

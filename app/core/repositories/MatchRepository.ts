@@ -1,4 +1,4 @@
-import { supabase } from '../db/db'
+import { getSupabase } from '../db/db'
 import { MatchResult } from '../domain/Matching'
 import { DbError } from '../errors/DbError'
 import { logger } from '../logging/Logger'
@@ -15,7 +15,7 @@ export class SupabaseMatchRepository implements MatchRepository {
     try {
       logger.debug('Saving match result', { songId, playlistId, similarity: matchResult.similarity })
       
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('song_playlist_matches')
         .upsert({
           song_id: songId,
@@ -43,7 +43,7 @@ export class SupabaseMatchRepository implements MatchRepository {
     try {
       logger.debug('Getting playlist matches for song', { songId })
       
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from('song_playlist_matches')
         .select('playlist_id, score, factors')
         .eq('song_id', songId)
@@ -69,7 +69,7 @@ export class SupabaseMatchRepository implements MatchRepository {
     try {
       logger.debug('Getting song matches for playlist', { playlistId })
       
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from('song_playlist_matches')
         .select('song_id, score, factors')
         .eq('playlist_id', playlistId)
@@ -95,7 +95,7 @@ export class SupabaseMatchRepository implements MatchRepository {
     try {
       logger.debug('Deleting match result', { songId, playlistId })
       
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('song_playlist_matches')
         .delete()
         .eq('song_id', songId)

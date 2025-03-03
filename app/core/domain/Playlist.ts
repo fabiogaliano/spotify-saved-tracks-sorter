@@ -56,4 +56,5 @@ export interface PlaylistRepository {
   removePlaylistTracks(playlistId: number, trackIds: number[]): Promise<void>
   updatePlaylistTrackCounts(updates: Array<{ id: number, track_count: number }>): Promise<void>
   deletePlaylists(playlistIds: number[]): Promise<void>
+  getPlaylistsByIds(playlistIds: number[]): Promise<Playlist[]>
 }

@@ -14,6 +14,18 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
     if (error) throw error
     return data || []
   }
+  
+  async getFlaggedPlaylists(userId: number): Promise<Playlist[]> {
+    const { data, error } = await getSupabase()
+      .from('playlists')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_flagged', true)
+      .order('name')
+
+    if (error) throw error
+    return data || []
+  }
 
   async savePlaylists(playlists: PlaylistInsert[]): Promise<Playlist[]> {
     const { data, error } = await getSupabase()
@@ -131,6 +143,19 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
       .in('id', playlistIds)
 
     if (deletePlaylistsError) throw deletePlaylistsError
+  }
+  
+  async getPlaylistsByIds(playlistIds: number[]): Promise<Playlist[]> {
+    if (!playlistIds.length) return []
+    
+    const { data, error } = await getSupabase()
+      .from('playlists')
+      .select('*')
+      .in('id', playlistIds)
+      .order('name')
+
+    if (error) throw error
+    return data || []
   }
 }
 
