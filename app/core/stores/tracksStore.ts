@@ -58,11 +58,24 @@ const useTracksStore = create<TracksState>()(
     }),
     {
       name: 'tracks-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => {
+        // Use localStorage only on the client side
+        if (typeof window !== 'undefined') {
+          return localStorage
+        }
+        // Return a mock storage for SSR
+        return {
+          getItem: () => null,
+          setItem: () => { },
+          removeItem: () => { }
+        }
+      }),
       partialize: (state) => ({
         tracks: state.tracks,
         isLoaded: state.isLoaded
       }),
+      // Skip hydration if in server environment to prevent hydration mismatches
+      skipHydration: true
     }
   )
 )
