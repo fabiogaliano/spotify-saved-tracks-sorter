@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs, MetaFunction, ActionFunction } from '@remix-ru
 import { useActionData, useLoaderData, useFetcher, json, Link } from '@remix-run/react'
 import { useState, useMemo, useEffect } from 'react'
 import { useTrackSortingStore } from '~/core/stores/trackSortingStore'
+import { useTracksStore } from '~/core/stores/tracksStore'
 import { SpotifyService } from '~/core/services/SpotifyService'
 import { SyncService } from '~/core/services/SyncService'
 import { trackRepository } from '~/core/repositories/TrackRepository'
@@ -128,6 +129,19 @@ export default function Index() {
   const [showAlbum, setShowAlbum] = useState(false)
   const [showAddedDate, setShowAddedDate] = useState(false)
   const sortedTracksCount = useTrackSortingStore(state => state.getSortedTracksCount())
+  const setTracks = useTracksStore(state => state.setTracks)
+
+  // Store tracks in Zustand store for global access
+  useEffect(() => {
+    if (savedTracks && savedTracks.length > 0) {
+      const trackObjects = savedTracks.map(savedTrack => ({
+        ...savedTrack.track,
+        liked_at: savedTrack.liked_at,
+        sorting_status: savedTrack.sorting_status
+      }))
+      setTracks(trackObjects)
+    }
+  }, [savedTracks, setTracks])
 
   // Memoized table data to prevent unnecessary recalculations
   const tableData = useMemo(() => {
@@ -136,10 +150,10 @@ export default function Index() {
     return savedTracks
       .filter(track => showStatus === 'all' || track.sorting_status === showStatus)
       .map(track => ({
-        id: track.tracks.spotify_track_id,
-        name: track.tracks.name,
-        artist: track.tracks.artist,
-        album: track.tracks.album,
+        id: track.track.spotify_track_id,
+        name: track.track.name,
+        artist: track.track.artist,
+        album: track.track.album,
         likedAt: track.liked_at,
         sortingStatus: track.sorting_status,
         userId: user?.id,

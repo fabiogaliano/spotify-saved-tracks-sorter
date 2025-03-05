@@ -21,7 +21,7 @@ class SupabaseTrackRepository implements TrackRepository {
     const { data, error } = await getSupabase()
       .from('tracks')
       .select('*')
-    
+
     if (error) throw error
     return data || []
   }
@@ -35,7 +35,7 @@ class SupabaseTrackRepository implements TrackRepository {
     if (error) throw error
     return data || []
   }
-  
+
   async insertTracks(tracks: TrackInsert[]): Promise<Track[]> {
     const { data, error } = await getSupabase()
       .from('tracks')
@@ -53,7 +53,8 @@ class SupabaseTrackRepository implements TrackRepository {
       .select(`
         liked_at,
         sorting_status,
-        tracks!inner(
+        track:tracks!inner(
+          id,
           spotify_track_id,
           name,
           artist,
@@ -73,9 +74,9 @@ class SupabaseTrackRepository implements TrackRepository {
   async saveSavedTrack(savedTrack: SavedTrackInsert): Promise<void> {
     const { error } = await getSupabase()
       .from('saved_tracks')
-      .upsert(savedTrack, { 
+      .upsert(savedTrack, {
         onConflict: 'track_id,user_id',
-        ignoreDuplicates: true 
+        ignoreDuplicates: true
       })
 
     if (error) throw error

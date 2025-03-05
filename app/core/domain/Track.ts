@@ -11,13 +11,19 @@ export type SavedTrackInsert = Database['public']['Tables']['saved_tracks']['Ins
 export interface SavedTrackRow {
   liked_at: string
   sorting_status: Database['public']['Enums']['sorting_status_enum'] | null
-  tracks: {
+  track: {
+    id: number
     spotify_track_id: string
     name: string
     artist: string
     album: string | null
   }
 }
+
+export type SavedTrackStore = {
+  liked_at: SavedTrack['liked_at'];
+  sorting_status: SavedTrack['sorting_status'];
+} & Omit<Track, 'created_at'>;
 
 // DTO for Spotify's saved track data structure
 export type SpotifyTrackDTO = {
@@ -35,10 +41,10 @@ export type SpotifyTrackDTO = {
 export const mapSavedTrackToTrackInsert = (
   savedTrack: SavedTrackRow
 ): TrackInsert => ({
-  spotify_track_id: savedTrack.tracks.spotify_track_id,
-  name: savedTrack.tracks.name,
-  artist: savedTrack.tracks.artist,
-  album: savedTrack.tracks.album,
+  spotify_track_id: savedTrack.track.spotify_track_id,
+  name: savedTrack.track.name,
+  artist: savedTrack.track.artist,
+  album: savedTrack.track.album,
   created_at: new Date().toISOString(),
 })
 

@@ -5,8 +5,18 @@ import json
 import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Music-Playlist Vectorization API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Replace with your Remix server URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Load embedding model - updated to use the better performing model
 embedding_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
