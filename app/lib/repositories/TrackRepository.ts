@@ -132,6 +132,39 @@ class SupabaseTrackRepository implements TrackRepository {
 
     if (error) throw error
   }
+
+  async removeSavedTracks(userId: number, trackIds: string[]): Promise<void> {
+    // ... existing implementation ...
+  }
+
+  async getTrackById(trackId: number): Promise<any> {
+    const { data, error } = await getSupabase()
+      .from('tracks')
+      .select('*')
+      .eq('id', trackId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') { // No rows returned
+        return null
+      }
+      throw error
+    }
+
+    return data
+  }
+
+  async getTracksByIds(trackIds: number[]): Promise<any[]> {
+    if (!trackIds.length) return []
+
+    const { data, error } = await getSupabase()
+      .from('tracks')
+      .select('*')
+      .in('id', trackIds)
+
+    if (error) throw error
+    return data || []
+  }
 }
 
 export const trackRepository = new SupabaseTrackRepository()

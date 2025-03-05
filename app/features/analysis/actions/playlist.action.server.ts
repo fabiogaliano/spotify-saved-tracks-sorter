@@ -1,7 +1,8 @@
 import { ActionFunctionArgs, json } from '@remix-run/node'
-import { getSupabase } from '~/lib/db/db'
-import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 import { llmProviderManager } from '~/lib/services'
+import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisRepository'
+import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
+import { trackRepository } from '~/lib/repositories/TrackRepository'
 
 // Define a more specific type for playlist tracks that matches database return
 interface DbPlaylistTrack {
@@ -13,125 +14,118 @@ interface DbPlaylistTrack {
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const formData = await request.formData()
-  const action = formData.get('action')
+  try {
+    const formData = await request.formData()
+    const playlistId = formData.get('playlistId')?.toString()
+    const promptTemplate = formData.get('prompt')?.toString() || 'Analyze this playlist: {playlist_name}'
 
-  if (action === 'analyze') {
-    const playlistId = formData.get('playlistId')
-    const playlistName = formData.get('playlistName')
-    const playlistDescription = formData.get('playlistDescription') || ''
-    const promptTemplate = formData.get('prompt') || 'Analyze this playlist: {playlist_name}'
-
-    if (!playlistId || !playlistName) {
-      return json({ success: false, error: 'Missing required playlist information' }, { status: 400 })
+    if (!playlistId) {
+      return json({
+        success: false,
+        error: 'No playlist ID provided',
+      })
     }
 
-    try {
-      // First check if analysis already exists
-      const { data, error } = await getSupabase()
-        .from('playlist_analyses')
-        .select('id')
-        .eq('playlist_id', Number(playlistId))
-        .limit(1)
-
-      if (error) {
-        console.error('Error checking existing analysis:', error)
-        return json({
-          success: false,
-          playlistId,
-          error: 'Database error when checking existing analysis',
-          details: error.message
-        }, { status: 500 })
-      }
-
-      if (data && data.length > 0) {
-        // Analysis already exists
-        return json({
-          success: true,
-          playlistId,
-          analysisId: data[0].id,
-          alreadyAnalyzed: true
-        })
-      }
-
-      // Get the tracks in the playlist
-      const playlistTracks = await playlistRepository.getPlaylistTracks(Number(playlistId))
-
-      // Format tracks for the prompt
-      const tracksFormatted = (playlistTracks as DbPlaylistTrack[])
-        .filter(track => track.name && track.artist)
-        .map(track => `"${track.name}" by ${track.artist}`)
-        .join('\n');
-
-      // Fill in the prompt template
-      const filledPrompt = promptTemplate.toString()
-        .replace('{playlist_name}', playlistName.toString())
-        .replace('{playlist_description}', playlistDescription.toString())
-        .replace('{tracks}', tracksFormatted)
-
-      console.log('Generating analysis for playlist:', playlistName)
-
-      // Generate the analysis using the LLM provider
-      const result = await llmProviderManager.getProvider().analyze()
-
-      if (!result) {
-        throw new Error('Failed to generate analysis: No response from LLM provider')
-      }
-
-      console.log('Analysis generation completed')
-
-      // Parse the result
-      let analysisJson = result.result
-
-      // Get the current user ID - using 1 as default for now
-      const userId = 1 // This should be replaced with actual user ID from session
-
-      console.log('Saving playlist analysis to database:', {
-        playlist_id: Number(playlistId),
-        model_name: 'mock-model'
+    // Get playlist details
+    const playlist = await playlistRepository.getPlaylistById(Number(playlistId))
+    if (!playlist) {
+      return json({
+        success: false,
+        error: `Playlist with ID ${playlistId} not found`,
       })
+    }
 
-      const { data: insertData, error: insertError } = await getSupabase()
-        .from('playlist_analyses')
-        .insert({
-          playlist_id: Number(playlistId),
-          analysis: analysisJson,
-          model_name: 'mock-model',
-          user_id: userId,
-          version: 1,
-          created_at: new Date().toISOString()
-        })
-        .select('id')
+    // Check if this playlist already has an analysis
+    const existingAnalysis = await playlistAnalysisRepository.getAnalysisByPlaylistId(Number(playlistId))
 
-      if (insertError) {
-        console.error('Error inserting analysis:', insertError)
-        return json({
-          success: false,
-          playlistId,
-          error: 'Failed to save analysis to database',
-          details: insertError.message
-        }, { status: 500 })
+    if (existingAnalysis) {
+      return json({
+        success: true,
+        playlistId,
+        analysisId: existingAnalysis.id,
+        alreadyAnalyzed: true,
+      })
+    }
+
+    // Get playlist tracks
+    const playlistTracks = await playlistRepository.getPlaylistTracks(Number(playlistId))
+
+    if (!playlistTracks || playlistTracks.length === 0) {
+      return json({
+        success: false,
+        playlistId,
+        error: 'No tracks found in this playlist',
+      })
+    }
+
+    // Get track details using the repository
+    const trackIds = playlistTracks.map(pt => pt.track_id)
+    const trackDetailsResult = await trackRepository.getTracksByIds(trackIds)
+
+    // Combine playlist tracks with their details
+    const tracks = playlistTracks.map(pt => {
+      const trackDetail = trackDetailsResult.find(t => t.id === pt.track_id)
+      return {
+        track_id: pt.track_id,
+        spotify_track_id: pt.spotify_track_id,
+        name: trackDetail?.name || '',
+        artist: trackDetail?.artist || ''
       }
+    })
+
+    // Format track list for prompt
+    const formattedTracks = tracks
+      .filter(t => t.name && t.artist)
+      .map(t => `"${t.name}" by ${t.artist}`)
+      .join('\n')
+
+    // Fill prompt template
+    const filledPrompt = promptTemplate
+      .replace('{playlist_name}', playlist.name)
+      .replace('{playlist_description}', playlist.description || '')
+      .replace('{tracks}', formattedTracks)
+
+    // Generate analysis using LLM
+    const analysis = await llmProviderManager.getProvider().analyze()
+
+    if (!analysis) {
+      return json({
+        success: false,
+        playlistId,
+        error: 'Failed to generate analysis',
+      })
+    }
+
+    // Store analysis in database
+    try {
+      const analysisId = await playlistAnalysisRepository.createAnalysis(
+        Number(playlistId),
+        1, // TODO: Replace with actual user ID from session
+        analysis,
+        'gpt-4', // Specify the model used
+        1 // Version number
+      )
 
       return json({
         success: true,
         playlistId,
-        analysisId: insertData[0].id
+        analysisId,
       })
-
-    } catch (error: any) {
-      console.error('Error in playlist analysis:', error)
+    } catch (insertError) {
+      console.error('Error saving analysis:', insertError)
       return json({
         success: false,
         playlistId,
-        error: 'Error analyzing playlist',
-        details: error.message || String(error)
-      }, { status: 500 })
+        error: 'Failed to save analysis',
+        details: insertError instanceof Error ? insertError.message : 'Unknown error',
+      })
     }
+  } catch (error) {
+    console.error('Error in playlist analysis action:', error)
+    return json({
+      success: false,
+      error: 'An unexpected error occurred',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    })
   }
-
-  return json({
-    success: false,
-    error: 'Invalid action'
-  }, { status: 400 })
 } 

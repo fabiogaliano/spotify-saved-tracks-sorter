@@ -1,7 +1,9 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
-import { getSupabase } from '~/lib/db/db'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
+import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisRepository'
+import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
+import { savedTrackRepository } from '~/lib/repositories/SavedTrackRepository'
 import type { AnalyzedTrack, AnalyzedPlaylist } from '~/types/analysis'
 
 // Database types that represent the actual structure from Supabase
@@ -43,83 +45,67 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const userId = 1 // Replace with actual user ID from session
 
-    // Get playlists with analyses
-    const { data: playlistsWithAnalysis, error: playlistError } = await getSupabase()
-      .from('playlist_analyses')
-      .select('id, playlist_id, analysis')
-      .eq('user_id', userId)
+    // Get playlist analyses using the repository
+    const playlistsWithAnalysis = await playlistAnalysisRepository.getAnalysesByUserId(userId)
 
-    if (playlistError) {
-      console.error('Error fetching playlist analyses:', playlistError)
-      return json({ playlists: [] as AnalyzedPlaylist[], tracks: [] as AnalyzedTrack[] })
+    if (!playlistsWithAnalysis || playlistsWithAnalysis.length === 0) {
+      return json({
+        playlists: [] as AnalyzedPlaylist[],
+        tracks: [] as AnalyzedTrack[]
+      })
     }
 
-    console.log('Playlists with analysis:', playlistsWithAnalysis?.length || 0)
+    console.log('Playlists with analysis:', playlistsWithAnalysis.length)
+
+    // Get playlist details for all playlists with analyses
+    const playlistIds = playlistsWithAnalysis.map(pa => pa.playlist_id)
 
     let playlists: AnalyzedPlaylist[] = []
-    if (playlistsWithAnalysis && playlistsWithAnalysis.length > 0) {
-      const playlistIds = playlistsWithAnalysis.map(pa => pa.playlist_id) || []
 
-      const { data: fetchedPlaylists, error: fetchPlaylistsError } = await getSupabase()
-        .from('playlists')
-        .select('*')
-        .in('id', playlistIds)
+    if (playlistIds.length > 0) {
+      // Use the repository to get playlists
+      const fetchedPlaylists = await playlistRepository.getPlaylistsByIds(playlistIds)
 
-      if (fetchPlaylistsError) {
-        console.error('Error fetching playlists:', fetchPlaylistsError)
-      } else {
-        // Combine playlists with their analyses
-        playlists = (fetchedPlaylists || []).map((playlist: DbPlaylist) => {
-          const analysisRecord = (playlistsWithAnalysis as DbPlaylistAnalysis[]).find(pa => pa.playlist_id === playlist.id)
-          return {
-            ...playlist,
-            description: playlist.description || undefined, // Convert null to undefined to match AnalyzedPlaylist type
-            analysis: analysisRecord?.analysis || null
-          } as AnalyzedPlaylist
-        })
-      }
+      // Combine playlists with their analyses
+      playlists = fetchedPlaylists.map(playlist => {
+        const analysisRecord = playlistsWithAnalysis.find(pa => pa.playlist_id === playlist.id)
+        return {
+          ...playlist,
+          description: playlist.description || undefined, // Convert null to undefined to match AnalyzedPlaylist type
+          analysis: analysisRecord?.analysis || null
+        } as AnalyzedPlaylist
+      })
     }
 
-    // Get all saved tracks for the user, regardless of sorting status
-    // This allows the front-end to filter based on selected tracks in the store
-    const { data: savedTracks, error: savedTracksError } = await getSupabase()
-      .from('saved_tracks')
-      .select('*')
-      .eq('user_id', userId)
+    // Get all saved tracks for the user using the repository
+    const savedTracks = await savedTrackRepository.getSavedTracksByUserId(userId)
 
-    if (savedTracksError) {
-      console.error('Error fetching saved tracks:', savedTracksError)
+    if (!savedTracks || savedTracks.length === 0) {
       return json({ playlists, tracks: [] as AnalyzedTrack[] })
     }
 
-    // Get the track details
-    const trackIds = (savedTracks || []).map(st => st.track_id)
-    let tracks: DbTrack[] = []
+    // Get the track IDs
+    const trackIds = savedTracks.map(st => st.track_id)
 
-    if (trackIds.length > 0) {
-      const { data: trackDetails, error: trackDetailsError } = await getSupabase()
-        .from('tracks')
-        .select('*')
-        .in('id', trackIds)
+    // Get track details using the repository
+    const trackDetails = await trackRepository.getTracksByIds(trackIds)
 
-      if (trackDetailsError) {
-        console.error('Error fetching track details:', trackDetailsError)
-      } else {
-        // Combine tracks with their saved_tracks data
-        tracks = (trackDetails || []).map((track: DbTrack) => {
-          const savedTrack = (savedTracks as DbSavedTrack[])?.find(st => st.track_id === track.id)
-          return {
-            ...track,
-            album: track.album || undefined, // Convert null to undefined to match expected type
-            liked_at: savedTrack?.liked_at || null,
-            track_id: track.id,
-            sorting_status: savedTrack?.sorting_status || 'unsorted'
-          } as unknown as DbTrack // Cast back to DbTrack after modification
-        })
-      }
+    if (!trackDetails || trackDetails.length === 0) {
+      return json({ playlists, tracks: [] as AnalyzedTrack[] })
     }
 
-    // Get the track analyses
+    // Combine tracks with their saved_tracks data
+    const tracksWithSavedInfo = trackDetails.map(track => {
+      const savedTrack = savedTracks.find(st => st.track_id === track.id)
+      return {
+        ...track,
+        album: track.album || undefined, // Convert null to undefined to match expected type
+        liked_at: savedTrack?.liked_at || null,
+        sorting_status: savedTrack?.sorting_status || 'unsorted'
+      }
+    })
+
+    // Get the track analyses using repository
     const trackAnalyses = await trackAnalysisRepository.getAllAnalyses()
 
     // Filter analyses to only include those for our tracks
@@ -128,7 +114,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     )
 
     // Combine tracks with their analyses
-    const tracksWithAnalyses: AnalyzedTrack[] = tracks.map((track: DbTrack) => {
+    const tracksWithAnalyses: AnalyzedTrack[] = tracksWithSavedInfo.map(track => {
       const analysis = relevantAnalyses.find(a => a.track_id === track.id)
       return {
         ...track,

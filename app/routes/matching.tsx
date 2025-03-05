@@ -1,9 +1,7 @@
-import { Link, useLoaderData } from '@remix-run/react'
+import { useLoaderData } from '@remix-run/react'
 import { useState, useEffect } from 'react'
-import { redirect } from '@remix-run/node'
 import type { LoaderFunctionArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { getSupabase } from '~/lib/db/db'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
@@ -17,6 +15,7 @@ import type {
 import { matchSongsToPlaylist } from '../../matching-algorithm/matching-algorithm'
 import { loader } from '~/features/matching/loaders/matching.loader.server'
 import type { AnalyzedTrack, AnalyzedPlaylist } from '~/types/analysis'
+import { LoadingSpinner, ActionButton, Card } from '~/shared/components/ui'
 
 export { loader }
 
@@ -49,7 +48,7 @@ export default function Matching() {
 		} else {
 			setIsLoading(false)
 		}
-	}, [tracks])
+	}, [tracks, sortingStore])
 
 	const startMatching = async (playlist: AnalyzedPlaylist) => {
 		try {
@@ -146,34 +145,28 @@ export default function Matching() {
 		}
 	}
 
-	// If no tracks are selected for sorting, display a message and a link back to the home page
+	// If loading, show spinner
 	if (isLoading) {
 		return (
 			<div className="container mx-auto px-4 py-8">
-				<div className="flex flex-col items-center justify-center min-h-[60vh]">
-					<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-					<p className="text-lg">Loading tracks and playlists...</p>
-				</div>
+				<LoadingSpinner fullHeight text="Loading tracks and playlists..." size="large" />
 			</div>
 		)
 	}
 
+	// If no tracks are selected for sorting, display a message and a link back to the home page
 	if (!hasSelectedTracks) {
 		return (
 			<div className="container mx-auto px-4 py-8">
-				<div className="text-center py-10 bg-white shadow-md rounded-lg">
-					<h1 className="text-2xl font-bold mb-4">No Tracks Selected</h1>
+				<Card title="No Tracks Selected" className="text-center py-4">
 					<p className="text-gray-600 mb-6">
 						No tracks have been selected for sorting. Please go back to the home page and
 						select some tracks by marking them with the "+" icon.
 					</p>
-					<Link
-						to="/"
-						className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-					>
+					<ActionButton to="/" variant="primary">
 						Back to Home
-					</Link>
-				</div>
+					</ActionButton>
+				</Card>
 			</div>
 		)
 	}
@@ -190,33 +183,24 @@ export default function Matching() {
 				</p>
 
 				<div className="flex space-x-4 mb-6">
-					<Link
+					<ActionButton
 						to="/analysis/playlist"
-						className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-3 rounded-full"
-						aria-label="Back to Playlist Analysis"
+						variant="back"
+						size="medium"
+						ariaLabel="Back to Playlist Analysis"
+						isRounded
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							className="h-5 w-5"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-						>
-							<path
-								fillRule="evenodd"
-								d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-								clipRule="evenodd"
-							/>
-						</svg>
-					</Link>
+						Back
+					</ActionButton>
 				</div>
 			</div>
 
 			{playlists.length === 0 || tracks.length === 0 ? (
-				<div className="bg-white shadow-md rounded-lg p-6 text-center">
+				<Card className="text-center">
 					<p className="text-gray-500">
 						Please ensure you have analyzed both playlists and songs before matching.
 					</p>
-				</div>
+				</Card>
 			) : (
 				<div className="space-y-8">
 					{playlists.map(playlist => {
@@ -226,33 +210,24 @@ export default function Matching() {
 						const hasMatches = playlistMatches.length > 0
 
 						return (
-							<div
+							<Card
 								key={playlist.id}
-								className="bg-white shadow-md rounded-lg overflow-hidden"
-							>
-								<div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-									<div>
-										<h2 className="text-xl font-semibold mb-1">{playlist.name}</h2>
-										<p className="text-gray-600 text-sm">
-											{playlist.description || 'No description'}
-										</p>
-									</div>
-
-									{!hasMatches && (
-										<button
+								title={playlist.name}
+								subtitle={playlist.description || 'No description'}
+								actions={
+									!hasMatches && (
+										<ActionButton
 											onClick={() => startMatching(playlist)}
 											disabled={isMatching}
-											className={`px-4 py-2 rounded ${
-												isMatching
-													? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-													: 'bg-blue-600 text-white hover:bg-blue-700'
-											}`}
+											variant="primary"
+											isLoading={isMatching}
 										>
 											{isMatching ? 'Matching...' : 'Start Matching'}
-										</button>
-									)}
-								</div>
-
+										</ActionButton>
+									)
+								}
+								isLoading={isMatching && !hasMatches && !error}
+							>
 								{error && (
 									<div className="px-6 py-2 bg-red-100 border-b border-red-400 text-red-700">
 										{error}
@@ -261,9 +236,9 @@ export default function Matching() {
 
 								{hasMatches ? (
 									<div>
-										<div className="flex justify-between items-center px-6 py-2 bg-gray-50 border-b border-gray-200">
+										<div className="flex justify-between items-center mb-4">
 											<h3 className="font-medium">Top Matching Songs</h3>
-											<button
+											<ActionButton
 												onClick={() => {
 													// Remove the matches for this playlist
 													setMatchResults(prev => {
@@ -272,10 +247,11 @@ export default function Matching() {
 														return newResults
 													})
 												}}
-												className="text-sm text-red-600 hover:text-red-800"
+												variant="secondary"
+												size="small"
 											>
 												Clear Results
-											</button>
+											</ActionButton>
 										</div>
 										<table className="min-w-full divide-y divide-gray-200">
 											<thead className="bg-gray-50">
@@ -336,53 +312,30 @@ export default function Matching() {
 															</div>
 														</td>
 														<td className="px-6 py-4 whitespace-nowrap">
-															<button
+															<ActionButton
 																onClick={() =>
 																	alert(JSON.stringify(match.component_scores, null, 2))
 																}
-																className="text-xs text-blue-600 hover:underline"
+																variant="secondary"
+																size="small"
 															>
 																View Details
-															</button>
+															</ActionButton>
 														</td>
 													</tr>
 												))}
 											</tbody>
 										</table>
 									</div>
-								) : isMatching ? (
-									<div className="px-6 py-12 text-center">
-										<svg
-											className="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4"
-											xmlns="http://www.w3.org/2000/svg"
-											fill="none"
-											viewBox="0 0 24 24"
-										>
-											<circle
-												className="opacity-25"
-												cx="12"
-												cy="12"
-												r="10"
-												stroke="currentColor"
-												strokeWidth="4"
-											></circle>
-											<path
-												className="opacity-75"
-												fill="currentColor"
-												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-											></path>
-										</svg>
-										<p className="text-gray-500">Matching songs to this playlist...</p>
-									</div>
-								) : (
-									<div className="px-6 py-12 text-center">
+								) : !isMatching && !error ? (
+									<div className="text-center py-6">
 										<p className="text-gray-500">
 											Click the "Start Matching" button to find the best matches for this
 											playlist.
 										</p>
 									</div>
-								)}
-							</div>
+								) : null}
+							</Card>
 						)
 					})}
 				</div>

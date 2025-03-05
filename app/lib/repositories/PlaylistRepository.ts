@@ -14,7 +14,7 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
     if (error) throw error
     return data || []
   }
-  
+
   async getFlaggedPlaylists(userId: number): Promise<Playlist[]> {
     const { data, error } = await getSupabase()
       .from('playlists')
@@ -144,10 +144,10 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
 
     if (deletePlaylistsError) throw deletePlaylistsError
   }
-  
+
   async getPlaylistsByIds(playlistIds: number[]): Promise<Playlist[]> {
     if (!playlistIds.length) return []
-    
+
     const { data, error } = await getSupabase()
       .from('playlists')
       .select('*')
@@ -156,6 +156,22 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
 
     if (error) throw error
     return data || []
+  }
+
+  async getPlaylistById(playlistId: number): Promise<Playlist | null> {
+    const { data, error } = await getSupabase()
+      .from('playlists')
+      .select('*')
+      .eq('id', playlistId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') { // The error code for no rows returned
+        return null
+      }
+      throw error
+    }
+    return data
   }
 }
 
