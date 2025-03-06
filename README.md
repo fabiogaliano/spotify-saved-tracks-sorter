@@ -9,32 +9,34 @@ An application for automatically sorting your Spotify liked songs into playlists
 - Analyze your music for sorting
 - Automatically sort songs into playlists
 - Match songs with similar tracks
-
-## Application Architecture
-
-This application follows a feature-first architecture for better maintainability and scalability:
+- Securely manage AI provider API keys
 
 ### Directory Structure
 
-- `app/`
-  - `features/` - Feature-focused modules
-    - `auth/` - Authentication functionality
-    - `tracks/` - Track management
-    - `playlists/` - Playlist functionality
-    - `analysis/` - Music analysis
-    - `matching/` - Track matching
-  - `shared/` - Shared components and utilities
-    - `components/` - Reusable UI components
-    - `hooks/` - Custom React hooks
-    - `utils/` - Utility functions
-  - `lib/` - Core infrastructure
-    - `api/` - API clients
-    - `db/` - Database access
-    - `models/` - Domain models
-    - `repositories/` - Data access layer
-    - `services/` - Application services
-    - `stores/` - State management
-  - `routes/` - Remix routes
+```
+app/
+├── features/            # Feature modules
+│   ├── auth/            # Authentication
+│   ├── tracks/          # Track management
+│   ├── playlists/       # Playlist functionality
+│   ├── analysis/        # Music analysis
+│   └── matching/        # Track matching
+├── shared/              # Shared components and utilities
+│   ├── components/      # Reusable UI components
+│   ├── layouts/         # Layout components
+│   ├── hooks/           # Custom React hooks
+│   └── utils/           # Utility functions
+├── lib/                 # Core infrastructure
+│   ├── api/             # API clients
+│   ├── db/              # Database access
+│   ├── models/          # Domain models
+│   ├── repositories/    # Data access
+│   ├── services/        # Application services
+│   └── stores/          # State management
+├── routes/              # Hierarchical routes
+│   └── auth/            # Auth routes
+└── types/               # TypeScript types
+```
 
 ## Technology Stack
 
@@ -45,25 +47,22 @@ This application follows a feature-first architecture for better maintainability
 - [Supabase](https://supabase.io/) - Backend as a Service
 - [Spotify Web API](https://developer.spotify.com/documentation/web-api/) - Spotify API
 - [Zustand](https://github.com/pmndrs/zustand) - State management
+- [Node.js Crypto](https://nodejs.org/api/crypto.html) - For secure encryption
 
 ## Development
 
 ### Prerequisites
 
 - Node.js 20+
-- pnpm
+- bun
 - Spotify Developer Account
 
 ### Setup
 
 1. Clone the repository
 2. Copy `.env.example` to `.env` and fill in required values
-3. Install dependencies: `pnpm install`
-4. Start the development server: `pnpm dev`
-
-### Additional Resources
-
-See the [REFACTORING.md](./REFACTORING.md) document for information on the recent code reorganization.
+3. Install dependencies: `bun install`
+4. Start the development server: `bun run dev`
 
 # Welcome to Remix!
 
@@ -74,7 +73,7 @@ See the [REFACTORING.md](./REFACTORING.md) document for information on the recen
 Run the dev server:
 
 ```shellscript
-npm run dev
+bun run dev
 ```
 
 ## Deployment
@@ -82,13 +81,13 @@ npm run dev
 First, build your app for production:
 
 ```sh
-npm run build
+bun run build
 ```
 
 Then run the app in production mode:
 
 ```sh
-npm start
+bun run start
 ```
 
 Now you'll need to pick a host to deploy it to.
