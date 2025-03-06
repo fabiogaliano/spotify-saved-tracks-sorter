@@ -39,7 +39,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         }
         
         // Get provider statuses - use the user ID from the session
+        // The statuses now already include the active provider information
         const providerStatuses = await providerKeyService.getProviderStatuses(session.user.id)
+        
         return json({ providerStatuses })
       } catch (error) {
         console.error('Error fetching provider statuses:', error)
@@ -111,6 +113,28 @@ export async function action({ request }: ActionFunctionArgs) {
         // This would call the validation logic
         // For now, we'll just return success
         return json({ success: true, message: `${provider} API key is valid` })
+      }
+      
+      case 'setActiveProvider': {
+        try {
+          // Check if the provider has a key before setting it as active
+          const hasKey = await providerKeyService.hasProviderKey(userId, provider)
+          if (!hasKey) {
+            return json({ 
+              error: `Cannot set ${provider} as active because it doesn't have an API key` 
+            }, { status: 400 })
+          }
+          
+          // Set the provider as active
+          await providerKeyService.setActiveProvider(userId, provider)
+          return json({ success: true, message: `${provider} set as active provider` })
+        } catch (error) {
+          console.error(`Error setting ${provider} as active:`, error)
+          return json({ 
+            error: `Failed to set ${provider} as active provider`, 
+            details: error instanceof Error ? error.message : 'Unknown error' 
+          }, { status: 500 })
+        }
       }
       
       default:

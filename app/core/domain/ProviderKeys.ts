@@ -26,10 +26,19 @@ export interface ProviderKeyUpdate {
   updated_at?: string
 }
 
+export interface UserProviderPreference {
+  // user_id is the Spotify user ID (string)
+  user_id: string
+  active_provider: string
+  updated_at: string
+}
+
 export interface ProviderKeysRepository {
   getByUserId(userId: string): Promise<ProviderKey[]>
   getByUserIdAndProvider(userId: string, provider: string): Promise<ProviderKey | null>
   insertKey(key: ProviderKeyInsert): Promise<ProviderKey>
   updateKey(id: number, key: ProviderKeyUpdate): Promise<ProviderKey>
   deleteKey(id: number): Promise<void>
+  getUserProviderPreference(userId: string): Promise<UserProviderPreference | null>
+  setActiveProvider(userId: string, provider: string): Promise<void>
 }

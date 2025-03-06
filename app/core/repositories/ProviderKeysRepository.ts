@@ -1,24 +1,24 @@
 import { getSupabase } from '~/core/db/db'
-import type { ProviderKey, ProviderKeyInsert, ProviderKeyUpdate, ProviderKeysRepository } from '../domain/ProviderKeys'
+import type { ProviderKey, ProviderKeyInsert, ProviderKeyUpdate, ProviderKeysRepository, UserProviderPreference } from '../domain/ProviderKeys'
 
 class SupabaseProviderKeysRepository implements ProviderKeysRepository {
   async getByUserId(userId: string): Promise<ProviderKey[]> {
-    // Cast user_id to text to handle non-UUID user IDs
+    // Using Spotify user ID (string)
     const { data, error } = await getSupabase()
       .from('provider_keys')
       .select('*')
-      .filter('user_id::text', 'eq', userId)
+      .eq('user_id', userId)
 
     if (error) throw error
     return data || []
   }
 
   async getByUserIdAndProvider(userId: string, provider: string): Promise<ProviderKey | null> {
-    // Cast user_id to text to handle non-UUID user IDs
+    // Using Spotify user ID (string)
     const { data, error } = await getSupabase()
       .from('provider_keys')
       .select('*')
-      .filter('user_id::text', 'eq', userId)
+      .eq('user_id', userId)
       .eq('provider', provider)
       .maybeSingle()
 
@@ -65,6 +65,48 @@ class SupabaseProviderKeysRepository implements ProviderKeysRepository {
       .eq('id', id)
 
     if (error) throw error
+  }
+
+  // User provider preferences methods
+  async getUserProviderPreference(userId: string): Promise<UserProviderPreference | null> {
+    // Using standard text comparison for user_id
+    const { data, error } = await getSupabase()
+      .from('user_provider_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
+  }
+
+  async setActiveProvider(userId: string, provider: string): Promise<void> {
+    // Check if preference already exists
+    const existing = await this.getUserProviderPreference(userId)
+
+    if (existing) {
+      // Update existing preference
+      const { error } = await getSupabase()
+        .from('user_provider_preferences')
+        .update({
+          active_provider: provider,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+
+      if (error) throw error
+    } else {
+      // Insert new preference
+      const { error } = await getSupabase()
+        .from('user_provider_preferences')
+        .insert({
+          user_id: userId,
+          active_provider: provider,
+          updated_at: new Date().toISOString()
+        })
+
+      if (error) throw error
+    }
   }
 }
 

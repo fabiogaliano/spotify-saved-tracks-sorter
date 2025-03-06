@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Form, useActionData, useNavigation, useSubmit } from '@remix-run/react'
 import type { ProviderKey } from '~/core/domain/ProviderKeys'
+import { Notification, type NotificationType } from '~/components/common/Notification'
 
 type ProviderStatus = {
   provider: string
   hasKey: boolean
+  isActive?: boolean
 }
 
 type ProviderKeysManagerProps = {
@@ -67,7 +69,6 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
   }
 
   // Handle form submission
-  const [saveStatus, setSaveStatus] = useState<{ message: string; isError: boolean } | null>(null)
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -80,7 +81,7 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
     formData.append('apiKey', apiKey)
     
     try {
-      setSaveStatus({ message: `Saving ${getProviderDisplayName(activeProvider)} API key...`, isError: false })
+      setNotification({ type: 'info', message: `Saving ${getProviderDisplayName(activeProvider)} API key...` })
       
       const response = await fetch('/api/llm-provider', {
         method: 'POST',
@@ -90,24 +91,63 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
       const data = await response.json()
       
       if (response.ok) {
-        setSaveStatus({ 
-          message: data.message || `${getProviderDisplayName(activeProvider)} API key saved successfully`, 
-          isError: false 
+        setNotification({ 
+          type: 'success',
+          message: data.message || `${getProviderDisplayName(activeProvider)} API key saved successfully`
         })
         // Refresh the page to show updated provider statuses after a short delay
         setTimeout(() => window.location.reload(), 1500)
       } else {
         console.error('Error saving API key:', data)
-        setSaveStatus({ 
-          message: data.details || data.error || 'Failed to save API key', 
-          isError: true 
+        setNotification({ 
+          type: 'error',
+          message: data.details || data.error || 'Failed to save API key'
         })
       }
     } catch (error) {
       console.error('Error saving API key:', error)
-      setSaveStatus({ 
-        message: `Failed to save ${getProviderDisplayName(activeProvider)} API key`, 
-        isError: true 
+      setNotification({ 
+        type: 'error',
+        message: `Failed to save ${getProviderDisplayName(activeProvider)} API key`
+      })
+    }
+  }
+
+  // Handle setting active provider
+  const handleSetActiveProvider = async (provider: string) => {
+    const formData = new FormData()
+    formData.append('action', 'setActiveProvider')
+    formData.append('provider', provider)
+    
+    try {
+      setNotification({ type: 'info', message: `Setting ${getProviderDisplayName(provider)} as active...` })
+      
+      const response = await fetch('/api/llm-provider', {
+        method: 'POST',
+        body: formData
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        setNotification({ 
+          type: 'success',
+          message: data.message || `${getProviderDisplayName(provider)} set as active provider`
+        })
+        // Refresh the page to show updated provider statuses after a short delay
+        setTimeout(() => window.location.reload(), 1500)
+      } else {
+        console.error('Error setting active provider:', data)
+        setNotification({ 
+          type: 'error',
+          message: data.details || data.error || 'Failed to set active provider'
+        })
+      }
+    } catch (error) {
+      console.error('Error setting active provider:', error)
+      setNotification({ 
+        type: 'error',
+        message: `Failed to set ${getProviderDisplayName(provider)} as active provider`
       })
     }
   }
@@ -123,7 +163,7 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
     formData.append('provider', provider)
     
     try {
-      setSaveStatus({ message: `Removing ${getProviderDisplayName(provider)} API key...`, isError: false })
+      setNotification({ type: 'info', message: `Removing ${getProviderDisplayName(provider)} API key...` })
       
       const response = await fetch('/api/llm-provider', {
         method: 'POST',
@@ -133,24 +173,24 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
       const data = await response.json()
       
       if (response.ok) {
-        setSaveStatus({ 
-          message: data.message || `${getProviderDisplayName(provider)} API key removed successfully`, 
-          isError: false 
+        setNotification({ 
+          type: 'success',
+          message: data.message || `${getProviderDisplayName(provider)} API key removed successfully`
         })
         // Refresh the page to show updated provider statuses after a short delay
         setTimeout(() => window.location.reload(), 1500)
       } else {
         console.error('Error removing API key:', data)
-        setSaveStatus({ 
-          message: data.details || data.error || 'Failed to remove API key', 
-          isError: true 
+        setNotification({ 
+          type: 'error',
+          message: data.details || data.error || 'Failed to remove API key'
         })
       }
     } catch (error) {
       console.error('Error removing API key:', error)
-      setSaveStatus({ 
-        message: `Failed to remove ${getProviderDisplayName(provider)} API key`, 
-        isError: true 
+      setNotification({ 
+        type: 'error',
+        message: `Failed to remove ${getProviderDisplayName(provider)} API key`
       })
     }
   }
@@ -174,161 +214,185 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
     }
   }
 
+  // Notification state
+  const [notification, setNotification] = useState<{
+    type: NotificationType;
+    message: string;
+  } | null>(null);
+
   return (
     <div className="space-y-6">
+      {/* Notification */}
+      {notification && (
+        <div className="mb-4">
+          <Notification
+            type={notification.type}
+            message={notification.message}
+            onClose={() => setNotification(null)}
+          />
+        </div>
+      )}
+
       <div className="flex flex-col gap-4">
         <h3 className="text-sm font-medium">API Keys</h3>
         <p className="text-xs text-gray-600">
           Add your own API keys for language models to use in the application.
         </p>
         
-        {/* Provider cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+        {/* Provider cards - vertical layout */}
+        <div className="flex flex-col gap-4 mt-2">
           {providerStatuses.map((status) => (
-            <div 
-              key={status.provider}
-              className={`
-                flex flex-col p-4 rounded-xl border transition-all
-                ${status.hasKey 
-                  ? 'bg-blue-50/50 border-blue-200' 
-                  : 'bg-gray-50 border-gray-200 hover:border-gray-300'}
-                ${activeProvider === status.provider ? 'ring-2 ring-blue-400' : ''}
-                cursor-pointer
-              `}
-              onClick={() => setActiveProvider(status.provider)}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className={`text-${status.hasKey ? 'blue' : 'gray'}-600`}>
-                    {getProviderIcon(status.provider)}
+            <div key={status.provider} className="flex flex-col">
+              {/* Provider header */}
+              <div 
+                className={`
+                  p-3 rounded-t-xl border transition-all
+                  ${status.hasKey 
+                    ? 'bg-blue-50/50 border-blue-200' 
+                    : 'bg-gray-50 border-gray-200 hover:border-gray-300'}
+                  ${activeProvider === status.provider ? 
+                    'ring-2 ring-blue-400 border-b-0 rounded-b-none' : 
+                    'rounded-xl'}
+                  cursor-pointer
+                `}
+                onClick={() => setActiveProvider(activeProvider === status.provider ? null : status.provider)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`text-${status.hasKey ? 'blue' : 'gray'}-600`}>
+                      {getProviderIcon(status.provider)}
+                    </div>
+                    <span className="font-medium text-sm">
+                      {getProviderDisplayName(status.provider)}
+                    </span>
                   </div>
-                  <span className="font-medium text-sm">
-                    {getProviderDisplayName(status.provider)}
-                  </span>
+                  {status.hasKey && (
+                    <div className="flex items-center gap-2">
+                      {status.isActive ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                          Active
+                        </span>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSetActiveProvider(status.provider);
+                          }}
+                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200"
+                        >
+                          Set Active
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {status.hasKey && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                    Active
-                  </span>
-                )}
               </div>
               
-              {status.hasKey ? (
-                <div className="mt-auto pt-2 flex justify-end">
-                  <button
-                    type="button"
-                    className="text-xs text-rose-600 hover:text-rose-800 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteKey(status.provider)
-                    }}
-                  >
-                    Remove Key
-                  </button>
-                </div>
-              ) : (
-                <div className="mt-auto pt-2">
-                  <span className="text-xs text-gray-500">
-                    No key configured
-                  </span>
+              {/* API Key Form - appears directly under the provider when active */}
+              {activeProvider === status.provider && (
+                <div className="p-4 border border-t-0 border-gray-200 bg-white rounded-b-xl">
+                  <Form method="post" onSubmit={async (e) => {
+                    e.preventDefault();
+                    
+                    if (!activeProvider || !apiKey.trim()) return;
+                    
+                    // Validate key before saving
+                    setNotification({ type: 'info', message: `Validating ${getProviderDisplayName(activeProvider)} API key...` });
+                    
+                    try {
+                      const isValid = await validateApiKey(activeProvider, apiKey);
+                      
+                      if (isValid) {
+                        // If valid, proceed with saving
+                        handleSubmit(e);
+                      } else {
+                        setNotification({ 
+                          type: 'error', 
+                          message: `Invalid ${getProviderDisplayName(activeProvider)} API key. Please check your key and try again.` 
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Error validating API key:', error);
+                      setNotification({ 
+                        type: 'error', 
+                        message: `Error validating ${getProviderDisplayName(activeProvider)} API key` 
+                      });
+                    }
+                  }}>
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="apiKey" className="block text-xs font-medium text-gray-700 mb-1">
+                          API Key
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showApiKey ? 'text' : 'password'}
+                            id="apiKey"
+                            name="apiKey"
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            placeholder={`Enter your ${getProviderDisplayName(activeProvider)} API key`}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                          >
+                            {showApiKey ? (
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                              </svg>
+                            ) : (
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Your API key is encrypted before being stored and never shared.
+                        </p>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        {status.hasKey && (
+                          <button
+                            type="button"
+                            className="text-xs text-rose-600 hover:text-rose-800 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteKey(status.provider);
+                            }}
+                          >
+                            Remove Key
+                          </button>
+                        )}
+                        <div className={status.hasKey ? '' : 'ml-auto'}>
+                          <button
+                            type="submit"
+                            disabled={navigation.state === 'submitting' || !apiKey.trim()}
+                            className={`
+                              inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
+                              text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                              ${(navigation.state === 'submitting' || !apiKey.trim()) ? 'opacity-75 cursor-not-allowed' : ''}
+                            `}
+                          >
+                            {navigation.state === 'submitting' ? 'Saving...' : 'Save API Key'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Form>
                 </div>
               )}
             </div>
           ))}
         </div>
       </div>
-
-      {/* API Key Form */}
-      {activeProvider && (
-        <div className="mt-6 p-4 border border-gray-200 rounded-xl bg-white">
-          <h4 className="text-sm font-medium mb-4">
-            Configure {getProviderDisplayName(activeProvider)} API Key
-          </h4>
-          
-          <Form method="post" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="apiKey" className="block text-xs font-medium text-gray-700 mb-1">
-                  API Key
-                </label>
-                <div className="relative">
-                  <input
-                    type={showApiKey ? 'text' : 'password'}
-                    id="apiKey"
-                    name="apiKey"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder={`Enter your ${getProviderDisplayName(activeProvider)} API key`}
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                  >
-                    {showApiKey ? (
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                      </svg>
-                    ) : (
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  Your API key is encrypted before being stored and never shared.
-                </p>
-              </div>
-              
-              {saveStatus && (
-                <div className={`mt-2 p-2 text-sm rounded ${saveStatus.isError ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'}`}>
-                  {saveStatus.message}
-                </div>
-              )}
-              
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (activeProvider && apiKey.trim()) {
-                      const isValid = await validateApiKey(activeProvider, apiKey);
-                      if (isValid) {
-                        alert('API key is valid!');
-                      } else {
-                        alert('API key validation failed. Please check your key and try again.');
-                      }
-                    }
-                  }}
-                  disabled={navigation.state === 'submitting' || !apiKey.trim()}
-                  className={`
-                    inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm
-                    text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                    ${(navigation.state === 'submitting' || !apiKey.trim()) ? 'opacity-75 cursor-not-allowed' : ''}
-                  `}
-                >
-                  Validate Key
-                </button>
-                
-                <button
-                  type="submit"
-                  disabled={navigation.state === 'submitting' || !apiKey.trim()}
-                  className={`
-                    inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
-                    text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                    ${(navigation.state === 'submitting' || !apiKey.trim()) ? 'opacity-75 cursor-not-allowed' : ''}
-                  `}
-                >
-                  {navigation.state === 'submitting' ? 'Saving...' : 'Save API Key'}
-                </button>
-              </div>
-            </div>
-          </Form>
-        </div>
-      )}
     </div>
   )
 }

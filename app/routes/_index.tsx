@@ -26,8 +26,6 @@ export default function Index() {
 		'unsorted'
 	)
 
-	console.log(user)
-
 	// Initialize responsive display settings
 	const { showAlbum, showAddedDate, setShowAlbum, setShowAddedDate } =
 		useResponsiveDisplay()
