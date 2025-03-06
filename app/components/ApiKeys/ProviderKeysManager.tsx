@@ -54,19 +54,19 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
       case 'openai':
         return (
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.5091-2.6067-1.4997z" fill="currentColor"/>
+            <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.5091-2.6067-1.4997z" fill="currentColor" />
           </svg>
         )
       case 'anthropic':
         return (
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM15.88 8.29L10.29 13.88C10.2 13.97 10.1 14 10 14C9.9 14 9.8 13.97 9.71 13.88L8.12 12.29C7.93 12.1 7.93 11.79 8.12 11.6C8.31 11.41 8.62 11.41 8.81 11.6L10 12.79L15.19 7.6C15.38 7.41 15.69 7.41 15.88 7.6C16.07 7.79 16.07 8.1 15.88 8.29Z" fill="currentColor"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM15.88 8.29L10.29 13.88C10.2 13.97 10.1 14 10 14C9.9 14 9.8 13.97 9.71 13.88L8.12 12.29C7.93 12.1 7.93 11.79 8.12 11.6C8.31 11.41 8.62 11.41 8.81 11.6L10 12.79L15.19 7.6C15.38 7.41 15.69 7.41 15.88 7.6C16.07 7.79 16.07 8.1 15.88 8.29Z" fill="currentColor" />
           </svg>
         )
       case 'google':
         return (
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM11 7H13V9H11V7ZM11 11H13V17H11V11Z" fill="currentColor"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM11 7H13V9H11V7ZM11 11H13V17H11V11Z" fill="currentColor" />
           </svg>
         )
       default:
@@ -75,27 +75,27 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
   }
 
   // Handle form submission
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!activeProvider || !apiKey.trim()) return
-    
+
     const formData = new FormData()
     formData.append('action', 'saveKey')
     formData.append('provider', activeProvider)
     formData.append('apiKey', apiKey)
-    
+
     try {
-      setNotification({ type: 'info', message: `Saving ${getProviderDisplayName(activeProvider)} API key...` })
-      
+      setLoading('saving')
+
       const response = await fetch('/api/llm-provider', {
         method: 'POST',
         body: formData
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         // Update local state to reflect the saved API key
         setLocalProviderStatuses(prevStatuses => {
@@ -106,24 +106,60 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
             return status
           })
         })
+
+        setLoading(null); // Reset loading state
+
+        // Check if this is the first API key being added
+        const hasAnyActiveProvider = localProviderStatuses.some(s => s.isActive);
+        const isFirstKey = !localProviderStatuses.some(s => s.hasKey && s.provider !== activeProvider);
         
-        setNotification({ 
-          type: 'success',
-          message: data.message || `${getProviderDisplayName(activeProvider)} API key saved successfully`
-        })
-        
+        // If this is the first key or there's no active provider, automatically set it as active
+        if (!hasAnyActiveProvider || isFirstKey) {
+          // Set as active in local state immediately
+          setLocalProviderStatuses(prevStatuses => {
+            return prevStatuses.map(status => ({
+              ...status,
+              isActive: status.provider === activeProvider
+            }))
+          });
+          
+          // Also update in the backend
+          const activeFormData = new FormData();
+          activeFormData.append('action', 'setActiveProvider');
+          activeFormData.append('provider', activeProvider);
+          
+          fetch('/api/llm-provider', {
+            method: 'POST',
+            body: activeFormData
+          }).catch(error => {
+            console.error('Error setting new key as active provider:', error);
+          });
+          
+          setNotification({
+            type: 'success',
+            message: `${getProviderDisplayName(activeProvider)} API key saved and set as active`
+          });
+        } else {
+          setNotification({
+            type: 'success',
+            message: data.message || `${getProviderDisplayName(activeProvider)} API key saved successfully`
+          });
+        }
+
         // Close the form after successful save
         setActiveProvider(null)
       } else {
         console.error('Error saving API key:', data)
-        setNotification({ 
+        setLoading(null); // Reset loading state
+        setNotification({
           type: 'error',
           message: data.details || data.error || 'Failed to save API key'
         })
       }
     } catch (error) {
       console.error('Error saving API key:', error)
-      setNotification({ 
+      setLoading(null); // Reset loading state
+      setNotification({
         type: 'error',
         message: `Failed to save ${getProviderDisplayName(activeProvider)} API key`
       })
@@ -135,17 +171,17 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
     const formData = new FormData()
     formData.append('action', 'setActiveProvider')
     formData.append('provider', provider)
-    
+
     try {
-      setNotification({ type: 'info', message: `Setting ${getProviderDisplayName(provider)} as active...` })
-      
+      setLoading('setting')
+
       const response = await fetch('/api/llm-provider', {
         method: 'POST',
         body: formData
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         // Update local state to reflect the new active provider
         setLocalProviderStatuses(prevStatuses => {
@@ -154,21 +190,24 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
             isActive: status.provider === provider
           }))
         })
-        
-        setNotification({ 
+
+        setLoading(null); // Reset loading state
+        setNotification({
           type: 'success',
           message: data.message || `${getProviderDisplayName(provider)} set as active provider`
         })
       } else {
         console.error('Error setting active provider:', data)
-        setNotification({ 
+        setLoading(null); // Reset loading state
+        setNotification({
           type: 'error',
           message: data.details || data.error || 'Failed to set active provider'
         })
       }
     } catch (error) {
       console.error('Error setting active provider:', error)
-      setNotification({ 
+      setLoading(null); // Reset loading state
+      setNotification({
         type: 'error',
         message: `Failed to set ${getProviderDisplayName(provider)} as active provider`
       })
@@ -180,25 +219,25 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
     if (!confirm(`Are you sure you want to remove the ${getProviderDisplayName(provider)} API key?`)) {
       return
     }
-    
+
     const formData = new FormData()
     formData.append('action', 'deleteKey')
     formData.append('provider', provider)
-    
+
     try {
-      setNotification({ type: 'info', message: `Removing ${getProviderDisplayName(provider)} API key...` })
-      
+      setLoading('removing')
+
       const response = await fetch('/api/llm-provider', {
         method: 'POST',
         body: formData
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         // Check if the deleted provider was active
         const wasActive = localProviderStatuses.find(s => s.provider === provider)?.isActive;
-        
+
         // Update local state to reflect the removed API key
         setLocalProviderStatuses(prevStatuses => {
           const updatedStatuses = prevStatuses.map(status => {
@@ -207,7 +246,7 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
             }
             return status;
           });
-          
+
           // If the deleted provider was active, find another provider with a key to set as active
           if (wasActive) {
             const remainingWithKey = updatedStatuses.find(s => s.hasKey && s.provider !== provider);
@@ -219,10 +258,11 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
               }));
             }
           }
-          
+
           return updatedStatuses;
         });
-        
+
+        setLoading(null); // Reset loading state
         // If the deleted provider was active, automatically set the remaining provider as active in the backend
         if (wasActive) {
           const remainingWithKey = localProviderStatuses.find(s => s.hasKey && s.provider !== provider);
@@ -232,7 +272,7 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
             const formData = new FormData();
             formData.append('action', 'setActiveProvider');
             formData.append('provider', newActiveProvider);
-            
+
             fetch('/api/llm-provider', {
               method: 'POST',
               body: formData
@@ -260,21 +300,23 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
             message: data.message || `${getProviderDisplayName(provider)} API key removed successfully`
           });
         }
-        
+
         // Close the form if the deleted provider was active
         if (activeProvider === provider) {
           setActiveProvider(null);
         }
       } else {
         console.error('Error removing API key:', data)
-        setNotification({ 
+        setLoading(null); // Reset loading state
+        setNotification({
           type: 'error',
           message: data.details || data.error || 'Failed to remove API key'
         })
       }
     } catch (error) {
       console.error('Error removing API key:', error)
-      setNotification({ 
+      setLoading(null); // Reset loading state
+      setNotification({
         type: 'error',
         message: `Failed to remove ${getProviderDisplayName(provider)} API key`
       })
@@ -286,7 +328,7 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
     const formData = new FormData()
     formData.append('provider', provider)
     formData.append('apiKey', key)
-    
+
     try {
       const response = await fetch('/api/provider-keys/validate', {
         method: 'POST',
@@ -306,39 +348,41 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
     message: string;
   } | null>(null);
 
+  // Loading state
+  const [loading, setLoading] = useState<string | null>(null);
+
   return (
     <div className="space-y-6">
-      {/* Notification */}
-      {notification && (
-        <div className="mb-4">
-          <Notification
-            type={notification.type}
-            message={notification.message}
-            onClose={() => setNotification(null)}
-          />
-        </div>
-      )}
 
       <div className="flex flex-col gap-4">
         <h3 className="text-sm font-medium">API Keys</h3>
         <p className="text-xs text-gray-600">
           Add your own API keys for language models to use in the application.
         </p>
-        
+        {notification && (
+          <div className="mt-2">
+            <Notification
+              type={notification.type}
+              message={notification.message}
+              onClose={() => setNotification(null)}
+            />
+          </div>
+        )}
+
         {/* Provider cards - vertical layout */}
         <div className="flex flex-col gap-4 mt-2">
           {localProviderStatuses.map((status) => (
             <div key={status.provider} className="flex flex-col">
               {/* Provider header */}
-              <div 
+              <div
                 className={`
-                  p-3 rounded-t-xl border transition-all
-                  ${status.hasKey 
-                    ? 'bg-blue-50/50 border-blue-200' 
+                  p-3 transition-all border
+                  ${status.hasKey
+                    ? 'bg-blue-50/50 border-blue-200'
                     : 'bg-gray-50 border-gray-200 hover:border-gray-300'}
-                  ${activeProvider === status.provider ? 
-                    'ring-2 ring-blue-400 border-b-0 rounded-b-none' : 
-                    'rounded-xl'}
+                  ${activeProvider === status.provider
+                    ? 'rounded-t-xl'
+                    : 'rounded-xl'}
                   cursor-pointer
                 `}
                 onClick={() => setActiveProvider(activeProvider === status.provider ? null : status.provider)}
@@ -359,50 +403,61 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
                           Active
                         </span>
                       ) : (
-                        <button 
+                        <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSetActiveProvider(status.provider);
                           }}
-                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200"
+                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100"
+                          disabled={loading !== null}
                         >
-                          Set Active
+                          {loading === 'setting' && status.provider === activeProvider ? (
+                            <span className="flex items-center">
+                              <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Setting...
+                            </span>
+                          ) : 'Set Active'}
                         </button>
                       )}
                     </div>
                   )}
                 </div>
               </div>
-              
+
               {/* API Key Form - appears directly under the provider when active */}
               {activeProvider === status.provider && (
-                <div className="p-4 border border-t-0 border-gray-200 bg-white rounded-b-xl">
+                <div className="p-4 border border-blue-200 border-t-0 bg-white rounded-b-xl">
                   <Form method="post" onSubmit={async (e) => {
                     e.preventDefault();
-                    
+
                     if (!activeProvider || !apiKey.trim()) return;
-                    
+
                     // Validate key before saving
-                    setNotification({ type: 'info', message: `Validating ${getProviderDisplayName(activeProvider)} API key...` });
-                    
+                    setLoading('validating');
+
                     try {
                       const isValid = await validateApiKey(activeProvider, apiKey);
-                      
+
                       if (isValid) {
                         // If valid, proceed with saving
                         handleSubmit(e);
                       } else {
-                        setNotification({ 
-                          type: 'error', 
-                          message: `Invalid ${getProviderDisplayName(activeProvider)} API key. Please check your key and try again.` 
+                        setLoading(null); // Reset loading state
+                        setNotification({
+                          type: 'error',
+                          message: `Invalid ${getProviderDisplayName(activeProvider)} API key. Please check your key and try again.`
                         });
                       }
                     } catch (error) {
                       console.error('Error validating API key:', error);
-                      setNotification({ 
-                        type: 'error', 
-                        message: `Error validating ${getProviderDisplayName(activeProvider)} API key` 
+                      setLoading(null); // Reset loading state
+                      setNotification({
+                        type: 'error',
+                        message: `Error validating ${getProviderDisplayName(activeProvider)} API key`
                       });
                     }
                   }}>
@@ -443,18 +498,27 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
                           Your API key is encrypted before being stored and never shared.
                         </p>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         {status.hasKey && (
                           <button
                             type="button"
-                            className="text-xs text-rose-600 hover:text-rose-800 transition-colors"
+                            className="text-xs text-rose-600 hover:text-rose-800 transition-colors inline-flex items-center"
+                            disabled={loading !== null}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteKey(status.provider);
                             }}
                           >
-                            Remove Key
+                            {loading === 'removing' && status.provider === activeProvider ? (
+                              <span className="flex items-center">
+                                <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-rose-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Removing...
+                              </span>
+                            ) : 'Remove Key'}
                           </button>
                         )}
                         <div className={status.hasKey ? '' : 'ml-auto'}>
@@ -464,10 +528,18 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
                             className={`
                               inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
                               text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                              ${(navigation.state === 'submitting' || !apiKey.trim()) ? 'opacity-75 cursor-not-allowed' : ''}
+                              ${(navigation.state === 'submitting' || !apiKey.trim() || loading !== null) ? 'opacity-75 cursor-not-allowed' : ''}
                             `}
                           >
-                            {navigation.state === 'submitting' ? 'Saving...' : 'Save API Key'}
+                            {navigation.state === 'submitting' || loading === 'saving' || loading === 'validating' ? (
+                              <span className="flex items-center">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {loading === 'validating' ? 'Validating...' : 'Saving...'}
+                              </span>
+                            ) : 'Save API Key'}
                           </button>
                         </div>
                       </div>
