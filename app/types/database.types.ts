@@ -194,6 +194,39 @@ export type Database = {
           },
         ]
       }
+      provider_keys: {
+        Row: {
+          auth_tag: string
+          created_at: string
+          encrypted_key: string
+          id: number
+          iv: string
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth_tag?: string
+          created_at?: string
+          encrypted_key: string
+          id?: number
+          iv: string
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth_tag?: string
+          created_at?: string
+          encrypted_key?: string
+          id?: number
+          iv?: string
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_tracks: {
         Row: {
           id: number
@@ -343,6 +376,24 @@ export type Database = {
           id?: number
           name?: string
           spotify_track_id?: string
+        }
+        Relationships: []
+      }
+      user_provider_preferences: {
+        Row: {
+          active_provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_provider?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

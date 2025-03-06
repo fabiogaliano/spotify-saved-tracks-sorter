@@ -20,7 +20,7 @@ export const links: LinksFunction = () => [
 	},
 ]
 
-const publicRoutes = ['/', '/about', '/auth/spotify', '/auth/spotify/callback']
+const publicRoutes = ['/', '/about', '/auth/spotify', '/auth/spotify/callback', '/config']
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url)
