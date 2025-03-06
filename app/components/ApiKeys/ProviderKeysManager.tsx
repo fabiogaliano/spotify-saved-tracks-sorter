@@ -21,6 +21,12 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
   const [activeProvider, setActiveProvider] = useState<string | null>(null)
   const [apiKey, setApiKey] = useState('')
   const [showApiKey, setShowApiKey] = useState(false)
+  const [localProviderStatuses, setLocalProviderStatuses] = useState<ProviderStatus[]>(providerStatuses)
+
+  // Initialize local state from props
+  useEffect(() => {
+    setLocalProviderStatuses(providerStatuses)
+  }, [providerStatuses])
 
   // Reset form when provider changes
   useEffect(() => {
@@ -91,12 +97,23 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
       const data = await response.json()
       
       if (response.ok) {
+        // Update local state to reflect the saved API key
+        setLocalProviderStatuses(prevStatuses => {
+          return prevStatuses.map(status => {
+            if (status.provider === activeProvider) {
+              return { ...status, hasKey: true }
+            }
+            return status
+          })
+        })
+        
         setNotification({ 
           type: 'success',
           message: data.message || `${getProviderDisplayName(activeProvider)} API key saved successfully`
         })
-        // Refresh the page to show updated provider statuses after a short delay
-        setTimeout(() => window.location.reload(), 1500)
+        
+        // Close the form after successful save
+        setActiveProvider(null)
       } else {
         console.error('Error saving API key:', data)
         setNotification({ 
@@ -130,12 +147,18 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
       const data = await response.json()
       
       if (response.ok) {
+        // Update local state to reflect the new active provider
+        setLocalProviderStatuses(prevStatuses => {
+          return prevStatuses.map(status => ({
+            ...status,
+            isActive: status.provider === provider
+          }))
+        })
+        
         setNotification({ 
           type: 'success',
           message: data.message || `${getProviderDisplayName(provider)} set as active provider`
         })
-        // Refresh the page to show updated provider statuses after a short delay
-        setTimeout(() => window.location.reload(), 1500)
       } else {
         console.error('Error setting active provider:', data)
         setNotification({ 
@@ -173,12 +196,25 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
       const data = await response.json()
       
       if (response.ok) {
+        // Update local state to reflect the removed API key
+        setLocalProviderStatuses(prevStatuses => {
+          return prevStatuses.map(status => {
+            if (status.provider === provider) {
+              return { ...status, hasKey: false, isActive: false }
+            }
+            return status
+          })
+        })
+        
         setNotification({ 
           type: 'success',
           message: data.message || `${getProviderDisplayName(provider)} API key removed successfully`
         })
-        // Refresh the page to show updated provider statuses after a short delay
-        setTimeout(() => window.location.reload(), 1500)
+        
+        // Close the form if the deleted provider was active
+        if (activeProvider === provider) {
+          setActiveProvider(null)
+        }
       } else {
         console.error('Error removing API key:', data)
         setNotification({ 
@@ -241,7 +277,7 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
         
         {/* Provider cards - vertical layout */}
         <div className="flex flex-col gap-4 mt-2">
-          {providerStatuses.map((status) => (
+          {localProviderStatuses.map((status) => (
             <div key={status.provider} className="flex flex-col">
               {/* Provider header */}
               <div 
