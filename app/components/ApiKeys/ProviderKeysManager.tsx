@@ -196,24 +196,74 @@ export function ProviderKeysManager({ userId, providerStatuses }: ProviderKeysMa
       const data = await response.json()
       
       if (response.ok) {
+        // Check if the deleted provider was active
+        const wasActive = localProviderStatuses.find(s => s.provider === provider)?.isActive;
+        
         // Update local state to reflect the removed API key
         setLocalProviderStatuses(prevStatuses => {
-          return prevStatuses.map(status => {
+          const updatedStatuses = prevStatuses.map(status => {
             if (status.provider === provider) {
-              return { ...status, hasKey: false, isActive: false }
+              return { ...status, hasKey: false, isActive: false };
             }
-            return status
-          })
-        })
+            return status;
+          });
+          
+          // If the deleted provider was active, find another provider with a key to set as active
+          if (wasActive) {
+            const remainingWithKey = updatedStatuses.find(s => s.hasKey && s.provider !== provider);
+            if (remainingWithKey) {
+              // Set the first remaining provider with a key as active
+              return updatedStatuses.map(status => ({
+                ...status,
+                isActive: status.provider === remainingWithKey.provider
+              }));
+            }
+          }
+          
+          return updatedStatuses;
+        });
         
-        setNotification({ 
-          type: 'success',
-          message: data.message || `${getProviderDisplayName(provider)} API key removed successfully`
-        })
+        // If the deleted provider was active, automatically set the remaining provider as active in the backend
+        if (wasActive) {
+          const remainingWithKey = localProviderStatuses.find(s => s.hasKey && s.provider !== provider);
+          if (remainingWithKey) {
+            // Call the API to set the new active provider
+            const newActiveProvider = remainingWithKey.provider;
+            const formData = new FormData();
+            formData.append('action', 'setActiveProvider');
+            formData.append('provider', newActiveProvider);
+            
+            fetch('/api/llm-provider', {
+              method: 'POST',
+              body: formData
+            }).then(response => response.json())
+              .then(data => {
+                if (response.ok) {
+                  setNotification({
+                    type: 'success',
+                    message: `${getProviderDisplayName(provider)} API key removed and ${getProviderDisplayName(newActiveProvider)} set as active`
+                  });
+                }
+              })
+              .catch(error => {
+                console.error('Error setting new active provider:', error);
+              });
+          } else {
+            setNotification({
+              type: 'success',
+              message: data.message || `${getProviderDisplayName(provider)} API key removed successfully`
+            });
+          }
+        } else {
+          setNotification({
+            type: 'success',
+            message: data.message || `${getProviderDisplayName(provider)} API key removed successfully`
+          });
+        }
         
         // Close the form if the deleted provider was active
         if (activeProvider === provider) {
-          setActiveProvider(null)
+          setActiveProvider(null);
         }
       } else {
         console.error('Error removing API key:', data)
