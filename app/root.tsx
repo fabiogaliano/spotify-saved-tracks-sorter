@@ -1,8 +1,8 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
-import { authenticator } from '~/core/auth/auth.server'
-import type { SpotifySession } from '~/core/auth/auth.server'
+import { authenticator } from '~/features/auth/auth.server'
+import type { SpotifySession } from '~/features/auth/auth.server'
 import { StrictMode } from 'react'
 
 import './tailwind.css'

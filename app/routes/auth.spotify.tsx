@@ -1,12 +1,12 @@
-import type { ActionFunctionArgs } from '@remix-run/node';
-import { redirect } from '@remix-run/node';
+import type { ActionFunctionArgs } from '@remix-run/node'
+import { redirect } from '@remix-run/node'
 
-import { authenticator } from '~/core/auth/auth.server';
+import { authenticator } from '~/features/auth/auth.server'
 
 export function loader() {
-  return redirect('/');
+	return redirect('/')
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  return await authenticator.authenticate('spotify', request);
+	return await authenticator.authenticate('spotify', request)
 }

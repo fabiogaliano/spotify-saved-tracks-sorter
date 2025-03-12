@@ -1,8 +1,7 @@
-import { getSpotifyApi } from '~/core/api/spotify.api'
-import type { SpotifyTrackDTO } from '~/core/domain/Track'
-import type { SpotifyPlaylistDTO } from '~/core/domain/Playlist'
-import { SpotifyApiError } from '~/core/errors/ApiError'
-import { logger } from '~/core/logging/Logger'
+import { getSpotifyApi } from '~/lib/api/spotify.api'
+import type { SpotifyTrackDTO } from '~/lib/models/Track'
+import type { SpotifyPlaylistDTO } from '~/lib/models/Playlist'
+import { logger } from '~/lib/logging/Logger'
 import { Market, MaxInt } from '@fostertheweb/spotify-web-sdk'
 
 export class SpotifyService {
@@ -46,7 +45,7 @@ export class SpotifyService {
       return allTracks;
     } catch (error) {
       logger.error('fetch liked tracks failed', error as Error);
-      throw new SpotifyApiError('Failed to fetch liked tracks', 500, { error });
+      throw new logger.AppError('Failed to fetch liked tracks', 'SPOTIFY_API_ERROR', 500, { error });
     }
   }
 
@@ -90,7 +89,7 @@ export class SpotifyService {
       return allPlaylists;
     } catch (error) {
       logger.error('fetch playlists failed', error as Error);
-      throw new SpotifyApiError('Failed to fetch playlists', 500, { error });
+      throw new logger.AppError('Failed to fetch playlists', 'SPOTIFY_API_ERROR', 500, { error });
     }
   }
 
@@ -125,7 +124,7 @@ export class SpotifyService {
       return allTracks
     } catch (error) {
       logger.error('fetch playlist tracks failed', error as Error)
-      throw new SpotifyApiError('Failed to fetch playlist tracks', 500, { error })
+      throw new logger.AppError('Failed to fetch playlist tracks', 'SPOTIFY_API_ERROR', 500, { error })
     }
   }
 

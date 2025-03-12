@@ -1,8 +1,8 @@
 import { json } from '@remix-run/node'
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
-import { authenticator } from '~/core/auth/auth.server'
-import type { SpotifySession } from '~/core/auth/auth.server'
-import { providerKeyService } from '~/core/services/llm/ProviderKeyService'
+import { authenticator } from '~/features/auth/auth.server'
+import type { SpotifySession } from '~/features/auth/auth.server'
+import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 /**
  * API endpoint for LLM provider operations

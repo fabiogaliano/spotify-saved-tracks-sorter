@@ -5,7 +5,7 @@ import { defineCommand } from 'citty'
 import { intro, outro, select, spinner, text } from '@clack/prompts'
 import { readdir, mkdir, stat, readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { LlmProviderManager } from '~/core/services/llm/LlmProviderManager'
+import { LlmProviderManager } from '~/lib/services/llm/LlmProviderManager'
 
 const DEFAULT_PLAYLIST_NAME = 'my reset ritual'
 const DEFAULT_PLAYLIST_DESCRIPTION = 'AI: the feel good playlist to put on for, my weekend reset ritual. light a scented candle, take a long slow shower while singing along, deep conditioning and then shaving, finishing off with the skin care routine that leaves me refreshed, positive and ready to face the world with high self esteem'

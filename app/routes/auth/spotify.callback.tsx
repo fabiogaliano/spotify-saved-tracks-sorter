@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from '@remix-run/node'
 import { authenticator } from '~/features/auth/auth.server'
 import type { SpotifySession } from '~/features/auth/auth.server'
-import { initializeSpotifyApi } from '~/core/api/spotify.api'
+import { initializeSpotifyApi } from '~/lib/api/spotify.api'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const session = (await authenticator.authenticate('spotify', request, {

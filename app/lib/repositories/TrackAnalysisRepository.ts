@@ -1,5 +1,5 @@
-import { getSupabase } from '~/core/db/db'
-import type { TrackAnalysis, TrackAnalysisInsert, TrackAnalysisRepository } from '../domain/TrackAnalysis'
+import { getSupabase } from '~/lib/db/db'
+import type { TrackAnalysis, TrackAnalysisInsert, TrackAnalysisRepository } from '~/lib/models/TrackAnalysis'
 
 class SupabaseTrackAnalysisRepository implements TrackAnalysisRepository {
   async getByTrackId(trackId: number): Promise<TrackAnalysis | null> {

@@ -55,8 +55,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       })
     }
 
-    console.log('Playlists with analysis:', playlistsWithAnalysis.length)
-
     // Get playlist details for all playlists with analyses
     const playlistIds = playlistsWithAnalysis.map(pa => pa.playlist_id)
 

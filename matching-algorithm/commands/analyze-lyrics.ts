@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 import { intro, outro, select, spinner } from '@clack/prompts'
 import { readdir, mkdir, stat, readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { LlmProviderManager } from '../../app/core/services/llm/LlmProviderManager'
+import { LlmProviderManager } from '../../app/lib/services/llm/LlmProviderManager'
 import { v4 as uuidv4 } from 'uuid'
 import { Langfuse } from "langfuse"
 import { CommandOptions } from './shared/types'
@@ -56,7 +56,7 @@ export default defineCommand({
         message: 'Choose a prompt file',
         options: files.map(file => ({ value: file, label: file }))
       })
-      
+
       if (!response) {
         outro('No prompt file selected')
         return
@@ -74,7 +74,7 @@ export default defineCommand({
       message: 'Choose a lyrics file',
       options: lyricsFiles.map(file => ({ value: file, label: file }))
     })
-    
+
     if (!selectedResponse) {
       outro('No lyrics file selected')
       return
@@ -100,8 +100,7 @@ export default defineCommand({
     const s = spinner()
     s.start('Analyzing lyrics...')
 
-    const llmManager = new LlmProviderManager()
-    llmManager.switchProvider('google', process.env.GOOGLE_API_KEY!)
+    const llmManager = new LlmProviderManager('google', process.env.GOOGLE_API_KEY!,)
 
     try {
       const lyricsData = JSON.parse(

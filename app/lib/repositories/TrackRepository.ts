@@ -1,5 +1,5 @@
-import { getSupabase } from '~/core/db/db'
-import type { Track, TrackInsert, SavedTrackInsert, SavedTrackRow, TrackRepository } from '../domain/Track'
+import { getSupabase } from '~/lib/db/db'
+import type { Track, TrackInsert, SavedTrackInsert, SavedTrackRow, TrackRepository } from '~/lib/models/Track'
 import type { Database } from '~/types/database.types'
 
 export const SYNC_STATUS = {

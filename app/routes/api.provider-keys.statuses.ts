@@ -1,6 +1,6 @@
 import { json } from '@remix-run/node'
 import type { LoaderFunctionArgs } from '@remix-run/node'
-import { providerKeyService } from '~/core/services/llm/ProviderKeyService'
+import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 // Handle GET requests to fetch provider statuses
 export async function loader({ request }: LoaderFunctionArgs) {

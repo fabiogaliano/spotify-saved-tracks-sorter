@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { SavedTrackStore } from '~/core/domain/Track'
+import type { SavedTrackStore } from '~/lib/models/Track'
 
 interface TracksState {
   tracks: SavedTrackStore[]

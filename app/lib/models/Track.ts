@@ -1,5 +1,5 @@
 import type { Database } from '~/types/database.types'
-import type { SyncStatus } from '~/core/repositories/TrackRepository'
+import type { SyncStatus } from '~/lib/repositories/TrackRepository'
 
 export type Track = Database['public']['Tables']['tracks']['Row']
 export type TrackInsert = Database['public']['Tables']['tracks']['Insert']

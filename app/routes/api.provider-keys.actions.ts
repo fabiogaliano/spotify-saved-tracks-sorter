@@ -1,6 +1,6 @@
 import { json } from '@remix-run/node'
 import type { ActionFunctionArgs } from '@remix-run/node'
-import { providerKeyService } from '~/core/services/llm/ProviderKeyService'
+import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 // Handle POST requests to save or delete provider keys
 export async function action({ request }: ActionFunctionArgs) {
@@ -40,10 +40,10 @@ export async function action({ request }: ActionFunctionArgs) {
   } catch (error) {
     console.error(`Error ${action === 'saveProviderKey' ? 'saving' : 'deleting'} provider key:`, error)
     return json(
-      { 
+      {
         error: `Failed to ${action === 'saveProviderKey' ? 'save' : 'delete'} API key`,
         details: error instanceof Error ? error.message : 'Unknown error'
-      }, 
+      },
       { status: 500 }
     )
   }

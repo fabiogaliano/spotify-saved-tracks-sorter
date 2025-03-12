@@ -1,11 +1,10 @@
 import { SpotifyService } from './SpotifyService'
-import type { TrackRepository } from '~/core/domain/Track'
-import type { Playlist, PlaylistRepository, SpotifyPlaylistDTO } from '~/core/domain/Playlist'
-import { mapSpotifyTrackDTOToTrackInsert, mapToSavedTrackInsert, mapPlaylistTrackToTrackInsert } from '~/core/domain/Track'
-import { mapSpotifyPlaylistToPlaylistInsert } from '~/core/domain/Playlist'
-import { AppError } from '~/core/errors/AppError'
-import { logger } from '~/core/logging/Logger'
-import { SYNC_STATUS } from '~/core/repositories/TrackRepository'
+import type { TrackRepository } from '~/lib/models/Track'
+import type { Playlist, PlaylistRepository, SpotifyPlaylistDTO } from '~/lib/models/Playlist'
+import { mapSpotifyTrackDTOToTrackInsert, mapToSavedTrackInsert, mapPlaylistTrackToTrackInsert } from '~/lib/models/Track'
+import { mapSpotifyPlaylistToPlaylistInsert } from '~/lib/models/Playlist'
+import { logger } from '~/lib/logging/Logger'
+import { SYNC_STATUS } from '~/lib/repositories/TrackRepository'
 
 
 export interface SyncResult {
@@ -92,7 +91,7 @@ export class SyncService {
 
       await this.trackRepository.updateSyncStatus(userId, SYNC_STATUS.FAILED)
 
-      throw new AppError(
+      throw new logger.AppError(
         'Failed to sync tracks',
         'DB_SYNC_ERROR',
         500,
@@ -141,7 +140,7 @@ export class SyncService {
     } catch (error) {
       logger.error('sync playlists failed', error as Error, { userId })
       await this.playlistRepository.updateSyncStatus(userId, SYNC_STATUS.FAILED)
-      throw new AppError(
+      throw new logger.AppError(
         'Failed to sync playlists',
         'DB_SYNC_ERROR',
         500,

@@ -1,7 +1,7 @@
-import { getSupabase } from '~/core/db/db'
+import { getSupabase } from '~/lib/db/db'
 import type { Database } from '~/types/database.types'
 import { SYNC_STATUS, type SyncStatus } from './TrackRepository'
-import type { Playlist, PlaylistInsert, PlaylistTrackInsert, PlaylistRepository as IPlaylistRepository } from '../domain/Playlist'
+import type { Playlist, PlaylistInsert, PlaylistTrackInsert, PlaylistRepository as IPlaylistRepository } from '~/lib/models/Playlist'
 
 class SupabasePlaylistRepository implements IPlaylistRepository {
   async getPlaylists(userId: number): Promise<Playlist[]> {

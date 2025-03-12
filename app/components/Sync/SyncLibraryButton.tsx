@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useFetcher } from '@remix-run/react'
-import { SyncResult } from '~/core/domain/Sync'
+import { SyncResult } from '~/lib/models/Sync'
 import { SyncStatus } from './SyncStatus'
 
 type SyncLibraryButtonProps = {
@@ -23,7 +23,6 @@ export function SyncLibraryButton({ userId }: SyncLibraryButtonProps) {
 			setButtonText('Sync Spotify Library')
 		}
 	}, [isLoading])
-
 
 	return (
 		<div className="flex flex-col items-center gap-2">

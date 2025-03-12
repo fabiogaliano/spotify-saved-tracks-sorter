@@ -4,12 +4,11 @@ import { authenticator, spotifyStrategy } from '~/features/auth/auth.server'
 import { initializeSpotifyApi, getSpotifyApi } from '~/lib/api/spotify.api'
 import { getOrCreateUser as getOrCreateUserDB } from '~/lib/db/user.server'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
-import { Logger } from '~/core/logging/Logger'
+import { logger } from '~/lib/logging/Logger'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const session = await spotifyStrategy.getSession(request)
-    const logger = Logger.getInstance()
 
     if (session?.user?.id) {
       logger.setDefaultContext({ username: session.user.id });

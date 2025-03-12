@@ -6,10 +6,10 @@ import { useTracksStore } from '~/lib/stores/tracksStore'
 import { useEffect, useState } from 'react'
 import { loader } from '~/features/analysis/loaders/music.loader.server'
 import { action } from '~/features/analysis/actions/music.action.server'
-import { trackAnalysisRepository } from '~/core/repositories/TrackAnalysisRepository'
+import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
 import type { LoaderFunctionArgs, ActionFunctionArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { songAnalysisService } from '~/core/services'
+import { songAnalysisService } from '~/lib/services'
 
 // Define response type for the analysis action
 interface AnalysisResponse {
@@ -76,98 +76,89 @@ export default function MusicAnalysis() {
 	}, [tracks, tracksLoaded, sortedTrackIds, analysisStatusMap])
 
 	useEffect(() => {
-		// Check if there's a currently analyzing track or queued tracks in the store
+		// Skip if there's a form submission in progress
+		if (fetcher.state === 'submitting') return
+
+		// If there's already a track being analyzed, nothing to do here
 		const currentlyAnalyzingId = analysisStore.getCurrentlyAnalyzing()
+		if (currentlyAnalyzingId) return
+
+		// If no active analysis, check for the next track in queue
 		const nextTrack = analysisStore.getNextTrackToAnalyze()
+		if (!nextTrack) return
 
-		// If there's a track being analyzed, continue the analysis process
-		if (currentlyAnalyzingId && fetcher.state !== 'submitting') {
-			const trackToAnalyze = sortedTracks.find(
-				track => track.id.toString() === currentlyAnalyzingId
-			)
-			if (trackToAnalyze) {
-				const formData = new FormData()
-				formData.append('action', 'analyze')
-				formData.append('trackId', trackToAnalyze.id.toString())
-				formData.append('spotifyTrackId', trackToAnalyze.spotify_track_id)
-				formData.append('artist', trackToAnalyze.artist)
-				formData.append('name', trackToAnalyze.name)
+		console.log(`Processing next track in queue: ${nextTrack.id}`)
 
-				setTimeout(() => {
-					fetcher.submit(formData, { method: 'post' })
-				}, 500)
-			}
-		}
-		// If there's no track being analyzed but there are queued tracks, start analyzing the next one
-		else if (!currentlyAnalyzingId && nextTrack && fetcher.state !== 'submitting') {
-			analysisStore.removeFromQueue(nextTrack.id)
-			analysisStore.setCurrentlyAnalyzing(nextTrack.id)
-			analysisStore.setTrackStatus(nextTrack.id, 'analyzing')
+		// Remove from queue and set as currently analyzing
+		analysisStore.removeFromQueue(nextTrack.id)
+		analysisStore.setCurrentlyAnalyzing(nextTrack.id)
+		analysisStore.setTrackStatus(nextTrack.id, 'analyzing')
 
-			const formData = new FormData()
-			formData.append('action', 'analyze')
-			formData.append('trackId', nextTrack.id.toString())
-			formData.append('spotifyTrackId', nextTrack.spotify_track_id)
-			formData.append('artist', nextTrack.artist)
-			formData.append('name', nextTrack.name)
+		// Submit for analysis
+		const formData = new FormData()
+		formData.append('action', 'analyze')
+		formData.append('trackId', nextTrack.id.toString())
+		formData.append('spotifyTrackId', nextTrack.spotify_track_id)
+		formData.append('artist', nextTrack.artist)
+		formData.append('name', nextTrack.name)
 
-			setTimeout(() => {
-				fetcher.submit(formData, { method: 'post' })
-			}, 500)
-		}
-	}, [sortedTracks, fetcher.state])
+		// Submit with a slight delay to avoid any race conditions
+		setTimeout(() => {
+			fetcher.submit(formData, { method: 'post' })
+		}, 100)
+	}, [fetcher.state, analysisStore.getCurrentlyAnalyzing()]) // Add currentlyAnalyzing as a dependency
 
+	// Log when a track analysis starts but don't change state again
 	useEffect(() => {
 		if (fetcher.state === 'submitting' && fetcher.formData) {
 			const trackId = fetcher.formData.get('trackId')
 			if (trackId) {
 				console.log(`Track ${trackId} is now being analyzed`)
-				analysisStore.setCurrentlyAnalyzing(trackId.toString())
-				analysisStore.setTrackStatus(trackId.toString(), 'analyzing')
+				// Don't update state here, as this can cause flickering
 			}
 		}
 	}, [fetcher.state, fetcher.formData])
 
+	// Process analysis results
 	useEffect(() => {
 		if (fetcher.state === 'idle' && fetcherData) {
-			const { success, trackId, alreadyAnalyzed } = fetcherData
-			if (trackId) {
-				if (alreadyAnalyzed) {
-					console.log(`Track ${trackId} already has analysis, skipping`)
-				} else {
-					console.log(`Track ${trackId} analysis completed with success: ${success}`)
+			const { success, trackId, alreadyAnalyzed, error } = fetcherData
+			if (!trackId) return
+
+			if (alreadyAnalyzed) {
+				console.log(`Track ${trackId} already has analysis, skipping`)
+			} else {
+				console.log(`Track ${trackId} analysis completed with success: ${success}`)
+				if (!success && error) {
+					console.error(`Analysis error for track ${trackId}: ${error}`)
 				}
+			}
 
-				analysisStore.setTrackStatus(trackId.toString(), success ? 'analyzed' : 'error')
+			// Set the track status first
+			analysisStore.setTrackStatus(trackId.toString(), success ? 'analyzed' : 'error')
 
-				if (success) {
-					setHasAnalyzedTracks(true)
-				}
+			if (success) {
+				setHasAnalyzedTracks(true)
+			}
 
-				const nextTrack = analysisStore.getNextTrackToAnalyze()
-				if (nextTrack) {
-					analysisStore.removeFromQueue(nextTrack.id)
-
-					analysisStore.setCurrentlyAnalyzing(nextTrack.id)
-
-					const formData = new FormData()
-					formData.append('action', 'analyze')
-					formData.append('trackId', nextTrack.id.toString())
-					formData.append('spotifyTrackId', nextTrack.spotify_track_id)
-					formData.append('artist', nextTrack.artist)
-					formData.append('name', nextTrack.name)
-
-					setTimeout(() => {
-						fetcher.submit(formData, { method: 'post' })
-					}, 500)
-				} else {
-					analysisStore.setCurrentlyAnalyzing(null)
-				}
+			// Make sure we clear the currently analyzing track to allow queue to continue
+			if (analysisStore.getCurrentlyAnalyzing() === trackId.toString()) {
+				console.log(`Clearing currently analyzing track: ${trackId}`)
+				analysisStore.setCurrentlyAnalyzing(null)
 			}
 		}
 	}, [fetcher.state, fetcherData])
 
 	const analyzeTrack = (track: any) => {
+		// First check if it's already analyzed to avoid redundant analysis
+		const status = analysisStore.getTrackStatus(track.id.toString())
+		if (status === 'analyzed') {
+			console.log(`Track ${track.id} is already analyzed, skipping`)
+			return
+		}
+
+		// Clear any existing queue to focus on this track
+		analysisStore.setQueuedTracks([])
 		analysisStore.setCurrentlyAnalyzing(track.id.toString())
 		analysisStore.setTrackStatus(track.id.toString(), 'analyzing')
 
@@ -182,17 +173,20 @@ export default function MusicAnalysis() {
 	}
 
 	const analyzeAllTracks = () => {
+		// First, clear any ongoing work
+		analysisStore.setCurrentlyAnalyzing(null)
+		analysisStore.setQueuedTracks([])
+
+		// Find tracks that need analysis
 		const tracksToAnalyze = sortedTracks.filter(track => {
 			const status = analysisStore.getTrackStatus(track.id.toString())
 			return status === 'idle' || status === 'error'
 		})
 
+		console.log(`Found ${tracksToAnalyze.length} tracks to analyze`)
 		if (tracksToAnalyze.length === 0) return
 
-		const firstTrack = tracksToAnalyze[0]
-		analysisStore.setCurrentlyAnalyzing(firstTrack.id.toString())
-		analysisStore.setTrackStatus(firstTrack.id.toString(), 'analyzing')
-
+		// Queue up tracks beyond the first one
 		if (tracksToAnalyze.length > 1) {
 			const remainingTracks = tracksToAnalyze.slice(1).map(t => ({
 				id: t.id.toString(),
@@ -201,12 +195,21 @@ export default function MusicAnalysis() {
 				name: t.name,
 			}))
 
+			console.log(`Queuing ${remainingTracks.length} tracks for analysis`)
 			remainingTracks.forEach(track => {
 				analysisStore.setTrackStatus(track.id, 'queued')
 			})
 
 			analysisStore.setQueuedTracks(remainingTracks)
 		}
+
+		// Process the first track
+		const firstTrack = tracksToAnalyze[0]
+		console.log(`Starting analysis with track: ${firstTrack.id}`)
+
+		// Set the first track as analyzing and submit
+		analysisStore.setCurrentlyAnalyzing(firstTrack.id.toString())
+		analysisStore.setTrackStatus(firstTrack.id.toString(), 'analyzing')
 
 		const formData = new FormData()
 		formData.append('action', 'analyze')

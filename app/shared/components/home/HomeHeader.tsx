@@ -5,9 +5,6 @@ import { HelpButton } from '~/components/HelpButton'
 import { ConfigButton } from '~/components/ConfigButton'
 import { SyncLibraryButton } from '~/components/Sync/SyncLibraryButton'
 import { useTrackSortingStore } from '~/lib/stores/trackSortingStore'
-import { SpotifyProfile } from '~/core/domain/Spotify'
-import { User } from '~/core/domain/User'
-import { useFetcherStore } from '~/lib/stores/fetcherStore'
 
 interface HomeHeaderProps {
 	spotifyProfile: {

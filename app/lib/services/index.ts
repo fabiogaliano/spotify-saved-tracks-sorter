@@ -1,82 +1,60 @@
 import { SpotifyService } from './SpotifyService'
 import { SyncService } from './SyncService'
-
-// Import repository instances
+import { DefaultSongAnalysisService } from './analysis/SongAnalysisService'
+import { DefaultPlaylistAnalysisService } from './analysis/PlaylistAnalysisService'
+import { LlmProviderManager } from './llm/LlmProviderManager'
+import { DefaultLyricsService } from './lyrics/LyricsService'
+import { DefaultVectorizationService } from './vectorization/VectorizationService'
+import { MatchingService } from './matching/MatchingService'
+import { SupabaseMatchRepository } from '~/lib/repositories/MatchRepository'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 
-// Initialize existing services
+// Initialize LLM provider manager with Google API key
+const googleApiKey = process.env.GOOGLE_API_KEY || ''
+const llmProviderManager = new LlmProviderManager('google', googleApiKey)
+
+// Initialize lyrics service with Genius API token
+const lyricsService = new DefaultLyricsService({
+  accessToken: process.env.GENIUS_CLIENT_TOKEN || ''
+})
+
+// Initialize analysis services
+const songAnalysisService = new DefaultSongAnalysisService(lyricsService, llmProviderManager)
+const playlistAnalysisService = new DefaultPlaylistAnalysisService(llmProviderManager)
+
+// Initialize vectorization service
+const vectorizationService = new DefaultVectorizationService()
+
+// Initialize repositories
+const matchRepository = new SupabaseMatchRepository()
+
+// Initialize matching service
+const matchingService = new MatchingService(vectorizationService, matchRepository)
+
+// Initialize Spotify service
 const spotifyService = new SpotifyService()
-const syncService = new SyncService(spotifyService, trackRepository, playlistRepository)
-
-// Mock services that don't exist (for now)
-const llmProviderManager = {
-  getProvider: () => {
-    console.warn('Mock LLM provider called')
-    return {
-      analyze: async () => ({
-        id: '1',
-        result: 'Mock analysis',
-      })
-    }
-  }
-}
-
-const songAnalysisService = {
-  analyze: async () => {
-    console.warn('Mock song analysis service called')
-    return { id: '1', result: 'Mock analysis' }
-  }
-}
-
-const playlistAnalysisService = {
-  analyze: async () => {
-    console.warn('Mock playlist analysis service called')
-    return { id: '1', result: 'Mock analysis' }
-  }
-}
-
-const lyricsService = {
-  getLyrics: async () => {
-    console.warn('Mock lyrics service called')
-    return 'Mock lyrics'
-  }
-}
-
-const vectorizationService = {
-  vectorize: async () => {
-    console.warn('Mock vectorization service called')
-    return [0.1, 0.2, 0.3]
-  }
-}
-
-const matchRepository = {
-  saveMatches: async () => {
-    console.warn('Mock match repository called')
-    return []
-  },
-  getMatches: async () => {
-    console.warn('Mock match repository called')
-    return []
-  }
-}
-
-const matchingService = {
-  matchSongsToPlaylists: async () => {
-    console.warn('Mock matching service called')
-    return []
-  }
-}
 
 // Export all services
 export {
-  spotifyService,
-  syncService,
   llmProviderManager,
+  lyricsService,
   songAnalysisService,
   playlistAnalysisService,
-  lyricsService,
   vectorizationService,
   matchRepository,
-  matchingService
+  matchingService,
+  spotifyService,
+  SyncService // Export the class itself, not an instance
+}
+
+// Export types for external use
+export type {
+  SpotifyService,
+  LlmProviderManager,
+  DefaultLyricsService as LyricsService,
+  DefaultSongAnalysisService as SongAnalysisService,
+  DefaultPlaylistAnalysisService as PlaylistAnalysisService,
+  DefaultVectorizationService as VectorizationService,
+  MatchingService
 }

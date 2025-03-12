@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { SyncResult } from '~/core/domain/Sync'
+import { SyncResult } from '~/lib/models/Sync'
 import { SyncNotification } from './SyncNotification'
 
 type SyncStatusProps = {
@@ -10,11 +10,13 @@ type SyncStatusProps = {
 }
 
 export function SyncStatus({ result }: SyncStatusProps) {
-	const [notifications, setNotifications] = useState<Array<{
-		id: number
-		type: 'success' | 'error'
-		message: string
-	}>>([])
+	const [notifications, setNotifications] = useState<
+		Array<{
+			id: number
+			type: 'success' | 'error'
+			message: string
+		}>
+	>([])
 
 	useEffect(() => {
 		if (!result) return
@@ -24,14 +26,14 @@ export function SyncStatus({ result }: SyncStatusProps) {
 			type: 'success' | 'error'
 			message: string
 		}> = []
-		
+
 		if (result.savedTracks) {
 			newNotifications.push({
 				id: Date.now(),
 				type: result.savedTracks.success ? 'success' : 'error',
-				message: `Songs: ${result.savedTracks.success ? 'Synced successfully' : 'Failed to sync'}${
-					result.savedTracks.message ? ` - ${result.savedTracks.message}` : ''
-				}`
+				message: `Songs: ${
+					result.savedTracks.success ? 'Synced successfully' : 'Failed to sync'
+				}${result.savedTracks.message ? ` - ${result.savedTracks.message}` : ''}`,
 			})
 		}
 
@@ -39,9 +41,9 @@ export function SyncStatus({ result }: SyncStatusProps) {
 			newNotifications.push({
 				id: Date.now() + 1,
 				type: result.playlists.success ? 'success' : 'error',
-				message: `Playlists: ${result.playlists.success ? 'Synced successfully' : 'Failed to sync'}${
-					result.playlists.message ? ` - ${result.playlists.message}` : ''
-				}`
+				message: `Playlists: ${
+					result.playlists.success ? 'Synced successfully' : 'Failed to sync'
+				}${result.playlists.message ? ` - ${result.playlists.message}` : ''}`,
 			})
 		}
 
@@ -55,7 +57,7 @@ export function SyncStatus({ result }: SyncStatusProps) {
 	if (!notifications.length) return null
 
 	return (
-		<div 
+		<div
 			className="fixed bottom-4 right-4 flex flex-col gap-2 max-w-sm z-50"
 			role="alert"
 			aria-live="polite"
@@ -74,4 +76,4 @@ export function SyncStatus({ result }: SyncStatusProps) {
 			))}
 		</div>
 	)
-} 
+}
