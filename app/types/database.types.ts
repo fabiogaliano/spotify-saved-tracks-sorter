@@ -382,17 +382,17 @@ export type Database = {
       user_provider_preferences: {
         Row: {
           active_provider: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           active_provider: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           active_provider?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -400,6 +400,7 @@ export type Database = {
       users: {
         Row: {
           created_at: string | null
+          has_setup_completed: boolean
           id: number
           last_login: string | null
           playlists_last_sync: string | null
@@ -411,6 +412,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          has_setup_completed?: boolean
           id?: number
           last_login?: string | null
           playlists_last_sync?: string | null
@@ -422,6 +424,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          has_setup_completed?: boolean
           id?: number
           last_login?: string | null
           playlists_last_sync?: string | null

@@ -1,4 +1,3 @@
-import { json } from '@remix-run/node'
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { authenticator } from '~/features/auth/auth.server'
@@ -13,30 +12,35 @@ export const meta: MetaFunction = () => {
 	]
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
-	// Ensure user is authenticated
-	const session = (await authenticator.isAuthenticated(request)) as SpotifySession | null
+export type ConfigLoaderData = {
+	user: SpotifySession['user'] | null
+	providerStatuses: Array<{
+		provider: string
+		hasKey: boolean
+		isActive: boolean
+	}>
+	hasApiKeys: boolean
+}
 
+export async function loader({ request }: LoaderFunctionArgs) {
+	const session = (await authenticator.isAuthenticated(request)) as SpotifySession | null
 	if (!session) {
-		return json({ user: null })
+		return { user: null }
 	}
 
-	// Get provider statuses for the user
 	const providerStatuses = await providerKeyService.getProviderStatuses(
 		session.user.id.toString()
 	)
 	const hasApiKeys = providerStatuses.some(status => status.hasKey)
 
-	return json({
+	return {
 		user: session.user,
 		providerStatuses,
 		hasApiKeys,
-	})
+	}
 }
 
 export default function ConfigPage() {
-	const data = useLoaderData<typeof loader>()
-
 	return (
 		<div className="max-w-4xl mx-auto px-4 py-8">
 			<h1 className="text-2xl font-bold mb-6">Configuration</h1>

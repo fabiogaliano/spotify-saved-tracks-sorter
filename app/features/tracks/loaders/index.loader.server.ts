@@ -1,8 +1,7 @@
 import type { LoaderFunctionArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
 import { authenticator, spotifyStrategy } from '~/features/auth/auth.server'
 import { initializeSpotifyApi, getSpotifyApi } from '~/lib/api/spotify.api'
-import { getOrCreateUser as getOrCreateUserDB } from '~/lib/db/user.server'
+import { userService } from '~/lib/services/UserService'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { logger } from '~/lib/logging/Logger'
 
@@ -40,7 +39,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     logger.info('login')
 
-    const user = await getOrCreateUserDB(spotifyProfile.id, spotifyProfile.email)
+    const user = await userService.getOrCreateUser(spotifyProfile.id, spotifyProfile.email)
     const savedTracks = user ? await trackRepository.getSavedTracks(user.id) : null
 
     return { spotifyProfile, user, savedTracks }
