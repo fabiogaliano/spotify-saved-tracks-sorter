@@ -1,4 +1,3 @@
-import { json } from '@remix-run/node'
 import type { LoaderFunctionArgs } from '@remix-run/node'
 import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
@@ -13,16 +12,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = url.searchParams.get('userId')
 
   if (!userId) {
-    return json({ error: 'User ID is required' }, { status: 400 })
+    return { error: 'User ID is required', status: 400 }
   }
 
   try {
     // Check if the user has any provider keys
     const hasAnyKey = await providerKeyService.hasAnyProviderKey(userId)
-    return json({ hasAnyKey })
+    return { hasAnyKey }
   } catch (error) {
     console.error('Error checking provider keys:', error)
-    return json({ error: 'Failed to check provider keys' }, { status: 500 })
+    return { error: 'Failed to check provider keys', status: 500 }
   }
 }
 

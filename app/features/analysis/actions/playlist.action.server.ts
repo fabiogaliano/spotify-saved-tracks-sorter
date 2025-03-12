@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, json } from '@remix-run/node'
+import type { ActionFunctionArgs } from '@remix-run/node'
 import { llmProviderManager } from '~/lib/services'
 import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisRepository'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
@@ -20,42 +20,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const promptTemplate = formData.get('prompt')?.toString() || 'Analyze this playlist: {playlist_name}'
 
     if (!playlistId) {
-      return json({
-        success: false,
-        error: 'No playlist ID provided',
-      })
+      return { success: false, error: 'No playlist ID provided' }
     }
 
     // Get playlist details
     const playlist = await playlistRepository.getPlaylistById(Number(playlistId))
     if (!playlist) {
-      return json({
-        success: false,
-        error: `Playlist with ID ${playlistId} not found`,
-      })
+      return { success: false, error: `Playlist with ID ${playlistId} not found` }
     }
 
     // Check if this playlist already has an analysis
     const existingAnalysis = await playlistAnalysisRepository.getAnalysisByPlaylistId(Number(playlistId))
 
     if (existingAnalysis) {
-      return json({
-        success: true,
-        playlistId,
-        analysisId: existingAnalysis.id,
-        alreadyAnalyzed: true,
-      })
+      return { success: true, playlistId, analysisId: existingAnalysis.id, alreadyAnalyzed: true }
     }
 
     // Get playlist tracks
     const playlistTracks = await playlistRepository.getPlaylistTracks(Number(playlistId))
 
     if (!playlistTracks || playlistTracks.length === 0) {
-      return json({
-        success: false,
-        playlistId,
-        error: 'No tracks found in this playlist',
-      })
+      return { success: false, playlistId, error: 'No tracks found in this playlist' }
     }
 
     // Get track details using the repository
@@ -89,11 +74,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const analysis = await llmProviderManager.getProvider().analyze()
 
     if (!analysis) {
-      return json({
-        success: false,
-        playlistId,
-        error: 'Failed to generate analysis',
-      })
+      return { success: false, playlistId, error: 'Failed to generate analysis' }
     }
 
     // Store analysis in database
@@ -106,26 +87,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         1 // Version number
       )
 
-      return json({
-        success: true,
-        playlistId,
-        analysisId,
-      })
+      return { success: true, playlistId, analysisId }
     } catch (insertError) {
       console.error('Error saving analysis:', insertError)
-      return json({
-        success: false,
-        playlistId,
-        error: 'Failed to save analysis',
-        details: insertError instanceof Error ? insertError.message : 'Unknown error',
-      })
+      return { success: false, playlistId, error: 'Failed to save analysis', details: insertError instanceof Error ? insertError.message : 'Unknown error' }
     }
   } catch (error) {
     console.error('Error in playlist analysis action:', error)
-    return json({
-      success: false,
-      error: 'An unexpected error occurred',
-      details: error instanceof Error ? error.message : 'Unknown error',
-    })
+    return { success: false, error: 'An unexpected error occurred', details: error instanceof Error ? error.message : 'Unknown error' }
   }
 } 

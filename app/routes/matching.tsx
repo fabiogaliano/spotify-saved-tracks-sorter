@@ -1,7 +1,6 @@
 import { useLoaderData } from '@remix-run/react'
 import { useState, useEffect } from 'react'
 import type { LoaderFunctionArgs } from '@remix-run/node'
-import { json } from '@remix-run/node'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
@@ -119,9 +118,8 @@ export default function Matching() {
 				console.error('Error in matching algorithm:', matchError)
 				setErrors(prev => ({
 					...prev,
-					[playlist.id]: `Error in matching algorithm: ${
-						matchError instanceof Error ? matchError.message : 'Unknown error'
-					}`,
+					[playlist.id]: `Error in matching algorithm: ${matchError instanceof Error ? matchError.message : 'Unknown error'
+						}`,
 				}))
 				setMatchingPlaylists(prev => {
 					const newState = { ...prev }
@@ -133,9 +131,8 @@ export default function Matching() {
 			console.error('Error in matching process:', error)
 			setErrors(prev => ({
 				...prev,
-				[playlist.id]: `Error: ${
-					error instanceof Error ? error.message : 'Unknown error'
-				}`,
+				[playlist.id]: `Error: ${error instanceof Error ? error.message : 'Unknown error'
+					}`,
 			}))
 			setMatchingPlaylists(prev => {
 				const newState = { ...prev }
@@ -294,15 +291,14 @@ export default function Matching() {
 																					100
 																				)}%`,
 																			}}
-																			className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
-																				match.similarity > 0.8
+																			className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${match.similarity > 0.8
 																					? 'bg-green-500'
 																					: match.similarity > 0.6
-																					? 'bg-green-600'
-																					: match.similarity > 0.4
-																					? 'bg-yellow-500'
-																					: 'bg-red-500'
-																			}`}
+																						? 'bg-green-600'
+																						: match.similarity > 0.4
+																							? 'bg-yellow-500'
+																							: 'bg-red-500'
+																				}`}
 																		></div>
 																	</div>
 																	<div className="text-xs mt-1 text-right">

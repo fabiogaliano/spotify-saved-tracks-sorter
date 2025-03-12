@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, json } from '@remix-run/node'
+import { LoaderFunctionArgs } from '@remix-run/node'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
 import type { AnalysisStatus } from '~/types/analysis'
 
@@ -14,13 +14,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       return acc
     }, {} as Record<number, AnalysisStatus>)
 
-    return json({
-      analysisStatusMap,
-    })
+    return { analysisStatusMap }
   } catch (error) {
     console.error('Error loading track analyses:', error)
-    return json({
-      analysisStatusMap: {} as Record<number, AnalysisStatus>,
-    })
+    return { analysisStatusMap: {} as Record<number, AnalysisStatus> }
   }
 } 

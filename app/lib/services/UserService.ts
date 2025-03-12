@@ -1,7 +1,5 @@
 import { userRepository } from '~/lib/repositories/UserRepository'
-import type { Database } from '~/types/database.types'
-
-type User = Database['public']['Tables']['users']['Row']
+import { User } from '~/lib/models/User'
 
 export class UserService {
   async getOrCreateUser(spotifyUserId: string, spotifyUserEmail: string): Promise<User> {

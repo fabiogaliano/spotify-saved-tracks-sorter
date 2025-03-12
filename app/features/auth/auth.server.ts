@@ -1,6 +1,5 @@
 import { Authenticator } from 'remix-auth'
 import { SpotifyStrategy } from 'remix-auth-spotify'
-
 import { sessionStorage } from './session.server'
 
 export type SpotifySession = {

@@ -1,9 +1,6 @@
 import { getSupabase } from '~/lib/db/db'
-import type { Database } from '~/types/database.types'
+import { User, CreateUserParams } from '../models/User'
 
-type User = Database['public']['Tables']['users']['Row']
-
-type CreateUserParams = Pick<User, 'spotify_user_id' | 'spotify_user_email'> & Partial<User>
 
 export interface UserRepository {
   findUser(spotifyUserId: string): Promise<User | null>

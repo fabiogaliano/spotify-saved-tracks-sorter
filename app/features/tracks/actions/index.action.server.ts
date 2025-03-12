@@ -1,5 +1,4 @@
 import type { ActionFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
 import { SpotifyService } from '~/lib/services/SpotifyService'
 import { SyncService } from '~/lib/services/SyncService'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
@@ -24,7 +23,7 @@ export const action: ActionFunction = async ({ request }) => {
         syncService.syncPlaylists(userIdNumber)
       ])
 
-      return json({
+      return {
         savedTracks: {
           success: Boolean(tracksResult.success),
           message: tracksResult.message
@@ -37,19 +36,19 @@ export const action: ActionFunction = async ({ request }) => {
             ? playlistsResult.message
             : `Processed ${playlistsResult.totalProcessed} playlists, ${playlistsResult.newItems} new`
         }
-      })
+      }
     }
 
     if (action === 'updateTrackStatus') {
       const trackId = Number(formData.get('trackId'))
       const status = formData.get('status') as Database['public']['Enums']['sorting_status_enum']
       await trackRepository.updateTrackStatus(trackId, status)
-      return json({ success: true })
+      return { success: true }
     }
   } catch (error) {
     console.error('Action error:', error)
-    return json({
+    return {
       error: error instanceof Error ? error.message : 'Failed to process request'
-    })
+    }
   }
 } 

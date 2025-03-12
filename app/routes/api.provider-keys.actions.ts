@@ -1,4 +1,3 @@
-import { json } from '@remix-run/node'
 import type { ActionFunctionArgs } from '@remix-run/node'
 import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
@@ -10,11 +9,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const provider = formData.get('provider') as string
 
   if (!userId) {
-    return json({ error: 'User ID is required' }, { status: 400 })
+    return { error: 'User ID is required', status: 400 }
   }
 
   if (!provider) {
-    return json({ error: 'Provider is required' }, { status: 400 })
+    return { error: 'Provider is required', status: 400 }
   }
 
   try {
@@ -22,29 +21,23 @@ export async function action({ request }: ActionFunctionArgs) {
       case 'saveProviderKey': {
         const apiKey = formData.get('apiKey') as string
         if (!apiKey) {
-          return json({ error: 'API key is required' }, { status: 400 })
+          return { error: 'API key is required', status: 400 }
         }
 
         await providerKeyService.saveProviderKey(userId, provider, apiKey)
-        return json({ success: true, message: 'API key saved successfully' })
+        return { success: true, message: 'API key saved successfully' }
       }
 
       case 'deleteProviderKey': {
         await providerKeyService.deleteProviderKey(userId, provider)
-        return json({ success: true, message: 'API key deleted successfully' })
+        return { success: true, message: 'API key deleted successfully' }
       }
 
       default:
-        return json({ error: 'Invalid action' }, { status: 400 })
+        return { error: 'Invalid action', status: 400 }
     }
   } catch (error) {
     console.error(`Error ${action === 'saveProviderKey' ? 'saving' : 'deleting'} provider key:`, error)
-    return json(
-      {
-        error: `Failed to ${action === 'saveProviderKey' ? 'save' : 'delete'} API key`,
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    return { error: `Failed to ${action === 'saveProviderKey' ? 'save' : 'delete'} API key`, details: error instanceof Error ? error.message : 'Unknown error', status: 500 }
   }
 }

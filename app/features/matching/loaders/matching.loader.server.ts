@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, json } from '@remix-run/node'
+import { LoaderFunctionArgs } from '@remix-run/node'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
 import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisRepository'
@@ -49,10 +49,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const playlistsWithAnalysis = await playlistAnalysisRepository.getAnalysesByUserId(userId)
 
     if (!playlistsWithAnalysis || playlistsWithAnalysis.length === 0) {
-      return json({
+      return {
         playlists: [] as AnalyzedPlaylist[],
         tracks: [] as AnalyzedTrack[]
-      })
+      }
     }
 
     // Get playlist details for all playlists with analyses
@@ -79,7 +79,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const savedTracks = await savedTrackRepository.getSavedTracksByUserId(userId)
 
     if (!savedTracks || savedTracks.length === 0) {
-      return json({ playlists, tracks: [] as AnalyzedTrack[] })
+      return { playlists, tracks: [] as AnalyzedTrack[] }
     }
 
     // Get the track IDs
@@ -89,7 +89,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const trackDetails = await trackRepository.getTracksByIds(trackIds)
 
     if (!trackDetails || trackDetails.length === 0) {
-      return json({ playlists, tracks: [] as AnalyzedTrack[] })
+      return { playlists, tracks: [] as AnalyzedTrack[] }
     }
 
     // Combine tracks with their saved_tracks data
@@ -121,15 +121,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       } as AnalyzedTrack
     }).filter(track => track.analysis !== null)
 
-    return json({
+    return {
       playlists,
       tracks: tracksWithAnalyses
-    })
+    }
   } catch (error) {
     console.error('Error in matching loader:', error)
-    return json({
+    return {
       playlists: [] as AnalyzedPlaylist[],
       tracks: [] as AnalyzedTrack[]
-    })
+    }
   }
 } 

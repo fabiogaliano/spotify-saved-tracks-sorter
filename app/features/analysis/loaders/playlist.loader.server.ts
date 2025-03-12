@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, json } from '@remix-run/node'
+import { LoaderFunctionArgs } from '@remix-run/node'
 import { getSupabase } from '~/lib/db/db'
 import path from 'path'
 import fs from 'fs'
@@ -74,17 +74,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       return acc
     }, {} as Record<number, AnalysisStatus>)
 
-    return json({
-      playlists: flaggedPlaylists as Playlist[] || [],
-      analysisStatusMap,
-      prompt: PLAYLIST_ANALYSIS_PROMPT
-    })
+    return { playlists: flaggedPlaylists as Playlist[] || [], analysisStatusMap, prompt: PLAYLIST_ANALYSIS_PROMPT }
   } catch (error) {
     console.error('Error loading playlists:', error)
-    return json({
-      playlists: [] as Playlist[],
-      analysisStatusMap: {} as Record<number, AnalysisStatus>,
-      prompt: PLAYLIST_ANALYSIS_PROMPT
-    })
+    return { playlists: [] as Playlist[], analysisStatusMap: {} as Record<number, AnalysisStatus>, prompt: PLAYLIST_ANALYSIS_PROMPT }
   }
 } 

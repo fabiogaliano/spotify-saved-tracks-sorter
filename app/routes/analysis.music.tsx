@@ -8,7 +8,6 @@ import { loader } from '~/features/analysis/loaders/music.loader.server'
 import { action } from '~/features/analysis/actions/music.action.server'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
 import type { LoaderFunctionArgs, ActionFunctionArgs } from '@remix-run/node'
-import { json } from '@remix-run/node'
 import { songAnalysisService } from '~/lib/services'
 
 // Define response type for the analysis action
@@ -275,11 +274,10 @@ export default function MusicAnalysis() {
 							<button
 								onClick={() => navigate('/analysis/playlist')}
 								disabled={!hasAnalyzedTracks}
-								className={`py-2 px-4 rounded ${
-									hasAnalyzedTracks
+								className={`py-2 px-4 rounded ${hasAnalyzedTracks
 										? 'bg-purple-600 hover:bg-purple-700 text-white'
 										: 'bg-gray-300 text-gray-500 cursor-not-allowed'
-								}`}
+									}`}
 							>
 								Continue to Playlist Analysis
 							</button>
@@ -316,48 +314,47 @@ export default function MusicAnalysis() {
 											<td className="px-6 py-4 whitespace-nowrap">
 												<span
 													className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${
-												analysisStore.getTrackStatus(track.id.toString()) === 'analyzed'
-													? 'bg-green-100 text-green-800'
-													: analysisStore.getTrackStatus(track.id.toString()) ===
-													  'analyzing'
-													? 'bg-yellow-100 text-yellow-800'
-													: analysisStore.getTrackStatus(track.id.toString()) === 'queued'
-													? 'bg-blue-100 text-blue-800'
-													: analysisStore.getTrackStatus(track.id.toString()) === 'error'
-													? 'bg-red-100 text-red-800'
-													: 'bg-gray-100 text-gray-800'
-											}`}
+                      ${analysisStore.getTrackStatus(track.id.toString()) === 'analyzed'
+															? 'bg-green-100 text-green-800'
+															: analysisStore.getTrackStatus(track.id.toString()) ===
+																'analyzing'
+																? 'bg-yellow-100 text-yellow-800'
+																: analysisStore.getTrackStatus(track.id.toString()) === 'queued'
+																	? 'bg-blue-100 text-blue-800'
+																	: analysisStore.getTrackStatus(track.id.toString()) === 'error'
+																		? 'bg-red-100 text-red-800'
+																		: 'bg-gray-100 text-gray-800'
+														}`}
 												>
 													{analysisStore.getTrackStatus(track.id.toString()) ===
-													'analyzed'
+														'analyzed'
 														? 'Analyzed'
 														: analysisStore.getTrackStatus(track.id.toString()) ===
-														  'analyzing'
-														? 'Analyzing...'
-														: analysisStore.getTrackStatus(track.id.toString()) ===
-														  'queued'
-														? 'Queued'
-														: analysisStore.getTrackStatus(track.id.toString()) ===
-														  'error'
-														? 'Error'
-														: 'Not Analyzed'}
+															'analyzing'
+															? 'Analyzing...'
+															: analysisStore.getTrackStatus(track.id.toString()) ===
+																'queued'
+																? 'Queued'
+																: analysisStore.getTrackStatus(track.id.toString()) ===
+																	'error'
+																	? 'Error'
+																	: 'Not Analyzed'}
 												</span>
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
 												{analysisStore.getTrackStatus(track.id.toString()) ===
 													'error' && (
-													<button
-														onClick={() => analyzeTrack(track)}
-														className="text-blue-600 hover:text-blue-900"
-														disabled={
-															analysisStore.getTrackStatus(track.id.toString()) ===
-															'analyzing'
-														}
-													>
-														Analyze
-													</button>
-												)}
+														<button
+															onClick={() => analyzeTrack(track)}
+															className="text-blue-600 hover:text-blue-900"
+															disabled={
+																analysisStore.getTrackStatus(track.id.toString()) ===
+																'analyzing'
+															}
+														>
+															Analyze
+														</button>
+													)}
 											</td>
 										</tr>
 									))
