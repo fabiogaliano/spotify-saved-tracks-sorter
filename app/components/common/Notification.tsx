@@ -66,7 +66,7 @@ export function Notification({
 			px-4 py-3 
 			rounded-xl
 			shadow-lg
-			backdrop-blur-sm
+			backdrop-blur-xs
 			transition-all duration-300 ease-in-out
 			${getTypeStyles()}
 		`}>

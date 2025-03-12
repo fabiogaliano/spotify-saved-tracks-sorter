@@ -21,7 +21,7 @@ export function SyncNotification({ type, message, onClose }: SyncNotificationPro
 			px-4 py-3 
 			rounded-xl
 			shadow-lg
-			backdrop-blur-sm
+			backdrop-blur-xs
 			transition-all duration-300 ease-in-out
 			${type === 'success' 
 				? 'bg-emerald-50/90 text-emerald-700 border border-emerald-200/50' 

@@ -265,7 +265,7 @@ export default function MusicAnalysis() {
 
 								<button
 									onClick={analyzeAllTracks}
-									className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+									className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-sm"
 								>
 									Analyze All Tracks
 								</button>

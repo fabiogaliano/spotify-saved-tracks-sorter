@@ -116,7 +116,7 @@ export function MatchLibrary({ savedTracks, playlists }: MatchLibraryProps) {
 										{result.matches.map(({ playlist, matchResult }) => (
 											<div
 												key={playlist.id}
-												className="flex items-center justify-between text-sm p-2 bg-gray-900 rounded"
+												className="flex items-center justify-between text-sm p-2 bg-gray-900 rounded-sm"
 											>
 												<span>{playlist.name || `Playlist ${playlist.id}`}</span>
 												<span

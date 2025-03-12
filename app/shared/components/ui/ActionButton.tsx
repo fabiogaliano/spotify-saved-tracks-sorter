@@ -100,7 +100,7 @@ export function ActionButton({
     font-semibold
     ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
     transition-colors duration-200
-    ${isRounded ? 'rounded-full' : 'rounded'}
+    ${isRounded ? 'rounded-full' : 'rounded-sm'}
     flex items-center justify-center
     ${isLoading ? 'relative' : ''}
     ${className}

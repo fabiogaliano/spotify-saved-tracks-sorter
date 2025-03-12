@@ -214,7 +214,7 @@ export default function PlaylistAnalysis() {
 
 						<button
 							onClick={analyzeAllPlaylists}
-							className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+							className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-sm"
 							disabled={!playlists || playlists.length === 0}
 						>
 							Analyze All Playlists
@@ -326,7 +326,7 @@ export default function PlaylistAnalysis() {
 					</p>
 					<Link
 						to="/playlists"
-						className="mt-4 inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+						className="mt-4 inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-sm"
 					>
 						Go to Playlists
 					</Link>

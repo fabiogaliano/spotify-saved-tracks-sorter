@@ -467,7 +467,7 @@ export function ProviderKeysManager({
 									{status.hasKey && (
 										<div className="flex items-center gap-2">
 											{status.isActive ? (
-												<span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+												<span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-green-100 text-green-800">
 													Active
 												</span>
 											) : (
@@ -477,7 +477,7 @@ export function ProviderKeysManager({
 														e.stopPropagation()
 														handleSetActiveProvider(status.provider)
 													}}
-													className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100"
+													className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100"
 													disabled={loading !== null}
 												>
 													{loading === 'setting' && status.provider === activeProvider ? (
@@ -569,7 +569,7 @@ export function ProviderKeysManager({
 														name="apiKey"
 														value={apiKey}
 														onChange={e => setApiKey(e.target.value)}
-														className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+														className="block w-full rounded-md border-gray-300 shadow-xs focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
 														placeholder={`Enter your ${getProviderDisplayName(
 															activeProvider
 														)} API key`}
@@ -669,7 +669,7 @@ export function ProviderKeysManager({
 														disabled={navigation.state === 'submitting' || !apiKey.trim()}
 														className={`
                               inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
-                              text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                              text-white bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                               ${
 																navigation.state === 'submitting' ||
 																!apiKey.trim() ||

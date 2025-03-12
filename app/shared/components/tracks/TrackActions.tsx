@@ -69,7 +69,7 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
 	return (
 		<div className="relative w-[120px] mx-auto">
 			<div
-				className="relative h-8 rounded-full bg-gray-100/80 cursor-pointer backdrop-blur-sm"
+				className="relative h-8 rounded-full bg-gray-100/80 cursor-pointer backdrop-blur-xs"
 				onClick={handleClick}
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}

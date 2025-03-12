@@ -33,7 +33,7 @@ export function StatusFilter({ showStatus, onStatusChange, showExtraStatus = fal
   }
 
   return (
-    <div className="inline-flex p-1.5 rounded-full bg-gray-100/80 shadow-sm">
+    <div className="inline-flex p-1.5 rounded-full bg-gray-100/80 shadow-xs">
       <div className="relative inline-flex bg-white/95 rounded-full">
         <div
           className="absolute transition-all duration-200 ease-out"

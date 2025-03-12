@@ -49,7 +49,7 @@ export function Config() {
 						{/* Toggle Switch */}
 						<div className="relative w-[100px]">
 							<div
-								className="h-9 rounded-full bg-gray-100/80 cursor-pointer backdrop-blur-sm"
+								className="h-9 rounded-full bg-gray-100/80 cursor-pointer backdrop-blur-xs"
 								onClick={() => setRemoveLikedSongs(!removeLikedSongs)}
 							>
 								{/* Status indicators */}
