@@ -2,7 +2,7 @@ import { getSupabase } from '~/lib/db/db'
 import type { ProviderKey, ProviderKeyInsert, ProviderKeyUpdate, ProviderKeysRepository, UserProviderPreference } from '~/lib/models/ProviderKeys'
 
 class SupabaseProviderKeysRepository implements ProviderKeysRepository {
-  async getByUserId(userId: string): Promise<ProviderKey[]> {
+  async getByUserId(userId: number): Promise<ProviderKey[]> {
     // Using Spotify user ID (string)
     const { data, error } = await getSupabase()
       .from('provider_keys')
@@ -13,8 +13,7 @@ class SupabaseProviderKeysRepository implements ProviderKeysRepository {
     return data || []
   }
 
-  async getByUserIdAndProvider(userId: string, provider: string): Promise<ProviderKey | null> {
-    // Using Spotify user ID (string)
+  async getByUserIdAndProvider(userId: number, provider: string): Promise<ProviderKey | null> {
     const { data, error } = await getSupabase()
       .from('provider_keys')
       .select('*')
@@ -68,7 +67,7 @@ class SupabaseProviderKeysRepository implements ProviderKeysRepository {
   }
 
   // User provider preferences methods
-  async getUserProviderPreference(userId: string): Promise<UserProviderPreference | null> {
+  async getUserProviderPreference(userId: number): Promise<UserProviderPreference | null> {
     // Using standard text comparison for user_id
     const { data, error } = await getSupabase()
       .from('user_provider_preferences')
@@ -80,8 +79,7 @@ class SupabaseProviderKeysRepository implements ProviderKeysRepository {
     return data
   }
 
-  async setActiveProvider(userId: string, provider: string): Promise<void> {
-    // Check if preference already exists
+  async setActiveProvider(userId: number, provider: string): Promise<void> {
     const existing = await this.getUserProviderPreference(userId)
 
     if (existing) {
@@ -96,7 +94,6 @@ class SupabaseProviderKeysRepository implements ProviderKeysRepository {
 
       if (error) throw error
     } else {
-      // Insert new preference
       const { error } = await getSupabase()
         .from('user_provider_preferences')
         .insert({

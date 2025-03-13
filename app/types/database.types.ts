@@ -203,7 +203,7 @@ export type Database = {
           iv: string
           provider: string
           updated_at: string
-          user_id: string
+          user_id: number | null
         }
         Insert: {
           auth_tag?: string
@@ -213,7 +213,7 @@ export type Database = {
           iv: string
           provider: string
           updated_at?: string
-          user_id: string
+          user_id?: number | null
         }
         Update: {
           auth_tag?: string
@@ -223,9 +223,17 @@ export type Database = {
           iv?: string
           provider?: string
           updated_at?: string
-          user_id?: string
+          user_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "provider_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_tracks: {
         Row: {
@@ -383,19 +391,27 @@ export type Database = {
         Row: {
           active_provider: string
           updated_at: string | null
-          user_id: string
+          user_id: number
         }
         Insert: {
           active_provider: string
           updated_at?: string | null
-          user_id: string
+          user_id: number
         }
         Update: {
           active_provider?: string
           updated_at?: string | null
-          user_id?: string
+          user_id?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_provider_preferences_new_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {

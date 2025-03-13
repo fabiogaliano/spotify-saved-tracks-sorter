@@ -1,5 +1,6 @@
 import { userRepository } from '~/lib/repositories/UserRepository'
 import { User } from '~/lib/models/User'
+import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 export class UserService {
   async getOrCreateUser(spotifyUserId: string, spotifyUserEmail: string): Promise<User> {
@@ -19,6 +20,13 @@ export class UserService {
     }
 
     return userRepository.updateUser(spotifyUserId, updateData)
+  }
+
+  async saveUserSetup(userId: number, config: { provider: string; apiKey: string; batchSize: number }) {
+    await providerKeyService.saveProviderKey(userId, config.provider, config.apiKey);
+    await providerKeyService.setActiveProvider(userId, config.provider);
+
+    // todo: Save batchSize to user preferences
   }
 }
 
