@@ -1,7 +1,7 @@
 import type { MetaFunction } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
+import { redirect, useLoaderData } from '@remix-run/react'
+import { useUserStore } from '~/lib/stores/userStore'
 import { useState } from 'react'
-import { SpotifyLogin } from '~/shared/components/auth/SpotifyLogin'
 import { HomeHeader } from '~/shared/components/home/HomeHeader'
 import { TrackFilterControls } from '~/shared/components/tracks/TrackFilterControls'
 import { TracksTable } from '~/shared/components/tracks/TracksTable'
@@ -10,6 +10,7 @@ import { useTrackInitialization } from '~/shared/hooks/useTrackInitialization'
 import { useResponsiveDisplay } from '~/shared/hooks/useResponsiveDisplay'
 import { loader } from '~/features/tracks/loaders/index.loader.server'
 import { action } from '~/features/tracks/actions/index.action.server'
+import LandingPage from '~/features/auth/LandingPage'
 
 export { loader, action }
 
@@ -26,14 +27,15 @@ export default function Index() {
 		'unsorted'
 	)
 
-	// Initialize responsive display settings
+	const { initialize } = useUserStore()
+	initialize(user, spotifyProfile)
+
 	const { showAlbum, showAddedDate, setShowAlbum, setShowAddedDate } =
 		useResponsiveDisplay()
 
-	// Initialize tracks in the global store
 	useTrackInitialization({ savedTracks })
 
-	// Filter tracks based on current status
+
 	const { filteredTracks } = useTrackFiltering({
 		savedTracks,
 		showStatus,
@@ -41,11 +43,7 @@ export default function Index() {
 	})
 
 	if (!spotifyProfile) {
-		return (
-			<div className="h-screen flex items-center justify-center p-4">
-				<SpotifyLogin />
-			</div>
-		)
+		return <LandingPage />
 	}
 
 	return (
