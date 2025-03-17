@@ -95,7 +95,7 @@ export class ProviderKeyService {
   async getActiveProvider(userId: number): Promise<string | null> {
     try {
       const preference = await providerKeysRepository.getUserProviderPreference(userId)
-      if (preference) {
+      if (preference && preference.active_provider) {
         const hasKey = await this.hasProviderKey(userId, preference.active_provider)
         if (hasKey) {
           return preference.active_provider

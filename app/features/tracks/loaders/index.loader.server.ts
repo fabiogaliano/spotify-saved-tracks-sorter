@@ -10,17 +10,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const spotifySession = await spotifyStrategy.getSession(request)
 
-    if (spotifySession?.user?.id) {
-      logger.setDefaultContext({ username: spotifySession.user.id });
-    }
-
     if (!spotifySession) {
-      logger.warn('no session')
-      return { spotifyProfile: null, user: null, savedTracks: null }
+      return Response.json({ spotifyProfile: null, user: null, savedTracks: null }, { status: 401 })
     }
 
     if (spotifySession.expiresAt <= Date.now()) {
-      logger.info('session expired')
       throw await authenticator.logout(request, { redirectTo: '/login' })
     }
 
@@ -31,29 +25,36 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     })
 
     const spotifyProfile = await getSpotifyApi().currentUser.profile()
-
     if (!spotifyProfile?.id) {
-      logger.error('Failed to get Spotify profile')
       throw new Error('Failed to get Spotify profile')
     }
 
-    logger.info('login')
-
     const user = await userService.getOrCreateUser(spotifyProfile.id, spotifyProfile.email)
 
+    const sessionCookie = await createUserSession(request, { id: user.id, has_setup_completed: user.has_setup_completed })
 
-    await createUserSession(request, { id: user.id, has_setup_completed: user.has_setup_completed })
 
     if (!user?.has_setup_completed) {
-      return redirect('/setup')
+      return redirect('/initial-setup', {
+        headers: {
+          "Set-Cookie": sessionCookie
+        }
+      })
     }
 
     const savedTracks = user ? await trackRepository.getSavedTracks(user.id) : null
 
-    return { spotifyProfile, user, savedTracks }
+    return Response.json(
+      { spotifyProfile, user, savedTracks },
+      {
+        headers: {
+          "Set-Cookie": sessionCookie
+        }
+      }
+    );
   } catch (error) {
     console.error('Loader error:', error)
     if (error instanceof Response) throw error
-    return { spotifyProfile: null, user: null, savedTracks: null }
+    return Response.json({ spotifyProfile: null, user: null, savedTracks: null }, { status: 500 })
   }
 } 

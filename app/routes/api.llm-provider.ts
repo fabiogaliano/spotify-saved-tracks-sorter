@@ -1,6 +1,7 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
+import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { authenticator } from '~/features/auth/auth.server'
 import type { SpotifySession } from '~/features/auth/auth.server'
+import { getUserSession } from '~/features/auth/session.server'
 import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 /**
@@ -8,11 +9,10 @@ import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
  * Handles fetching available providers and their configurations
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  // Ensure user is authenticated
-  const session = (await authenticator.isAuthenticated(request)) as SpotifySession | null
-
-  if (!session) {
-    return { error: 'Unauthorized', status: 401 }
+  const userSession = await getUserSession(request)
+  console.log({ userSession })
+  if (!userSession?.id) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const url = new URL(request.url)
@@ -20,7 +20,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   switch (action) {
     case 'getProviders':
-      // Return list of supported LLM providers
       return {
         providers: [
           { id: 'openai', name: 'OpenAI', description: 'OpenAI API' },
@@ -28,27 +27,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
           { id: 'google', name: 'Google', description: 'Google Gemini API' }
         ]
       }
-
     case 'getProviderStatuses':
-      // Get the status of all providers for the current user
       try {
-        // Make sure we have a valid user ID
-        if (!session.user || !session.user.id) {
-          return { error: 'User ID not found', status: 400 }
-        }
-
-        // Get provider statuses - use the user ID from the session
-        // The statuses now already include the active provider information
-        const providerStatuses = await providerKeyService.getProviderStatuses(session.user.id)
-
-        return { providerStatuses }
+        return { providerStatuses: await providerKeyService.getProviderStatuses(userSession.id) }
       } catch (error) {
-        console.error('Error fetching provider statuses:', error)
-        return { error: 'Failed to fetch provider statuses', status: 500 }
+        return Response.json({ error: 'Failed to fetch provider statuses' }, { status: 500 })
       }
 
     default:
-      return { error: 'Invalid action', status: 400 }
+      return Response.json({ error: 'Invalid action' }, { status: 400 })
   }
 }
 
@@ -56,11 +43,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
  * Handle API key management operations
  */
 export async function action({ request }: ActionFunctionArgs) {
-  // Ensure user is authenticated
-  const session = (await authenticator.isAuthenticated(request)) as SpotifySession | null
+  const userSession = await getUserSession(request)
+  console.log({ userSession })
 
-  if (!session) {
-    return { error: 'Unauthorized', status: 401 }
+  if (!userSession) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const formData = await request.formData()
@@ -68,68 +55,62 @@ export async function action({ request }: ActionFunctionArgs) {
   const provider = formData.get('provider') as string
 
   if (!provider) {
-    return { error: 'Provider is required', status: 400 }
+    return Response.json({ error: 'Provider is required' }, { status: 400 })
   }
 
-  // Make sure we have a valid user ID
-  if (!session.user || !session.user.id) {
-    return { error: 'User ID not found', status: 400 }
+  if (!userSession.id) {
+    return Response.json({ error: 'User ID not found' }, { status: 400 })
   }
-
-  const userId = session.user.id
 
   try {
     switch (action) {
       case 'saveKey': {
         const apiKey = formData.get('apiKey') as string
         if (!apiKey) {
-          return { error: 'API key is required', status: 400 }
+          return Response.json({ error: 'API key is required' }, { status: 400 })
         }
 
         try {
-          await providerKeyService.saveProviderKey(userId, provider, apiKey)
-          return { success: true, message: `${provider} API key saved successfully` }
+          await providerKeyService.saveProviderKey(userSession.id, provider, apiKey)
+          return Response.json({ success: true, message: `${provider} API key saved successfully` }, { status: 200 })
         } catch (saveError) {
           console.error(`Error saving ${provider} API key:`, saveError)
-          return { error: `Failed to save ${provider} API key`, details: saveError instanceof Error ? saveError.message : 'Unknown error', status: 500 }
+          return Response.json({ error: `Failed to save ${provider} API key`, details: saveError instanceof Error ? saveError.message : 'Unknown error' }, { status: 500 })
         }
       }
 
       case 'deleteKey': {
-        await providerKeyService.deleteProviderKey(userId, provider)
-        return { success: true, message: `${provider} API key deleted successfully` }
+        await providerKeyService.deleteProviderKey(userSession.id, provider)
+        return Response.json({ success: true, message: `${provider} API key deleted successfully` }, { status: 200 })
       }
 
       case 'validateKey': {
         const apiKey = formData.get('apiKey') as string
         if (!apiKey) {
-          return { error: 'API key is required', status: 400 }
+          return Response.json({ error: 'API key is required' }, { status: 400 })
         }
 
         // This would call the validation logic
         // For now, we'll just return success
-        return { success: true, message: `${provider} API key is valid` }
+        return Response.json({ success: true, message: `${provider} API key is valid` }, { status: 200 })
       }
 
       case 'setActiveProvider': {
         try {
-          // Check if the provider has a key before setting it as active
-          const hasKey = await providerKeyService.hasProviderKey(userId, provider)
+          const hasKey = await providerKeyService.hasProviderKey(userSession.id, provider)
           if (!hasKey) {
-            return { error: `Cannot set ${provider} as active because it doesn't have an API key`, status: 400 }
+            return Response.json({ error: `Cannot set ${provider} as active because it doesn't have an API key` }, { status: 400 })
           }
 
-          // Set the provider as active
-          await providerKeyService.setActiveProvider(userId, provider)
-          return { success: true, message: `${provider} set as active provider` }
+          await providerKeyService.setActiveProvider(userSession.id, provider)
+          return Response.json({ success: true, message: `${provider} set as active provider` }, { status: 200 })
         } catch (error) {
-          console.error(`Error setting ${provider} as active:`, error)
-          return { error: `Failed to set ${provider} as active provider`, details: error instanceof Error ? error.message : 'Unknown error', status: 500 }
+          return Response.json({ error: `Failed to set ${provider} as active provider`, details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
         }
       }
 
       default:
-        return { error: 'Invalid action', status: 400 }
+        return Response.json({ error: 'Invalid action' }, { status: 400 })
     }
   } catch (error) {
     console.error(`Error performing action ${action} for provider ${provider}:`, error)
@@ -147,6 +128,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    return { error: errorMessage, details: errorDetails, status: 500 }
+    return Response.json({ error: errorMessage, details: errorDetails }, { status: 500 })
   }
 }

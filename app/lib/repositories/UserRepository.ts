@@ -1,5 +1,6 @@
+import { useFetcher } from '@remix-run/react'
 import { getSupabase } from '~/lib/db/db'
-import { User, CreateUserParams } from '../models/User'
+import { User, CreateUserParams, UserPreferences } from '~/lib/models/User'
 
 
 export interface UserRepository {
@@ -7,6 +8,8 @@ export interface UserRepository {
   createUser(user: CreateUserParams): Promise<User>
   updateUser(spotifyUserId: string, updates: Partial<User>): Promise<User>
   updateSetupCompletion(spotifyUserId: string, hasSetupCompleted: boolean): Promise<User>
+  updateUserPreferences(userId: number, updates: Partial<UserPreferences>): Promise<UserPreferences>
+  setUserHasSetupCompleted(userId: number, hasSetup: boolean): Promise<User>
 }
 
 class SupabaseUserRepository implements UserRepository {
@@ -48,6 +51,32 @@ class SupabaseUserRepository implements UserRepository {
 
   async updateSetupCompletion(spotifyUserId: string, hasSetupCompleted: boolean): Promise<User> {
     return this.updateUser(spotifyUserId, { has_setup_completed: hasSetupCompleted })
+  }
+
+  async updateUserPreferences(userId: number, updates: Partial<UserPreferences>): Promise<UserPreferences> {
+    const { data, error } = await getSupabase()
+      .from('user_preferences')
+      .upsert({ user_id: userId, ...updates })
+      .eq('user_id', userId)
+      .select()
+      .single()
+
+    if (error) throw error
+    if (!data) throw new Error('Failed to update user preferences')
+    return data
+  }
+
+  async setUserHasSetupCompleted(userId: number, hasSetup: boolean): Promise<User> {
+    const { data, error } = await getSupabase()
+      .from('users')
+      .update({ has_setup_completed: hasSetup })
+      .eq('id', userId)
+      .select()
+      .single()
+
+    if (error) throw error
+    if (!data) throw new Error('Failed to update user has setup')
+    return data
   }
 }
 

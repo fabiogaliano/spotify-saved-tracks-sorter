@@ -20,27 +20,21 @@ export function generateIV(): Buffer {
 }
 
 // Encrypt data using AES-256-GCM
-export function encrypt(text: string, key: Buffer): { 
-  encryptedData: string, 
+export function encrypt(text: string, key: Buffer): {
+  encryptedData: string,
   iv: string,
-  authTag: string 
+  authTag: string
 } {
   try {
-    console.log('Starting encryption process')
     const iv = generateIV()
-    console.log('IV generated successfully')
-    
+
     const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
-    console.log('Cipher created successfully')
-    
+
     let encrypted = cipher.update(text, 'utf8', 'hex')
     encrypted += cipher.final('hex')
-    console.log('Text encrypted successfully')
-    
-    // Get the authentication tag
+
     const authTag = cipher.getAuthTag().toString('hex')
-    console.log('Auth tag generated successfully')
-    
+
     return {
       encryptedData: encrypted,
       iv: iv.toString('hex'),
@@ -55,37 +49,35 @@ export function encrypt(text: string, key: Buffer): {
 // Decrypt data using AES-256-GCM
 export function decrypt(encryptedData: string, iv: string, authTag: string, key: Buffer): string {
   const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'hex'))
-  
+
   // Set the authentication tag
   decipher.setAuthTag(Buffer.from(authTag, 'hex'))
-  
+
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8')
   decrypted += decipher.final('utf8')
-  
+
   return decrypted
 }
 
 // Encrypt an API key for storage
-export function encryptApiKey(apiKey: string, secret: string): { 
-  encryptedKey: string, 
+export function encryptApiKey(apiKey: string, secret: string): {
+  encryptedKey: string,
   iv: string,
-  authTag: string 
+  authTag: string
 } {
   if (!apiKey) {
     console.error('Error: API key is empty or null')
     throw new Error('API key cannot be empty')
   }
-  
+
   if (!secret) {
     console.error('Error: Encryption secret is empty or null')
     throw new Error('Encryption secret cannot be empty')
   }
-  
+
   try {
-    console.log('Generating encryption key from secret')
     const key = crypto.pbkdf2Sync(secret, 'static-salt-for-api-keys', 100000, KEY_LENGTH, 'sha512')
-    console.log('Key generated successfully')
-    
+
     const result = encrypt(apiKey, key)
     // Map encryptedData to encryptedKey for the expected return format
     return {

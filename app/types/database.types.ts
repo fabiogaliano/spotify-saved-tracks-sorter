@@ -387,19 +387,25 @@ export type Database = {
         }
         Relationships: []
       }
-      user_provider_preferences: {
+      user_preferences: {
         Row: {
-          active_provider: string
+          active_provider: string | null
+          batch_size: number
+          sync_mode: Database["public"]["Enums"]["sync_mode_enum"]
           updated_at: string | null
           user_id: number
         }
         Insert: {
-          active_provider: string
+          active_provider?: string | null
+          batch_size?: number
+          sync_mode?: Database["public"]["Enums"]["sync_mode_enum"]
           updated_at?: string | null
           user_id: number
         }
         Update: {
-          active_provider?: string
+          active_provider?: string | null
+          batch_size?: number
+          sync_mode?: Database["public"]["Enums"]["sync_mode_enum"]
           updated_at?: string | null
           user_id?: number
         }
@@ -467,6 +473,7 @@ export type Database = {
     Enums: {
       analysis_version_enum: "1.0"
       sorting_status_enum: "unsorted" | "sorted" | "ignored"
+      sync_mode_enum: "manual" | "automatic"
     }
     CompositeTypes: {
       [_ in never]: never

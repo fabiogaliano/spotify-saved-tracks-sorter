@@ -1,9 +1,9 @@
 import { getSupabase } from '~/lib/db/db'
-import type { ProviderKey, ProviderKeyInsert, ProviderKeyUpdate, ProviderKeysRepository, UserProviderPreference } from '~/lib/models/ProviderKeys'
+import type { ProviderKey, ProviderKeyInsert, ProviderKeyUpdate, ProviderKeysRepository } from '~/lib/models/ProviderKeys'
+import { UserPreferences } from '~/lib/models/User'
 
 class SupabaseProviderKeysRepository implements ProviderKeysRepository {
   async getByUserId(userId: number): Promise<ProviderKey[]> {
-    // Using Spotify user ID (string)
     const { data, error } = await getSupabase()
       .from('provider_keys')
       .select('*')
@@ -66,12 +66,10 @@ class SupabaseProviderKeysRepository implements ProviderKeysRepository {
     if (error) throw error
   }
 
-  // User provider preferences methods
-  async getUserProviderPreference(userId: number): Promise<UserProviderPreference | null> {
-    // Using standard text comparison for user_id
+  async getUserProviderPreference(userId: number): Promise<Pick<UserPreferences, 'active_provider'> | null> {
     const { data, error } = await getSupabase()
-      .from('user_provider_preferences')
-      .select('*')
+      .from('user_preferences')
+      .select('active_provider')
       .eq('user_id', userId)
       .maybeSingle()
 
@@ -80,30 +78,18 @@ class SupabaseProviderKeysRepository implements ProviderKeysRepository {
   }
 
   async setActiveProvider(userId: number, provider: string): Promise<void> {
-    const existing = await this.getUserProviderPreference(userId)
-
-    if (existing) {
-      // Update existing preference
-      const { error } = await getSupabase()
-        .from('user_provider_preferences')
-        .update({
-          active_provider: provider,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId)
-
-      if (error) throw error
-    } else {
-      const { error } = await getSupabase()
-        .from('user_provider_preferences')
-        .insert({
+    const { error } = await getSupabase()
+      .from('user_preferences')
+      .upsert(
+        {
           user_id: userId,
           active_provider: provider,
           updated_at: new Date().toISOString()
-        })
+        },
+        { onConflict: 'user_id' }
+      )
 
-      if (error) throw error
-    }
+    if (error) throw error
   }
 }
 

@@ -22,7 +22,7 @@ export async function getAuthenticatedSession(request: Request) {
       throw await authenticator.logout(request, { redirectTo: '/' })
     }
 
-    logger.info(`Session valid for user ${session?.user?.id}`)
+    logger.info(`login:session: ${session?.user?.id}`)
     return session
   } catch (error) {
     if (error instanceof Response) {

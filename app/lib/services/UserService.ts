@@ -1,5 +1,5 @@
 import { userRepository } from '~/lib/repositories/UserRepository'
-import { User } from '~/lib/models/User'
+import { LibrarySyncMode, User } from '~/lib/models/User'
 import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 export class UserService {
@@ -22,11 +22,13 @@ export class UserService {
     return userRepository.updateUser(spotifyUserId, updateData)
   }
 
-  async saveUserSetup(userId: number, config: { provider: string; apiKey: string; batchSize: number }) {
-    await providerKeyService.saveProviderKey(userId, config.provider, config.apiKey);
-    await providerKeyService.setActiveProvider(userId, config.provider);
+  async saveUserInitialSetup(userId: number, config: { batchSize: number, syncMode: LibrarySyncMode }) {
+    await userRepository.updateUserPreferences(userId, { batch_size: config.batchSize, sync_mode: config.syncMode })
+    return true;
+  }
 
-    // todo: Save batchSize to user preferences
+  async setUserHasSetupCompleted(userId: number, hasSetupCompleted: boolean) {
+    await userRepository.setUserHasSetupCompleted(userId, hasSetupCompleted);
   }
 }
 
