@@ -4,6 +4,7 @@ import { json, redirect } from '@remix-run/node'
 import { authenticator } from '~/features/auth/auth.server'
 import type { SpotifySession } from '~/features/auth/auth.server'
 import { StrictMode } from 'react'
+import { Toaster } from '~/shared/components/ui/sonner'
 
 import styles from "./tailwind.css?url"
 
@@ -56,6 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="min-h-screen bg-gray-50">
 				<main>{children}</main>
+				<Toaster richColors position="bottom-right" duration={5000} closeButton={true} />
 				<ScrollRestoration />
 				<Scripts />
 			</body>

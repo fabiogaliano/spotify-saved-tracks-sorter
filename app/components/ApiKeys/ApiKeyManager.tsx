@@ -3,6 +3,7 @@ import { EyeIcon, EyeOffIcon, CheckCircle, AlertCircle, Loader2 } from 'lucide-r
 import Anthropic from '~/shared/components/svgs/providers/Anthropic';
 import Google from '~/shared/components/svgs/providers/Google';
 import OpenAI from '~/shared/components/svgs/providers/OpenAI';
+import { useNotificationStore } from '~/lib/stores/notificationStore';
 
 export type ProviderStatus = {
   provider: string;
@@ -10,12 +11,7 @@ export type ProviderStatus = {
   isActive?: boolean;
 };
 
-export type NotificationType = 'success' | 'error' | 'info';
-
-export type Notification = {
-  type: NotificationType;
-  message: string;
-};
+// Using the toast store instead of local notification types
 
 export type ApiKeyManagerProps = {
   providers?: string[];
@@ -24,9 +20,7 @@ export type ApiKeyManagerProps = {
   onSetActiveSuccess?: (provider: string) => void;
   compact?: boolean;
   className?: string;
-  showNotifications?: boolean;
   autoSetActive?: boolean;
-  onNotification?: (notification: Notification | null) => void;
 };
 
 export type ApiKeyManagerHandle = {
@@ -41,15 +35,14 @@ export const ApiKeyManager = forwardRef<ApiKeyManagerHandle, ApiKeyManagerProps>
   onSaveSuccess,
   onSetActiveSuccess,
   className = '',
-  showNotifications = true,
-  autoSetActive = true,
-  onNotification
+  autoSetActive = false
 }, ref) => {
   const [activeProvider, setActiveProvider] = useState<string>(initialProvider);
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
-  const [notification, setNotification] = useState<Notification | null>(null);
+
+  const { success: showSuccess, error: showError } = useNotificationStore();
 
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
@@ -63,13 +56,6 @@ export const ApiKeyManager = forwardRef<ApiKeyManagerHandle, ApiKeyManagerProps>
     setApiKey('');
     setShowApiKey(false);
   }, [activeProvider]);
-
-  // Handle notification changes
-  useEffect(() => {
-    if (onNotification && notification) {
-      onNotification(notification);
-    }
-  }, [notification, onNotification]);
 
   const getProviderDisplayName = (provider: string) => {
     switch (provider) {
@@ -126,10 +112,7 @@ export const ApiKeyManager = forwardRef<ApiKeyManagerHandle, ApiKeyManagerProps>
 
       if (!isValid) {
         setLoading(null);
-        setNotification({
-          type: 'error' as NotificationType,
-          message: `your key for ${getProviderDisplayName(activeProvider)} is invalid. try copy it again from your provider.`,
-        });
+        showError(`Your key for ${getProviderDisplayName(activeProvider)} is invalid. Try copying it again from your provider.`);
         return false;
       }
 
@@ -149,11 +132,7 @@ export const ApiKeyManager = forwardRef<ApiKeyManagerHandle, ApiKeyManagerProps>
 
       if (saveResponse.ok) {
         setLoading(null);
-        const successNotification = {
-          type: 'success' as NotificationType,
-          message: `${getProviderDisplayName(activeProvider)} API key saved successfully`,
-        };
-        setNotification(successNotification);
+        showSuccess(`${getProviderDisplayName(activeProvider)} API key saved successfully`);
 
         if (autoSetActive) {
           const activeFormData = new FormData();
@@ -182,63 +161,21 @@ export const ApiKeyManager = forwardRef<ApiKeyManagerHandle, ApiKeyManagerProps>
         return true;
       } else {
         setLoading(null);
-        const errorNotification = {
-          type: 'error' as NotificationType,
-          message: saveData.error || `Failed to save ${getProviderDisplayName(activeProvider)} API key`,
-        };
-        setNotification(errorNotification);
+        showError(saveData.error || `Failed to save ${getProviderDisplayName(activeProvider)} API key`);
         return false;
       }
     } catch (error) {
       console.error('Error saving API key:', error);
       setLoading(null);
-      const errorNotification = {
-        type: 'error' as NotificationType,
-        message: `Failed to save ${getProviderDisplayName(activeProvider)} API key`,
-      };
-      setNotification(errorNotification);
+      showError(`Failed to save ${getProviderDisplayName(activeProvider)} API key`);
       return false;
     }
   };
 
-  const renderNotification = () => {
-    if (!showNotifications || !notification) return null;
-
-    return (
-      <div className={`p-3 rounded-md ${notification.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            {notification.type === 'success' ? (
-              <CheckCircle className="h-5 w-5 text-green-500" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-rose-500" />
-            )}
-          </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium">{notification.message}</p>
-          </div>
-          <div className="ml-auto pl-3">
-            <div className="-mx-1.5 -my-1.5">
-              <button
-                type="button"
-                onClick={() => setNotification(null)}
-                className="inline-flex rounded-md p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none"
-              >
-                <span className="sr-only">Dismiss</span>
-                <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // We no longer need the renderNotification function since we're using the toast store
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {renderNotification()}
 
       {/* Provider selection */}
       <div className="space-y-2">

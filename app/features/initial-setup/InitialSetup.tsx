@@ -170,7 +170,6 @@ const InitialSetup = ({ userId }: InitialSetupProps) => {
                     }, 1500);
                   }}
                   autoSetActive={true}
-                  showNotifications={true}
                 />
 
                 <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-4">
