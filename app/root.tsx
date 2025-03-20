@@ -1,9 +1,8 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { json, redirect } from '@remix-run/node'
-import { authenticator } from '~/features/auth/auth.server'
-import type { SpotifySession } from '~/features/auth/auth.server'
+import { redirect } from '@remix-run/node'
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import { StrictMode } from 'react'
+import { getUserSession } from '~/features/auth/auth.utils'
 import { Toaster } from '~/shared/components/ui/sonner'
 
 import styles from "./tailwind.css?url"
@@ -24,21 +23,41 @@ export const links: LinksFunction = () => [
 
 const publicRoutes = ['/', '/about', '/auth/spotify', '/auth/spotify/callback', '/config']
 
+export type RootLoaderData = {
+	isAuthenticated: boolean;
+	spotifyUser: {
+		id: string;
+		email: string;
+		name: string;
+		image?: string;
+	} | null;
+	appUser: {
+		id: number;
+		hasSetupCompleted: boolean;
+	} | null;
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url)
 	const pathname = url.pathname
 
-	const session = (await authenticator.isAuthenticated(request)) as SpotifySession | null
+	const sessionData = await getUserSession(request)
+	const isAuthenticated = !!sessionData
 
-	if (!publicRoutes.includes(pathname) && !session) {
+	if (!publicRoutes.includes(pathname) && !isAuthenticated) {
 		return redirect('/')
 	}
 
-	return json({
-		isAuthenticated: !!session,
-		user: session?.user || null,
-	})
+	return Response.json({
+		isAuthenticated,
+		spotifyUser: sessionData?.spotifyUser || null,
+		appUser: sessionData ? {
+			id: sessionData.userId,
+			hasSetupCompleted: sessionData.hasSetupCompleted
+		} : null,
+	} as RootLoaderData)
 }
+
 
 export const meta: MetaFunction = () => {
 	return [

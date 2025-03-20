@@ -1,7 +1,9 @@
-import { Authenticator } from 'remix-auth'
+import { Authenticator, Strategy } from 'remix-auth'
 import { SpotifyStrategy } from 'remix-auth-spotify'
 import { sessionStorage } from './session.server'
+import { userService } from '~/lib/services/UserService'
 
+// This is the structure that remix-auth-spotify expects
 export type SpotifySession = {
   accessToken: string
   refreshToken: string
@@ -12,6 +14,11 @@ export type SpotifySession = {
     email: string
     name: string
     image?: string
+  }
+  // We extend it with our app-specific data
+  appUser: {
+    id: number
+    hasSetupCompleted: boolean
   }
 }
 
@@ -27,7 +34,6 @@ if (!process.env.SPOTIFY_CALLBACK_URL) {
   throw new Error('Missing SPOTIFY_CALLBACK_URL env')
 }
 
-// See https://developer.spotify.com/documentation/general/guides/authorization/scopes
 const scopes = [
   'user-read-email',
   'playlist-read-private',
@@ -45,23 +51,35 @@ export const spotifyStrategy = new SpotifyStrategy(
     sessionStorage,
     scope: scopes,
   },
-  async ({ accessToken, refreshToken, extraParams, profile }) => ({
-    accessToken,
-    refreshToken: refreshToken!,
-    expiresAt: Date.now() + extraParams.expiresIn * 1000,
-    tokenType: extraParams.tokenType,
-    user: {
-      id: profile.id,
-      email: profile.emails[0].value,
-      name: profile.displayName,
-      image: profile.__json.images?.[0]?.url,
-    },
-  })
+  async ({ accessToken, refreshToken, extraParams, profile }) => {
+    // Get or create the user in our database when authenticating
+    const appUser = await userService.getOrCreateUser(profile.id, profile.emails[0].value)
+
+    // Return the format expected by SpotifyStrategy but with our extra data
+    return {
+      accessToken,
+      refreshToken: refreshToken!,
+      expiresAt: Date.now() + extraParams.expiresIn * 1000,
+      tokenType: extraParams.tokenType,
+      user: {
+        id: profile.id,
+        email: profile.emails[0].value,
+        name: profile.displayName,
+        image: profile.__json.images?.[0]?.url,
+      },
+      // Our app-specific data
+      appUser: {
+        id: appUser.id,
+        hasSetupCompleted: appUser.has_setup_completed,
+      }
+    }
+  }
 )
 
-export const authenticator = new Authenticator(sessionStorage, {
+export const authenticator = new Authenticator<SpotifySession>(sessionStorage, {
   sessionKey: spotifyStrategy.sessionKey,
   sessionErrorKey: spotifyStrategy.sessionErrorKey,
 })
 
-authenticator.use(spotifyStrategy)
+
+authenticator.use(spotifyStrategy as unknown as Strategy<SpotifySession, unknown>)

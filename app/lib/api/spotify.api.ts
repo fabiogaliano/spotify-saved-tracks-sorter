@@ -5,16 +5,14 @@ if (process.env.SPOTIFY_CLIENT_ID === undefined) {
 }
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID
 
-let spotifyInstance: SpotifyApi | null = null
-
 interface SpotifySession {
   accessToken: string
   refreshToken: string
   expiresIn: number
 }
 
-export function initializeSpotifyApi(session: SpotifySession) {
-  spotifyInstance = SpotifyApi.withAccessToken(SPOTIFY_CLIENT_ID, {
+export function createSpotifyApi(session: SpotifySession): SpotifyApi {
+  const spotifyInstance = SpotifyApi.withAccessToken(SPOTIFY_CLIENT_ID, {
     access_token: session.accessToken,
     refresh_token: session.refreshToken,
     expires_in: session.expiresIn,
@@ -22,18 +20,8 @@ export function initializeSpotifyApi(session: SpotifySession) {
   })
 
   if (!spotifyInstance) {
-    throw new Error('Failed to initialize SpotifyApi instance')
-  }
-}
-
-export function getSpotifyApi(): SpotifyApi {
-  if (!spotifyInstance) {
-    throw new Error('SpotifyApi instance is not initialized')
+    throw new Error('Failed to create SpotifyApi instance')
   }
 
   return spotifyInstance
-}
-
-export function clearSpotifyApi() {
-  spotifyInstance = null
 }

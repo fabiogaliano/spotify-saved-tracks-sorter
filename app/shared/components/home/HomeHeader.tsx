@@ -7,9 +7,7 @@ import { SyncLibraryButton } from '~/components/Sync/SyncLibraryButton'
 import { useTrackSortingStore } from '~/lib/stores/trackSortingStore'
 
 interface HomeHeaderProps {
-	spotifyProfile: {
-		display_name?: string
-	} | null
+	spotifyProfile: string | null
 	user: {
 		id: number
 	} | null
@@ -37,9 +35,9 @@ export function HomeHeader({ spotifyProfile, user }: HomeHeaderProps) {
 		<nav className="space-y-6 lg:space-y-10 mb-6 lg:mb-12">
 			<div className="flex flex-col-reverse sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4 lg:pb-8">
 				<div className="w-full sm:w-auto">
-					{spotifyProfile?.display_name && (
+					{spotifyProfile && (
 						<h1 className="text-xl sm:text-2xl lg:text-3xl font-medium text-gray-900 break-words text-center sm:text-left">
-							Welcome, {spotifyProfile.display_name}
+							Welcome, {spotifyProfile}
 						</h1>
 					)}
 				</div>

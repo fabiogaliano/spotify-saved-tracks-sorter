@@ -1,7 +1,6 @@
 import { ActionFunctionArgs, LoaderFunction, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { getAuthenticatedSession } from "~/features/auth/auth.session";
-import { getUserSession, type UserSessionData } from "~/features/auth/session.server";
+import { getUserSession } from "~/features/auth/auth.utils";
 import InitialSetup from "~/features/initial-setup/InitialSetup";
 import { LibrarySyncMode } from "~/lib/models/User";
 import { userService } from "~/lib/services/UserService";
@@ -31,19 +30,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const userSession: UserSessionData | null = await getUserSession(request);
+  const userSession = await getUserSession(request);
 
   if (userSession) {
-    return { userId: userSession.id };
+    return { userId: userSession.userId };
   }
 
-  const session = await getAuthenticatedSession(request);
-
-  if (!session?.user?.id) {
-    return redirect("/");
-  }
-
-  return { userId: session.user.id };
+  return redirect("/");
 };
 
 export default function Setup() {
