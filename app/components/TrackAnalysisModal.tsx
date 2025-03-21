@@ -564,20 +564,20 @@ const TrackAnalysisModal = ({
             <TabsTrigger value="context" className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-500 rounded-none px-4 py-2 text-gray-400 hover:text-white">Context</TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[60vh]">
-            <TabsContent value="themes" className="mt-0">
+          <ScrollArea className="h-[60vh] pr-2 hover-show-scrollbar">
+            <TabsContent value="themes" className="mt-0 pr-1">
               {meaning && meaning.themes ? renderThemes(meaning.themes) : null}
             </TabsContent>
 
-            <TabsContent value="interpretation" className="mt-0">
+            <TabsContent value="interpretation" className="mt-0 pr-1">
               {meaning && meaning.interpretation ? renderInterpretation(meaning.interpretation) : null}
             </TabsContent>
 
-            <TabsContent value="emotional" className="mt-0">
+            <TabsContent value="emotional" className="mt-0 pr-1">
               {emotional ? renderEmotional(emotional) : null}
             </TabsContent>
 
-            <TabsContent value="context" className="mt-0">
+            <TabsContent value="context" className="mt-0 pr-1">
               {context ? renderContext(context) : null}
             </TabsContent>
           </ScrollArea>
@@ -607,7 +607,7 @@ const TrackAnalysisModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden bg-gray-900 border-gray-800">
+      <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden bg-gray-900 border-gray-800" style={{ scrollbarGutter: 'stable' }}>
         <DialogClose style={{ color: '#10b981' }} />
 
         <DialogHeader className="border-b border-gray-800 pb-3">
@@ -615,7 +615,7 @@ const TrackAnalysisModal = ({
           <DialogDescription className="text-gray-400">{artistName}</DialogDescription>
         </DialogHeader>
 
-        <div className="py-1">
+        <div className="py-1 pr-1">
           {renderContent()}
         </div>
       </DialogContent>

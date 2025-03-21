@@ -57,6 +57,42 @@ body {
   ---break---
 */
 
+/* Custom Scrollbar Styles */
+/* For Webkit browsers (Chrome, Safari, etc.) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 20px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.5);
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+/* Custom class to show scrollbar only on hover */
+.hover-show-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.1);
+}
+
+.hover-show-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+}
+
 :root {
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.141 0.005 285.823);
@@ -185,5 +221,44 @@ body {
 	}
 	body {
 		@apply bg-background text-foreground;
+	}
+
+	/* Custom scrollbar styling */
+	::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	::-webkit-scrollbar-track {
+		background: transparent;
+		margin: 4px;
+	}
+
+	::-webkit-scrollbar-thumb {
+		background: rgba(75, 85, 99, 0.5);
+		border-radius: 10px;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background: rgba(75, 85, 99, 0.7);
+	}
+
+	/* Hide scrollbar when not in use but keep functionality */
+	.hide-scrollbar::-webkit-scrollbar {
+		width: 0px;
+		background: transparent;
+	}
+
+	.hide-scrollbar {
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE and Edge */
+	}
+
+	.hover-show-scrollbar::-webkit-scrollbar-thumb {
+		background: transparent;
+	}
+
+	.hover-show-scrollbar:hover::-webkit-scrollbar-thumb {
+		background: rgba(75, 85, 99, 0.5);
 	}
 }
