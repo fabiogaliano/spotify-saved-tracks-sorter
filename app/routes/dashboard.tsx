@@ -36,7 +36,7 @@ const DashboardTab = ({ value, ...props }: ComponentProps<typeof TabsTrigger>) =
 };
 
 const Dashboard = () => {
-  const { user, likedSongs, stats } = useLoaderData<DashboardLoaderData>()
+  const { user, likedSongs, stats, playlistsWithTracks } = useLoaderData<DashboardLoaderData>()
   const [activeTab, setActiveTab] = useState('overview');
   const [loadedTabs, setLoadedTabs] = useState<LoadedTabs>({
     overview: true, // Only the default tab is loaded initially
@@ -92,7 +92,7 @@ const Dashboard = () => {
             {loadedTabs.likedsongs && (
               <Card className="bg-gray-900/80 border-gray-800">
                 <CardContent className="p-6">
-                  <LikedSongsAnalysis />
+                  <LikedSongsAnalysis likedSongs={likedSongs} />
                 </CardContent>
               </Card>
             )}
@@ -102,7 +102,7 @@ const Dashboard = () => {
             {loadedTabs.playlists && (
               <Card className="bg-gray-900/80 border-gray-800">
                 <CardContent className="p-6">
-                  <PlaylistManagement />
+                  <PlaylistManagement playlistsWithTracks={playlistsWithTracks} />
                 </CardContent>
               </Card>
             )}

@@ -1,5 +1,6 @@
-import type { LyricsService } from '../../domain/Lyrics'
-import type { SongAnalysisService } from '../../domain/SongAnalysis'
+
+import { LyricsService } from '~/lib/models/Lyrics'
+import { SongAnalysisService } from '~/lib/models/SongAnalysis'
 import type { LlmProviderManager } from '../llm/LlmProviderManager'
 
 const MUSIC_ANALYSIS_PROMPT = `Artist: {artist}

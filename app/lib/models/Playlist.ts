@@ -1,12 +1,14 @@
-import type { Database } from '~/types/database.types'
+import type { Tables, TablesInsert, TablesUpdate } from '~/types/database.types'
 import type { SyncStatus } from '~/lib/repositories/TrackRepository'
+import { SavedTrackRow } from './Track'
 
-export type Playlist = Database['public']['Tables']['playlists']['Row']
-export type PlaylistInsert = Database['public']['Tables']['playlists']['Insert']
-export type PlaylistUpdate = Database['public']['Tables']['playlists']['Update']
-export type PlaylistTrack = Database['public']['Tables']['playlist_tracks']['Row']
-export type PlaylistTrackInsert = Database['public']['Tables']['playlist_tracks']['Insert']
-export type PlaylistTrackUpdate = Database['public']['Tables']['playlist_tracks']['Update']
+export type Playlist = Tables<'playlists'>
+export type PlaylistInsert = TablesInsert<'playlists'>
+export type PlaylistUpdate = TablesUpdate<'playlists'>
+export type PlaylistTrack = Tables<'playlist_tracks'>
+export type PlaylistTrackInsert = TablesInsert<'playlist_tracks'>
+export type PlaylistTrackUpdate = TablesUpdate<'playlist_tracks'>
+export type PlaylistWithTracks = Playlist & { tracks: SavedTrackRow[] }
 
 // DTO for Spotify's playlist data structure
 export type SpotifyPlaylistDTO = {
@@ -48,7 +50,7 @@ export const mapSpotifyPlaylistToPlaylistInsert = (
 export interface PlaylistRepository {
   getPlaylists(userId: number): Promise<Playlist[]>
   savePlaylists(playlists: PlaylistInsert[]): Promise<Playlist[]>
-  getPlaylistAnalysis(playlistId: number): Promise<Database['public']['Tables']['playlist_analyses']['Row'] | null>
+  getPlaylistAnalysis(playlistId: number): Promise<Tables<'playlist_analyses'> | null>
   updateSyncStatus(userId: number, status: SyncStatus): Promise<void>
   getLastSyncTime(userId: number): Promise<string | null>
   savePlaylistTracks(playlistTracks: PlaylistTrackInsert[]): Promise<void>

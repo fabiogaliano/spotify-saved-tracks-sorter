@@ -1,7 +1,7 @@
 import { getSupabase } from '~/lib/services/DatabaseService'
 import type { Database } from '~/types/database.types'
 import { SYNC_STATUS, type SyncStatus } from './TrackRepository'
-import type { Playlist, PlaylistInsert, PlaylistTrackInsert, PlaylistRepository as IPlaylistRepository } from '~/lib/models/Playlist'
+import type { Playlist, PlaylistInsert, PlaylistTrackInsert, PlaylistRepository as IPlaylistRepository, PlaylistTrack } from '~/lib/models/Playlist'
 
 class SupabasePlaylistRepository implements IPlaylistRepository {
   async getPlaylists(userId: number): Promise<Playlist[]> {
@@ -172,6 +172,16 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
       throw error
     }
     return data
+  }
+
+  async getPlaylistTracksByUserId(userId: number): Promise<PlaylistTrack[]> {
+    const { data, error } = await getSupabase()
+      .from('playlist_tracks')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (error) throw error
+    return data || []
   }
 }
 

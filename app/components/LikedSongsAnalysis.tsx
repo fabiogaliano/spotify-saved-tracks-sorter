@@ -36,33 +36,116 @@ import {
   useReactTable,
   getPaginationRowModel,
   getSortedRowModel,
-  getFilteredRowModel
+  getFilteredRowModel,
+  Table
 } from '@tanstack/react-table';
+import { SavedTrackRow, TrackWithAnalysis } from '~/lib/models/Track';
 
-// Sample data
-const data = [
-  { id: '1', title: 'Billie Jean', artist: 'Michael Jackson', album: 'Thriller', addedAt: '2023-10-15', analysisStatus: 'analyzed' },
-  { id: '2', title: 'Bohemian Rhapsody', artist: 'Queen', album: 'A Night at the Opera', addedAt: '2023-09-28', analysisStatus: 'analyzed' },
-  { id: '3', title: 'Imagine', artist: 'John Lennon', album: 'Imagine', addedAt: '2023-11-03', analysisStatus: 'not_analyzed' },
-  { id: '4', title: 'Smells Like Teen Spirit', artist: 'Nirvana', album: 'Nevermind', addedAt: '2023-08-12', analysisStatus: 'analyzed' },
-  { id: '5', title: 'Sweet Child O\' Mine', artist: 'Guns N\' Roses', album: 'Appetite for Destruction', addedAt: '2023-09-05', analysisStatus: 'not_analyzed' },
-  { id: '6', title: 'Hotel California', artist: 'Eagles', album: 'Hotel California', addedAt: '2023-07-22', analysisStatus: 'analyzed' },
-  { id: '7', title: 'Stairway to Heaven', artist: 'Led Zeppelin', album: 'Led Zeppelin IV', addedAt: '2023-10-01', analysisStatus: 'pending' },
-  { id: '8', title: 'Yesterday', artist: 'The Beatles', album: 'Help!', addedAt: '2023-11-10', analysisStatus: 'not_analyzed' },
-  { id: '9', title: 'Purple Haze', artist: 'Jimi Hendrix', album: 'Are You Experienced', addedAt: '2023-08-30', analysisStatus: 'failed' },
-  { id: '10', title: 'Like a Rolling Stone', artist: 'Bob Dylan', album: 'Highway 61 Revisited', addedAt: '2023-07-15', analysisStatus: 'analyzed' },
-];
+// Styles interface
+interface StylesType {
+  card: string;
+  iconContainer: string;
+  tableHeader: string;
+  tableCell: string;
+  tableRow: string;
+  button: {
+    outline: string;
+  };
+}
+
+// Common styles
+const styles: StylesType = {
+  card: "bg-gray-900/80 border-gray-800",
+  iconContainer: "p-2 rounded-full",
+  tableHeader: "text-left px-4 py-3 text-sm font-medium text-gray-400",
+  tableCell: "px-4 py-3 text-white",
+  tableRow: "border-b border-gray-800/50 hover:bg-gray-800/30",
+  button: {
+    outline: "border-gray-700 text-white hover:bg-gray-800"
+  }
+};
+
+// Helper function to determine analysis status
+const getAnalysisStatus = (track: TrackWithAnalysis): AnalysisStatus => {
+  if (!track.analysis) return 'not_analyzed';
+  // You might want to add more logic here based on your application's requirements
+  // For example, checking if analysis.analysis contains certain fields or values
+  return 'analyzed';
+};
+
+// Component Props Interfaces
+interface StatusCardProps {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  iconBg?: string;
+  valueColor?: string;
+}
+
+// Status Card component
+const StatusCard = ({ title, value, icon, iconBg, valueColor = 'text-white' }: StatusCardProps) => {
+  return (
+    <Card className={styles.card}>
+      <CardContent className="p-4 flex items-center justify-between">
+        <div>
+          <p className="text-gray-400 text-sm">{title}</p>
+          <p className={`${valueColor} text-2xl font-bold`}>{value}</p>
+        </div>
+        <div className={`${iconBg || 'bg-gray-800'} ${styles.iconContainer}`}>
+          {icon}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface SearchInputProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+}
+
+// Search Input component
+const SearchInput = ({ value, onChange, placeholder }: SearchInputProps) => {
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      <Input
+        value={value || ''}
+        onChange={onChange}
+        placeholder={placeholder || "Search..."}
+        className="pl-9 bg-gray-800 border-gray-700 text-white w-full"
+      />
+      {value && (
+        <button
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          onClick={() => onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+};
+
+type AnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed';
+
+interface AnalysisBadgeProps {
+  status: AnalysisStatus;
+  onAnalyze: () => void;
+  onView: () => void;
+}
 
 // Analysis badge component
-const AnalysisBadge = ({ status, onAnalyze, onView }) => {
-  const badgeStyle = {
+const AnalysisBadge = ({ status, onAnalyze, onView }: AnalysisBadgeProps) => {
+  const badgeStyle: Record<AnalysisStatus, string> = {
     analyzed: "bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30 cursor-pointer",
     pending: "bg-blue-500/20 border-blue-500 text-blue-400",
     not_analyzed: "bg-gray-500/20 border-gray-600 text-gray-400 hover:bg-gray-500/30 cursor-pointer",
     failed: "bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30 cursor-pointer"
   };
 
-  const statusText = {
+  const statusText: Record<AnalysisStatus, string> = {
     analyzed: "Analyzed",
     pending: "In Progress",
     not_analyzed: "Not Analyzed",
@@ -94,51 +177,95 @@ const AnalysisBadge = ({ status, onAnalyze, onView }) => {
   );
 };
 
+interface TablePaginationProps {
+  table: Table<any>;
+}
+
+// Table Pagination component
+const TablePagination = ({ table }: TablePaginationProps) => {
+  return (
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        className={styles.button.outline}
+        onClick={() => table.previousPage()}
+        disabled={!table.getCanPreviousPage()}
+      >
+        Previous
+      </Button>
+      <span className="text-white">
+        Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        className={styles.button.outline}
+        onClick={() => table.nextPage()}
+        disabled={!table.getCanNextPage()}
+      >
+        Next
+      </Button>
+    </div>
+  );
+};
+
 // Main component
-const LikedSongsAnalysis = () => {
+const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] }) => {
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnVisibility, setColumnVisibility] = useState({
     addedAt: false
   });
 
+
   // Calculate stats for display
-  const stats = {
-    analyzed: data.filter(track => track.analysisStatus === 'analyzed').length,
-    pending: data.filter(track => track.analysisStatus === 'pending').length,
-    notAnalyzed: data.filter(track => track.analysisStatus === 'not_analyzed').length,
-    failed: data.filter(track => track.analysisStatus === 'failed').length,
-    total: data.length
-  };
+  const stats = useMemo(() => {
+    const analyzed = likedSongs.filter(track => getAnalysisStatus(track) === 'analyzed').length;
+    const notAnalyzed = likedSongs.filter(track => getAnalysisStatus(track) === 'not_analyzed').length;
+    
+    return {
+      analyzed,
+      pending: 0, // You might want to add logic to detect pending analyses
+      notAnalyzed,
+      failed: 0, // You might want to add logic to detect failed analyses
+      total: likedSongs.length
+    };
+  }, [likedSongs]);
 
   // Column definitions
-  const columnHelper = createColumnHelper();
+  const columnHelper = createColumnHelper<TrackWithAnalysis>();
 
   const columns = useMemo(() => [
-    columnHelper.accessor('title', {
+    columnHelper.accessor(row => row.track.name, {
+      id: 'title',
       header: 'Title',
       cell: info => <div className="font-medium text-white">{info.getValue()}</div>
     }),
-    columnHelper.accessor('artist', {
+    columnHelper.accessor(row => row.track.artist, {
+      id: 'artist',
       header: 'Artist',
       cell: info => info.getValue()
     }),
-    columnHelper.accessor('album', {
+    columnHelper.accessor(row => row.track.album, {
+      id: 'album',
       header: 'Album',
-      cell: info => info.getValue()
+      cell: info => info.getValue() || 'N/A'
     }),
-    columnHelper.accessor('addedAt', {
+    columnHelper.accessor(row => row.liked_at, {
+      id: 'addedAt',
       header: 'Date Added',
       cell: info => new Date(info.getValue()).toLocaleDateString()
     }),
-    columnHelper.accessor('analysisStatus', {
+    columnHelper.accessor(row => getAnalysisStatus(row), {
+      id: 'analysisStatus',
       header: 'Status',
       cell: info => (
         <div className="flex justify-center">
           <AnalysisBadge
             status={info.getValue()}
-            onView={() => console.log('View analysis for:', info.row.original.title)}
-            onAnalyze={() => console.log('Analyze track:', info.row.original.title)}
+            onView={() => console.log('View analysis for:', info.row.original.track.name)}
+            onAnalyze={() => console.log('Analyze track:', info.row.original.track.name)}
           />
         </div>
       )
@@ -158,7 +285,7 @@ const LikedSongsAnalysis = () => {
         <div className="flex justify-center">
           <Checkbox
             checked={row.getIsSelected()}
-            disabled={row.original.analysisStatus === 'pending'}
+            disabled={getAnalysisStatus(row.original) === 'pending'}
             onCheckedChange={value => row.toggleSelected(!!value)}
             aria-label="Select row"
           />
@@ -169,14 +296,14 @@ const LikedSongsAnalysis = () => {
 
   // Initialize the table
   const table = useReactTable({
-    data,
+    data: likedSongs,
     columns,
     state: {
       rowSelection,
       globalFilter,
       columnVisibility
     },
-    enableRowSelection: true,
+    enableRowSelection: row => getAnalysisStatus(row.original) !== 'pending',
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
@@ -196,57 +323,37 @@ const LikedSongsAnalysis = () => {
 
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gray-900/80 border-gray-800">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Tracks</p>
-              <p className="text-white text-2xl font-bold">{stats.total}</p>
-            </div>
-            <div className="bg-gray-800 p-2 rounded-full">
-              <Music className="h-6 w-6 text-white" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatusCard
+          title="Total Tracks"
+          value={stats.total}
+          icon={<Music className="h-6 w-6 text-white" />}
+        />
 
-        <Card className="bg-gray-900/80 border-gray-800">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Analyzed</p>
-              <p className="text-green-400 text-2xl font-bold">{stats.analyzed}</p>
-            </div>
-            <div className="bg-green-500/20 p-2 rounded-full">
-              <CheckCircle className="h-6 w-6 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatusCard
+          title="Analyzed"
+          value={stats.analyzed}
+          valueColor="text-green-400"
+          iconBg="bg-green-500/20"
+          icon={<CheckCircle className="h-6 w-6 text-green-400" />}
+        />
 
-        <Card className="bg-gray-900/80 border-gray-800">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">In Progress</p>
-              <p className="text-blue-400 text-2xl font-bold">{stats.pending}</p>
-            </div>
-            <div className="bg-blue-500/20 p-2 rounded-full">
-              <Clock className="h-6 w-6 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatusCard
+          title="In Progress"
+          value={stats.pending}
+          valueColor="text-blue-400"
+          iconBg="bg-blue-500/20"
+          icon={<Clock className="h-6 w-6 text-blue-400" />}
+        />
 
-        <Card className="bg-gray-900/80 border-gray-800">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Not Analyzed</p>
-              <p className="text-white text-2xl font-bold">{stats.notAnalyzed + stats.failed}</p>
-            </div>
-            <div className="bg-gray-800 p-2 rounded-full">
-              <AlertCircle className="h-6 w-6 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatusCard
+          title="Not Analyzed"
+          value={stats.notAnalyzed + stats.failed}
+          icon={<AlertCircle className="h-6 w-6 text-gray-400" />}
+        />
       </div>
 
       {/* Table Card */}
-      <Card className="bg-gray-900/80 border-gray-800 flex-1">
+      <Card className={`${styles.card} flex-1`}>
         <CardHeader className="pb-2 border-b border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <CardTitle className="text-lg flex items-center gap-2 text-white">
@@ -266,7 +373,7 @@ const LikedSongsAnalysis = () => {
               {/* Column visibility */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-gray-700 text-white flex gap-1">
+                  <Button variant="outline" className={`${styles.button.outline} flex gap-1`}>
                     <Columns className="h-4 w-4" />
                     <span className="hidden md:inline">Columns</span>
                   </Button>
@@ -301,23 +408,11 @@ const LikedSongsAnalysis = () => {
         </CardHeader>
 
         <div className="p-4 border-b border-gray-800">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              value={globalFilter || ''}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder="Search all columns..."
-              className="pl-9 bg-gray-800 border-gray-700 text-white w-full"
-            />
-            {globalFilter && (
-              <button
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                onClick={() => setGlobalFilter('')}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search all columns..."
+          />
         </div>
 
         <CardContent className="p-0">
@@ -329,7 +424,7 @@ const LikedSongsAnalysis = () => {
                     {headerGroup.headers.map(header => (
                       <th
                         key={header.id}
-                        className="text-left px-4 py-3 text-sm font-medium text-gray-400"
+                        className={styles.tableHeader}
                       >
                         {header.isPlaceholder ? null : (
                           <div
@@ -355,12 +450,12 @@ const LikedSongsAnalysis = () => {
                 {table.getRowModel().rows.map(row => (
                   <tr
                     key={row.id}
-                    className="border-b border-gray-800/50 hover:bg-gray-800/30"
+                    className={styles.tableRow}
                   >
                     {row.getVisibleCells().map(cell => (
                       <td
                         key={cell.id}
-                        className="px-4 py-3 text-white"
+                        className={styles.tableCell}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -380,29 +475,7 @@ const LikedSongsAnalysis = () => {
             <div className="text-sm text-gray-400">
               {table.getFilteredRowModel().rows.length} results
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-700 text-white hover:bg-gray-800"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                Previous
-              </Button>
-              <span className="text-white">
-                Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-700 text-white hover:bg-gray-800"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                Next
-              </Button>
-            </div>
+            <TablePagination table={table} />
           </div>
         </CardFooter>
       </Card>

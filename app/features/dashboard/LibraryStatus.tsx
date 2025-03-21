@@ -36,7 +36,7 @@ export function LibraryStatus({ stats }: { stats: TrackAnalysisStats }) {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-300">AI-flagged playlists</span>
-            <span className="font-medium text-white">7</span>
+            <span className="font-medium text-white">? implement</span>
           </div>
         </div>
 

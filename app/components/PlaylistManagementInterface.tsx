@@ -1,128 +1,210 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '~/shared/components/ui/Card';
+import {
+  CheckCircle2,
+  Info,
+  ListMusic,
+  Music,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Sparkles
+} from 'lucide-react';
+import React, { ReactNode, useEffect, useState } from 'react';
+import { PlaylistWithTracks } from '~/lib/models/Playlist';
+import { Card, CardContent, CardHeader, CardTitle } from '~/shared/components/ui/Card';
 import { Button } from '~/shared/components/ui/button';
 import { Input } from '~/shared/components/ui/input';
-import { Textarea } from '~/shared/components/ui/textarea';
-import { Switch } from '~/shared/components/ui/switch';
-import { Progress } from '~/shared/components/ui/progress';
-import {
-  Music,
-  Search,
-  ListMusic,
-  Edit,
-  Settings,
-  Sparkles,
-  Plus,
-  CheckCircle2,
-  X,
-  Info,
-  Pencil,
-  Save,
-  ArrowRight,
-  RefreshCw,
-  AlertCircle
-} from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 import { ScrollArea } from '~/shared/components/ui/scroll-area';
+import { Switch } from '~/shared/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
+import { Textarea } from '~/shared/components/ui/textarea';
 
-const PlaylistManagement = () => {
+// Color mapping helper function
+const getColorClasses = (colorName: string) => {
+  const colorMap: Record<string, { bg: string; inner: string; icon: string; text: string }> = {
+    blue: {
+      bg: 'bg-blue-500/30',
+      inner: 'bg-blue-500',
+      icon: 'bg-blue-500/20',
+      text: 'text-blue-400'
+    },
+    green: {
+      bg: 'bg-green-500/30',
+      inner: 'bg-green-500',
+      icon: 'bg-green-500/20',
+      text: 'text-green-400'
+    },
+    purple: {
+      bg: 'bg-purple-500/30',
+      inner: 'bg-purple-500',
+      icon: 'bg-purple-500/20',
+      text: 'text-purple-400'
+    },
+    pink: {
+      bg: 'bg-pink-500/30',
+      inner: 'bg-pink-500',
+      icon: 'bg-pink-500/20',
+      text: 'text-pink-400'
+    },
+    yellow: {
+      bg: 'bg-yellow-500/30',
+      inner: 'bg-yellow-500',
+      icon: 'bg-yellow-500/20',
+      text: 'text-yellow-400'
+    }
+  };
+
+  return colorMap[colorName] || colorMap.blue;
+};
+
+// Reusable UI components
+const IconContainer = ({ icon: Icon, color, size = 'md' }: { icon: React.ElementType, color: string, size?: 'sm' | 'md' | 'lg' }) => {
+  const sizeClasses = {
+    sm: 'p-0.5',
+    md: 'p-1.5',
+    lg: 'p-2'
+  };
+
+  const iconSizes = {
+    sm: 'h-3 w-3',
+    md: 'h-5 w-5',
+    lg: 'h-6 w-6'
+  };
+
+  return (
+    <div className={`bg-${color}-500/20 ${sizeClasses[size]} rounded-md`}>
+      <Icon className={`${iconSizes[size]} text-${color}-400`} />
+    </div>
+  );
+};
+
+const SectionTitle = ({ icon, title, count }: { icon: React.ReactNode, title: string, count?: number }) => {
+  return (
+    <div className="flex justify-between items-center">
+      <CardTitle className="text-lg flex items-center gap-2 text-white">
+        {icon}
+        <span className="font-bold">{title}</span>
+      </CardTitle>
+      {count !== undefined && (
+        <div className="text-xs bg-blue-500/20 px-2 py-1 rounded-md text-blue-400 font-medium">
+          {count} total
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Badge = ({ children, color = 'blue' }: { children: ReactNode, color?: string }) => {
+  return (
+    <div className={`text-xs bg-${color}-500/20 px-2 py-1 rounded-md text-${color}-400 font-medium`}>
+      {children}
+    </div>
+  );
+};
+
+const NotificationMessage = ({ type, message }: { type: 'success' | 'info', message: string }) => {
+  return (
+    <div className={`p-4 rounded-md border ${type === 'success'
+      ? 'bg-green-900/20 border-green-800 text-green-400'
+      : 'bg-blue-900/20 border-blue-800 text-blue-400'}`}>
+      <div className="flex items-center gap-2">
+        {type === 'success' ? (
+          <CheckCircle2 className="h-4 w-4" />
+        ) : (
+          <Info className="h-4 w-4" />
+        )}
+        {message}
+      </div>
+    </div>
+  );
+};
+
+const ColoredBox = ({ color, size = 'md' }: { color: string, size?: 'sm' | 'md' | 'lg' }) => {
+  const sizes = {
+    sm: { outer: 'w-6 h-6', inner: 'w-4 h-4' },
+    md: { outer: 'w-10 h-10', inner: 'w-7 h-7' },
+    lg: { outer: 'w-32 h-32', inner: 'w-24 h-24' }
+  };
+
+  const { outer, inner } = sizes[size];
+  const colors = getColorClasses(color);
+
+  return (
+    <div className={`${outer} ${colors.bg} rounded-md flex items-center justify-center`}>
+      <div className={`${inner} ${colors.inner} rounded-sm`}></div>
+    </div>
+  );
+};
+
+const PlaylistManagement = ({ playlistsWithTracks }: { playlistsWithTracks: PlaylistWithTracks[] }) => {
   // State for active playlist and edit mode
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(() => {
+    // Try to get the previously selected playlist from localStorage
+    const savedPlaylist = typeof window !== 'undefined' ? localStorage.getItem('selectedPlaylistId') : null;
+    return savedPlaylist;
+  });
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [notification, setNotification] = useState(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'info', message: string } | null>(null);
   const [aiFlag, setAiFlag] = useState('');
 
-  // Demo data
-  const playlists = [
-    {
-      id: '1',
-      name: 'Chill Vibes',
-      songCount: 42,
-      imageColor: 'green',
-      description: 'AI: relaxing beats with mellow lyrics and acoustic instruments, perfect for unwinding after a long day',
-      aiEnabled: true,
-      songs: 42,
-      recentlyAdded: 5
-    },
-    {
-      id: '2',
-      name: 'Morning Energy',
-      songCount: 28,
-      imageColor: 'blue',
-      description: 'AI: upbeat tracks to start your day, positive lyrics and energetic tempos',
-      aiEnabled: true,
-      songs: 28,
-      recentlyAdded: 0
-    },
-    {
-      id: '3',
-      name: 'Late Night Feels',
-      songCount: 35,
-      imageColor: 'purple',
-      description: 'AI: emotional and introspective tracks with atmospheric production and deep lyrics',
-      aiEnabled: true,
-      songs: 35,
-      recentlyAdded: 2
-    },
-    {
-      id: '4',
-      name: 'Workout Mix',
-      songCount: 50,
-      imageColor: 'pink',
-      description: 'AI: high energy songs with driving beats and 120+ BPM, motivational lyrics',
-      aiEnabled: true,
-      songs: 50,
-      recentlyAdded: 8
-    },
-    {
-      id: '5',
-      name: 'Focus',
-      songCount: 32,
-      imageColor: 'yellow',
-      description: 'AI: ambient and minimal music for concentration, mostly instrumental or with minimal lyrics',
-      aiEnabled: true,
-      songs: 32,
-      recentlyAdded: 0
-    },
-    {
-      id: '6',
-      name: 'Party Playlist',
-      songCount: 64,
-      imageColor: 'blue',
-      description: 'Good vibes only',
-      aiEnabled: false,
-      songs: 64,
-      recentlyAdded: 12
-    },
-    {
-      id: '7',
-      name: 'Road Trip',
-      songCount: 47,
-      imageColor: 'green',
-      description: 'Music for the open road',
-      aiEnabled: false,
-      songs: 47,
-      recentlyAdded: 3
-    },
-  ];
+  // Assign deterministic colors to playlists based on their ID
+  const getColorForPlaylist = (playlistId: string) => {
+    const colors = ['blue', 'green', 'purple', 'pink', 'yellow'];
+    // Use the sum of character codes in the ID to determine the color
+    // This ensures the same playlist always gets the same color
+    const charSum = playlistId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charSum % colors.length];
+  };
 
-  // Sample playlist tracks for the selected playlist
-  const playlistTracks = [
-    { id: 't1', title: 'Dreams', artist: 'Fleetwood Mac', album: 'Rumours', dateAdded: '2 days ago' },
-    { id: 't2', title: 'Landslide', artist: 'Fleetwood Mac', album: 'Fleetwood Mac', dateAdded: '2 days ago' },
-    { id: 't3', title: 'Vienna', artist: 'Billy Joel', album: 'The Stranger', dateAdded: '1 week ago' },
-    { id: 't4', title: 'Rocket Man', artist: 'Elton John', album: 'Honky Château', dateAdded: '3 days ago' },
-    { id: 't5', title: 'Tiny Dancer', artist: 'Elton John', album: 'Madman Across The Water', dateAdded: '3 days ago' },
-    { id: 't6', title: 'Africa', artist: 'Toto', album: 'Toto IV', dateAdded: '5 days ago' },
-    { id: 't7', title: 'Hotel California', artist: 'Eagles', album: 'Hotel California', dateAdded: '1 week ago' },
-    { id: 't8', title: 'Bohemian Rhapsody', artist: 'Queen', album: 'A Night at the Opera', dateAdded: '2 weeks ago' },
-    { id: 't9', title: 'Under Pressure', artist: 'Queen & David Bowie', album: 'Hot Space', dateAdded: '2 weeks ago' },
-    { id: 't10', title: 'Space Oddity', artist: 'David Bowie', album: 'David Bowie', dateAdded: '3 weeks ago' },
-  ];
+  // Set the first playlist as active when component mounts
+  useEffect(() => {
+    if (playlistsWithTracks.length > 0) {
+      // If there's no selected playlist or the selected playlist doesn't exist in the current list
+      const playlistExists = playlistsWithTracks.some(p => p.id.toString() === selectedPlaylist);
+
+      if (!selectedPlaylist || !playlistExists) {
+        setSelectedPlaylist(playlistsWithTracks[0].id.toString());
+      }
+    }
+  }, [playlistsWithTracks, selectedPlaylist]);
+
+  // Save selected playlist to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedPlaylist) {
+      localStorage.setItem('selectedPlaylistId', selectedPlaylist);
+    }
+  }, [selectedPlaylist]);
+
+  // Map playlists to the format needed for the UI
+  const playlistsData = playlistsWithTracks.map(playlist => ({
+    id: playlist.id.toString(),
+    name: playlist.name,
+    songCount: playlist.track_count,
+    imageColor: getColorForPlaylist(playlist.id.toString()),
+    description: playlist.description || 'No description',
+    aiEnabled: playlist.is_flagged || false,
+    songs: playlist.tracks.length,
+    recentlyAdded: 0 // We don't have this information readily available
+  }));
+
+  // Function to format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return `${Math.floor(diffDays / 30)} months ago`;
+  };
 
   // Filter playlists based on search query
-  const filteredPlaylists = playlists.filter(playlist => {
+  const filteredPlaylists = playlistsData.filter(playlist => {
     if (!searchQuery) return true;
 
     const query = searchQuery.toLowerCase();
@@ -134,8 +216,24 @@ const PlaylistManagement = () => {
 
   // Get the currently selected playlist
   const currentPlaylist = selectedPlaylist
-    ? playlists.find(p => p.id === selectedPlaylist)
+    ? playlistsData.find(p => p.id === selectedPlaylist)
     : null;
+
+  // Get the tracks for the currently selected playlist
+  const currentPlaylistWithTracks = selectedPlaylist
+    ? playlistsWithTracks.find(p => p.id.toString() === selectedPlaylist)
+    : null;
+
+  // Format tracks for display
+  const playlistTracks = currentPlaylistWithTracks
+    ? currentPlaylistWithTracks.tracks.map(track => ({
+      id: track.track.spotify_track_id,
+      title: track.track.name,
+      artist: track.track.artist,
+      album: track.track.album || 'Unknown Album',
+      dateAdded: formatDate(track.liked_at)
+    }))
+    : [];
 
   // Handlers
   const handleSaveAiFlag = () => {
@@ -148,7 +246,7 @@ const PlaylistManagement = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleEnableAI = (enabled) => {
+  const handleEnableAI = (enabled: boolean) => {
     setNotification({
       type: enabled ? 'success' : 'info',
       message: enabled
@@ -168,43 +266,7 @@ const PlaylistManagement = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Color mapping helper function
-  const getColorClasses = (colorName) => {
-    const colorMap = {
-      blue: {
-        bg: 'bg-blue-500/30',
-        inner: 'bg-blue-500',
-        icon: 'bg-blue-500/20',
-        text: 'text-blue-400'
-      },
-      green: {
-        bg: 'bg-green-500/30',
-        inner: 'bg-green-500',
-        icon: 'bg-green-500/20',
-        text: 'text-green-400'
-      },
-      purple: {
-        bg: 'bg-purple-500/30',
-        inner: 'bg-purple-500',
-        icon: 'bg-purple-500/20',
-        text: 'text-purple-400'
-      },
-      pink: {
-        bg: 'bg-pink-500/30',
-        inner: 'bg-pink-500',
-        icon: 'bg-pink-500/20',
-        text: 'text-pink-400'
-      },
-      yellow: {
-        bg: 'bg-yellow-500/30',
-        inner: 'bg-yellow-500',
-        icon: 'bg-yellow-500/20',
-        text: 'text-yellow-400'
-      }
-    };
-
-    return colorMap[colorName] || colorMap.blue;
-  };
+  // Using the globally defined getColorClasses function
 
   return (
     <div className="h-full flex flex-col space-y-6">
@@ -232,19 +294,7 @@ const PlaylistManagement = () => {
 
       {/* Notification */}
       {notification && (
-        <div className={`p-4 rounded-md border ${notification.type === 'success'
-          ? 'bg-green-900/20 border-green-800 text-green-400'
-          : 'bg-blue-900/20 border-blue-800 text-blue-400'
-          }`}>
-          <div className="flex items-center gap-2">
-            {notification.type === 'success' ? (
-              <CheckCircle2 className="h-4 w-4" />
-            ) : (
-              <Info className="h-4 w-4" />
-            )}
-            {notification.message}
-          </div>
-        </div>
+        <NotificationMessage type={notification.type} message={notification.message} />
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
@@ -253,16 +303,11 @@ const PlaylistManagement = () => {
           <Card className="bg-gray-900/80 border-gray-800 h-full">
             <CardHeader className="pb-2 border-b border-gray-800">
               <div className="flex justify-between items-center">
-                <CardTitle className="text-lg flex items-center gap-2 text-white">
-                  <div className="bg-purple-500/20 p-1.5 rounded-md">
-                    <ListMusic className="h-5 w-5 text-purple-400" />
-                  </div>
-                  <span className="font-bold">Your Playlists</span>
-                </CardTitle>
-
-                <div className="text-xs bg-blue-500/20 px-2 py-1 rounded-md text-blue-400 font-medium">
-                  {playlists.length} total
-                </div>
+                <SectionTitle
+                  icon={<IconContainer icon={ListMusic} color="purple" />}
+                  title="Your Playlists"
+                  count={playlistsData.length}
+                />
               </div>
             </CardHeader>
 
@@ -303,16 +348,12 @@ const PlaylistManagement = () => {
                             }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 ${colors.bg} rounded-md flex items-center justify-center`}>
-                              <div className={`w-7 h-7 ${colors.inner} rounded-sm`}></div>
-                            </div>
+                            <ColoredBox color={playlist.imageColor} />
                             <div>
                               <div className="flex items-center gap-1.5">
                                 <span>{playlist.name}</span>
                                 {playlist.aiEnabled && (
-                                  <div className={`${colors.icon} p-0.5 rounded`}>
-                                    <Sparkles className={`h-3 w-3 ${colors.text}`} />
-                                  </div>
+                                  <IconContainer icon={Sparkles} color={playlist.imageColor} size="sm" />
                                 )}
                               </div>
                               <div className="flex items-center text-xs text-gray-400">
@@ -341,8 +382,8 @@ const PlaylistManagement = () => {
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     {/* Playlist Image */}
-                    <div className={`w-32 h-32 ${getColorClasses(currentPlaylist.imageColor).bg} rounded-md flex items-center justify-center shrink-0 mx-auto md:mx-0`}>
-                      <div className={`w-24 h-24 ${getColorClasses(currentPlaylist.imageColor).inner} rounded-sm`}></div>
+                    <div className="shrink-0 mx-auto md:mx-0">
+                      <ColoredBox color={currentPlaylist.imageColor} size="lg" />
                     </div>
 
                     {/* Playlist Info */}
@@ -350,9 +391,7 @@ const PlaylistManagement = () => {
                       <div className="flex items-center gap-2 mb-1">
                         <h2 className="text-2xl font-bold text-white">{currentPlaylist.name}</h2>
                         {currentPlaylist.aiEnabled && (
-                          <div className={`${getColorClasses(currentPlaylist.imageColor).icon} p-1 rounded-md`}>
-                            <Sparkles className={`h-4 w-4 ${getColorClasses(currentPlaylist.imageColor).text}`} />
-                          </div>
+                          <IconContainer icon={Sparkles} color={currentPlaylist.imageColor} />
                         )}
                       </div>
                       <p className="text-gray-300">{currentPlaylist.songs} songs</p>
@@ -437,9 +476,9 @@ const PlaylistManagement = () => {
                               />
                             </div>
 
-                            <div className="text-xs bg-gray-800 px-2 py-1 rounded-md text-gray-400 ml-2">
+                            <Badge color="gray">
                               {currentPlaylist.aiEnabled ? 'Enabled' : 'Disabled'}
-                            </div>
+                            </Badge>
                           </div>
 
                           <Button
@@ -460,12 +499,10 @@ const PlaylistManagement = () => {
               {/* Playlist Tracks */}
               <Card className="bg-gray-900/80 border-gray-800 h-full">
                 <CardHeader className="pb-2 border-b border-gray-800">
-                  <CardTitle className="text-lg flex items-center gap-2 text-white">
-                    <div className="bg-green-500/20 p-1.5 rounded-md">
-                      <Music className="h-5 w-5 text-green-400" />
-                    </div>
-                    <span className="font-bold">Playlist Tracks</span>
-                  </CardTitle>
+                  <SectionTitle
+                    icon={<IconContainer icon={Music} color="green" />}
+                    title="Playlist Tracks"
+                  />
                 </CardHeader>
 
                 <CardContent className="p-0">

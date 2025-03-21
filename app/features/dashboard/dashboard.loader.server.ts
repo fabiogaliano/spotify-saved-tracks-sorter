@@ -1,7 +1,9 @@
 import { redirect, type LoaderFunctionArgs } from '@remix-run/node'
 import { getUserSession, requireUserSession } from '~/features/auth/auth.utils'
-import { SavedTrackRow, TrackAnalysisStats } from '~/lib/models/Track'
+import { SavedTrackRow, TrackAnalysisStats, TrackWithAnalysis } from '~/lib/models/Track'
+import { playlistService } from '~/lib/services/PlaylistService'
 import { trackService } from '~/lib/services/TrackService'
+import { PlaylistWithTracks } from '~/lib/models/Playlist'
 
 export type DashboardLoaderData = {
   user: {
@@ -12,8 +14,9 @@ export type DashboardLoaderData = {
       image: string
     }
   }
-  likedSongs: SavedTrackRow[],
-  stats: TrackAnalysisStats
+  likedSongs: TrackWithAnalysis[],
+  stats: TrackAnalysisStats,
+  playlistsWithTracks: PlaylistWithTracks[]
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -25,10 +28,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       return Response.json({ user: null })
     }
 
-    const savedTracks = await trackService.getUserTracksWithAnalysis(userSession.userId)
+    const savedTracks: TrackWithAnalysis[] = await trackService.getUserTracksWithAnalysis(userSession.userId)
 
     const stats = await trackService.getTrackAnalysisStats(savedTracks)
 
+    const playlists = await playlistService.getUserPlaylistsWithTracks(userSession.userId, savedTracks)
 
     const safeUserData: DashboardLoaderData = {
       user: {
@@ -41,6 +45,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       },
       likedSongs: savedTracks,
       stats,
+      playlistsWithTracks: playlists
     }
 
     return Response.json(safeUserData)
