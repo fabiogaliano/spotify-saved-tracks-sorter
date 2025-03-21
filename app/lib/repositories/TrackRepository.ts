@@ -1,5 +1,5 @@
-import { getSupabase } from '~/lib/db/db'
-import type { Track, TrackInsert, SavedTrackInsert, SavedTrackRow, TrackRepository } from '~/lib/models/Track'
+import { getSupabase } from '~/lib/services/DatabaseService'
+import type { Track, TrackInsert, SavedTrackInsert, SavedTrackRow, TrackRepository, TrackAnalysis } from '~/lib/models/Track'
 import type { Database } from '~/types/database.types'
 
 export const SYNC_STATUS = {
@@ -164,6 +164,60 @@ class SupabaseTrackRepository implements TrackRepository {
 
     if (error) throw error
     return data || []
+  }
+
+  /**
+   * Get all track analyses for the given track IDs
+   */
+  async getTrackAnalysesByTrackIds(trackIds: number[]): Promise<TrackAnalysis[]> {
+    if (!trackIds.length) return []
+
+    const { data, error } = await getSupabase()
+      .from('track_analyses')
+      .select('*')
+      .in('track_id', trackIds)
+
+    if (error) throw error
+    return data || []
+  }
+
+  /**
+   * Get only the latest version of track analyses for each track ID
+   */
+  async getLatestTrackAnalysesByTrackIds(trackIds: number[]): Promise<TrackAnalysis[]> {
+    if (!trackIds.length) return []
+
+    // First, get all analyses for these tracks
+    const allAnalyses = await this.getTrackAnalysesByTrackIds(trackIds)
+
+    // Then filter to keep only the latest version for each track
+    const latestAnalysesMap = new Map<number, TrackAnalysis>()
+
+    allAnalyses.forEach(analysis => {
+      const currentLatest = latestAnalysesMap.get(analysis.track_id)
+
+      if (!currentLatest || analysis.version > currentLatest.version) {
+        latestAnalysesMap.set(analysis.track_id, analysis)
+      }
+    })
+
+    return Array.from(latestAnalysesMap.values())
+  }
+
+  /**
+   * Get analysis for a specific track ID
+   */
+  async getLatestTrackAnalysisByTrackId(trackId: number): Promise<TrackAnalysis | null> {
+    const { data, error } = await getSupabase()
+      .from('track_analyses')
+      .select('*')
+      .eq('track_id', trackId)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
   }
 }
 
