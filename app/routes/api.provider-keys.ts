@@ -17,7 +17,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     // Check if the user has any provider keys
-    const hasAnyKey = await providerKeyService.hasAnyProviderKey(userId)
+    const hasAnyKey = await providerKeyService.hasAnyProviderKey(parseInt(userId))
     return { hasAnyKey }
   } catch (error) {
     console.error('Error checking provider keys:', error)
@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // Helper function to check if a user has any provider keys
 export async function getHasAnyProviderKey(userId: string): Promise<boolean> {
   try {
-    return await providerKeyService.hasAnyProviderKey(userId)
+    return await providerKeyService.hasAnyProviderKey(parseInt(userId))
   } catch (error) {
     console.error('Error checking if user has any provider keys:', error)
     return false

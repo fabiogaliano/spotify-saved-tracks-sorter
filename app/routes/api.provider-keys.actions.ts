@@ -24,12 +24,12 @@ export async function action({ request }: ActionFunctionArgs) {
           return { error: 'API key is required', status: 400 }
         }
 
-        await providerKeyService.saveProviderKey(userId, provider, apiKey)
+        await providerKeyService.saveProviderKey(parseInt(userId), provider, apiKey)
         return { success: true, message: 'API key saved successfully' }
       }
 
       case 'deleteProviderKey': {
-        await providerKeyService.deleteProviderKey(userId, provider)
+        await providerKeyService.deleteProviderKey(parseInt(userId), provider)
         return { success: true, message: 'API key deleted successfully' }
       }
 

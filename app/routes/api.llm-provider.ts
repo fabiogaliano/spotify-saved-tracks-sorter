@@ -1,7 +1,7 @@
-import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { authenticator } from '~/features/auth/auth.server'
 import type { SpotifySession } from '~/features/auth/auth.server'
-import { getUserSession } from '~/features/auth/session.server'
+import { requireUserSession } from '~/features/auth/auth.utils'
 import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 /**
@@ -9,11 +9,7 @@ import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
  * Handles fetching available providers and their configurations
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const userSession = await getUserSession(request)
-  console.log({ userSession })
-  if (!userSession?.id) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const userSession = await requireUserSession(request)
 
   const url = new URL(request.url)
   const action = url.searchParams.get('action')
@@ -29,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
     case 'getProviderStatuses':
       try {
-        return { providerStatuses: await providerKeyService.getProviderStatuses(userSession.id) }
+        return { providerStatuses: await providerKeyService.getProviderStatuses(userSession.userId) }
       } catch (error) {
         return Response.json({ error: 'Failed to fetch provider statuses' }, { status: 500 })
       }
@@ -43,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
  * Handle API key management operations
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const userSession = await getUserSession(request)
+  const userSession = await requireUserSession(request)
   console.log({ userSession })
 
   if (!userSession) {
@@ -58,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return Response.json({ error: 'Provider is required' }, { status: 400 })
   }
 
-  if (!userSession.id) {
+  if (!userSession.userId) {
     return Response.json({ error: 'User ID not found' }, { status: 400 })
   }
 
@@ -71,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         try {
-          await providerKeyService.saveProviderKey(userSession.id, provider, apiKey)
+          await providerKeyService.saveProviderKey(userSession.userId, provider, apiKey)
           return Response.json({ success: true, message: `${provider} API key saved successfully` }, { status: 200 })
         } catch (saveError) {
           console.error(`Error saving ${provider} API key:`, saveError)
@@ -80,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       case 'deleteKey': {
-        await providerKeyService.deleteProviderKey(userSession.id, provider)
+        await providerKeyService.deleteProviderKey(userSession.userId, provider)
         return Response.json({ success: true, message: `${provider} API key deleted successfully` }, { status: 200 })
       }
 
@@ -97,12 +93,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
       case 'setActiveProvider': {
         try {
-          const hasKey = await providerKeyService.hasProviderKey(userSession.id, provider)
+          const hasKey = await providerKeyService.hasProviderKey(userSession.userId, provider)
           if (!hasKey) {
             return Response.json({ error: `Cannot set ${provider} as active because it doesn't have an API key` }, { status: 400 })
           }
 
-          await providerKeyService.setActiveProvider(userSession.id, provider)
+          await providerKeyService.setActiveProvider(userSession.userId, provider)
           return Response.json({ success: true, message: `${provider} set as active provider` }, { status: 200 })
         } catch (error) {
           return Response.json({ error: `Failed to set ${provider} as active provider`, details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })

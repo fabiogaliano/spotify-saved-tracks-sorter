@@ -13,7 +13,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   try {
-    const hasAnyKey = await providerKeyService.hasAnyProviderKey(userId)
+    const hasAnyKey = await providerKeyService.hasAnyProviderKey(parseInt(userId))
     return { hasAnyKey }
   } catch (error) {
     console.error('Error checking if user has any provider keys:', error)

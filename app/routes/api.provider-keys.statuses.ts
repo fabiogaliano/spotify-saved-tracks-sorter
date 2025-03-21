@@ -11,7 +11,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   try {
-    const providerStatuses = await providerKeyService.getProviderStatuses(userId)
+    const providerStatuses = await providerKeyService.getProviderStatuses(parseInt(userId))
     return { providerStatuses }
   } catch (error) {
     console.error('Error fetching provider statuses:', error)
