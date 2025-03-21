@@ -1,6 +1,6 @@
-import { getSupabase } from '../db/db'
-import { MatchResult } from '../models/Matching'
-import { logger } from '../logging/Logger'
+import { getSupabase } from '~/lib/services/DatabaseService'
+import { MatchResult } from '~/lib/models/Matching'
+import { logger } from '~/lib/logging/Logger'
 
 export interface MatchRepository {
   saveMatchResult(songId: number, playlistId: number, matchResult: MatchResult, modelName: string): Promise<void>

@@ -1,4 +1,4 @@
-import { getSupabase } from '~/lib/db/db'
+import { getSupabase } from '~/lib/services/DatabaseService'
 import type { TrackAnalysis, TrackAnalysisInsert, TrackAnalysisRepository } from '~/lib/models/TrackAnalysis'
 
 class SupabaseTrackAnalysisRepository implements TrackAnalysisRepository {

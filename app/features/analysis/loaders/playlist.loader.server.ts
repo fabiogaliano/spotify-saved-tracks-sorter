@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs } from '@remix-run/node'
-import { getSupabase } from '~/lib/db/db'
+import { getSupabase } from '~/lib/services/DatabaseService'
 import path from 'path'
 import fs from 'fs'
 import type { AnalysisStatus } from '~/types/analysis'

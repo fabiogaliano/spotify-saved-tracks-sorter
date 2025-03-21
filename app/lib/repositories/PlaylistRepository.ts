@@ -1,4 +1,4 @@
-import { getSupabase } from '~/lib/db/db'
+import { getSupabase } from '~/lib/services/DatabaseService'
 import type { Database } from '~/types/database.types'
 import { SYNC_STATUS, type SyncStatus } from './TrackRepository'
 import type { Playlist, PlaylistInsert, PlaylistTrackInsert, PlaylistRepository as IPlaylistRepository } from '~/lib/models/Playlist'

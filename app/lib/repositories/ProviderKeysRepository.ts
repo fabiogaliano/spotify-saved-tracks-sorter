@@ -1,4 +1,4 @@
-import { getSupabase } from '~/lib/db/db'
+import { getSupabase } from '~/lib/services/DatabaseService'
 import type { ProviderKey, ProviderKeyInsert, ProviderKeyUpdate, ProviderKeysRepository } from '~/lib/models/ProviderKeys'
 import { UserPreferences } from '~/lib/models/User'
 

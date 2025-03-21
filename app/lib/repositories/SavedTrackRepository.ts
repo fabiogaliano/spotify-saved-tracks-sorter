@@ -1,4 +1,4 @@
-import { getSupabase } from '~/lib/db/db'
+import { getSupabase } from '~/lib/services/DatabaseService'
 
 export type SortingStatus = 'unsorted' | 'sorted' | 'ignored'
 

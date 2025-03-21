@@ -1,4 +1,4 @@
-import { getSupabase } from '~/lib/db/db'
+import { getSupabase } from '~/lib/services/DatabaseService'
 
 interface PlaylistAnalysis {
   id: number
