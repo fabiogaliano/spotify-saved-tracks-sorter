@@ -1,46 +1,39 @@
-import { useState, useMemo } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter
-} from '~/shared/components/ui/Card';
-import { Button } from '~/shared/components/ui/button';
-import { Input } from '~/shared/components/ui/input';
-import { Checkbox } from '~/shared/components/ui/checkbox';
-import { Badge } from '~/shared/components/ui/badge';
-import TrackAnalysisModal from './TrackAnalysisModal';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel
-} from '~/shared/components/ui/dropdown-menu';
-import {
-  Search,
-  RefreshCw,
-  Columns,
-  X,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  Music,
-  Eye
-} from 'lucide-react';
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  useReactTable,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
-  Table
+  Table,
+  useReactTable,
+  VisibilityState
 } from '@tanstack/react-table';
-import { SavedTrackRow, TrackWithAnalysis } from '~/lib/models/Track';
+import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Columns,
+  Eye,
+  Music,
+  RefreshCw,
+  Search,
+  X
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { TrackWithAnalysis } from '~/lib/models/Track';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '~/shared/components/ui/Card';
+import { Badge } from '~/shared/components/ui/badge';
+import { Button } from '~/shared/components/ui/button';
+import { Checkbox } from '~/shared/components/ui/checkbox';
+import { Input } from '~/shared/components/ui/input';
+import TrackAnalysisModal from './TrackAnalysisModal';
 
 // Styles interface
 interface StylesType {
@@ -62,7 +55,7 @@ const styles: StylesType = {
   tableCell: "px-4 py-3 text-white",
   tableRow: "border-b border-gray-800/50 hover:bg-gray-800/30",
   button: {
-    outline: "border-gray-700 text-white hover:bg-gray-800"
+    outline: "border-gray-700 text-white hover:bg-gray-800 bg-gray-800/50"
   }
 };
 
@@ -215,14 +208,14 @@ const TablePagination = ({ table }: TablePaginationProps) => {
 const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] }) => {
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState('');
-  const [columnVisibility, setColumnVisibility] = useState({
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     addedAt: false
   });
-  
+
   // State for track analysis modal
   const [selectedTrack, setSelectedTrack] = useState<TrackWithAnalysis | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
-  
+
   // Function to handle viewing track analysis
   const handleViewAnalysis = (track: TrackWithAnalysis) => {
     setSelectedTrack(track);
@@ -271,7 +264,7 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
       id: 'analysisStatus',
       header: 'Status',
       cell: info => (
-        <div className="flex justify-center">
+        <div className="flex justify-start">
           <AnalysisBadge
             status={info.getValue()}
             onView={() => handleViewAnalysis(info.row.original)}
@@ -305,6 +298,32 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
   ], []);
 
   // Initialize the table
+  // Debug the initial column visibility state
+  console.log('Initial column visibility:', columnVisibility);
+
+  // Add click outside handler for the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const menuElement = document.getElementById('column-visibility-menu');
+      const buttonElement = document.getElementById('column-visibility-button');
+
+      if (
+        menuElement &&
+        buttonElement &&
+        !menuElement.contains(event.target as Node) &&
+        !buttonElement.contains(event.target as Node) &&
+        menuElement.style.display === 'block'
+      ) {
+        menuElement.style.display = 'none';
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const table = useReactTable({
     data: likedSongs,
     columns,
@@ -316,7 +335,10 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
     enableRowSelection: row => getAnalysisStatus(row.original) !== 'pending',
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: (updatedVisibility) => {
+      console.log('Column visibility changed:', updatedVisibility);
+      setColumnVisibility(updatedVisibility as VisibilityState);
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -335,7 +357,7 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
           onOpenChange={setIsAnalysisModalOpen}
         />
       )}
-      
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">Liked Songs Analysis</h1>
@@ -391,29 +413,65 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
             </CardTitle>
 
             <div className="flex items-center gap-2">
-              {/* Column visibility */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className={`${styles.button.outline} flex gap-1`}>
-                    <Columns className="h-4 w-4" />
-                    <span className="hidden md:inline">Columns</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 text-white">
-                  <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-gray-700" />
+              {/* Column visibility with direct imperative state control */}
+              <div className="relative">
+                <Button
+                  id="column-visibility-button"
+                  variant="outline"
+                  className={`${styles.button.outline} flex gap-1`}
+                  type="button"
+                  onClick={() => {
+                    // Directly toggle a visible state for the dropdown
+                    const menuElement = document.getElementById('column-visibility-menu');
+                    if (menuElement) {
+                      const isVisible = menuElement.style.display === 'block';
+                      menuElement.style.display = isVisible ? 'none' : 'block';
+                    }
+                  }}
+                >
+                  <Columns className="h-4 w-4" />
+                  <span className="hidden md:inline">Columns</span>
+                </Button>
+
+                {/* Custom dropdown implementation */}
+                <div
+                  id="column-visibility-menu"
+                  className="absolute right-0 top-full mt-1 bg-gray-800/95 border border-gray-700 text-white w-52 p-2 rounded-md shadow-lg z-50"
+                  style={{ display: 'none' }}
+                >
+                  <div className="text-gray-300 font-semibold px-2 mb-2">Toggle columns</div>
+                  <div className="h-px bg-gray-700 mb-2" />
+
                   {table.getAllLeafColumns().filter(column => column.id !== 'select').map((column) => (
-                    <DropdownMenuCheckboxItem
+                    <div
                       key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      className="flex items-center gap-2 px-2 py-2 hover:bg-gray-700/70 rounded cursor-pointer"
+                      onClick={() => {
+                        // Toggle visibility directly
+                        const newValue = !column.getIsVisible();
+                        column.toggleVisibility(newValue);
+
+                        // Update state explicitly
+                        setColumnVisibility(prev => {
+                          const updatedState: VisibilityState = {
+                            ...prev,
+                            [column.id]: newValue
+                          };
+                          return updatedState;
+                        });
+                      }}
                     >
-                      {column.id.replace(/([A-Z])/g, ' $1').trim()}
-                    </DropdownMenuCheckboxItem>
+                      <Checkbox
+                        checked={column.getIsVisible()}
+                        className="data-[state=checked]:bg-blue-500 border-gray-600"
+                      />
+                      <span className="capitalize">
+                        {column.id.replace(/([A-Z])/g, ' $1').trim()}
+                      </span>
+                    </div>
                   ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </div>
+              </div>
 
               {/* Analyze selected tracks button */}
               <Button
@@ -442,28 +500,34 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
               <thead className="border-b border-gray-800">
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
-                    {headerGroup.headers.map(header => (
-                      <th
-                        key={header.id}
-                        className={styles.tableHeader}
-                      >
-                        {header.isPlaceholder ? null : (
-                          <div
-                            {...{
-                              className: header.column.getCanSort()
-                                ? 'cursor-pointer select-none'
-                                : '',
-                              onClick: header.column.getToggleSortingHandler(),
-                            }}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                          </div>
-                        )}
-                      </th>
-                    ))}
+                    {headerGroup.headers.map(header => {
+                      // Only render headers for visible columns
+                      if (!header.column.getIsVisible()) {
+                        return null;
+                      }
+                      return (
+                        <th
+                          key={header.id}
+                          className={styles.tableHeader}
+                        >
+                          {header.isPlaceholder ? null : (
+                            <div
+                              {...{
+                                className: header.column.getCanSort()
+                                  ? 'cursor-pointer select-none'
+                                  : '',
+                                onClick: header.column.getToggleSortingHandler(),
+                              }}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                            </div>
+                          )}
+                        </th>
+                      );
+                    })}
                   </tr>
                 ))}
               </thead>
