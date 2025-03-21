@@ -10,6 +10,7 @@ import { Button } from '~/shared/components/ui/button';
 import { Input } from '~/shared/components/ui/input';
 import { Checkbox } from '~/shared/components/ui/checkbox';
 import { Badge } from '~/shared/components/ui/badge';
+import TrackAnalysisModal from './TrackAnalysisModal';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -217,13 +218,22 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
   const [columnVisibility, setColumnVisibility] = useState({
     addedAt: false
   });
-
+  
+  // State for track analysis modal
+  const [selectedTrack, setSelectedTrack] = useState<TrackWithAnalysis | null>(null);
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  
+  // Function to handle viewing track analysis
+  const handleViewAnalysis = (track: TrackWithAnalysis) => {
+    setSelectedTrack(track);
+    setIsAnalysisModalOpen(true);
+  };
 
   // Calculate stats for display
   const stats = useMemo(() => {
     const analyzed = likedSongs.filter(track => getAnalysisStatus(track) === 'analyzed').length;
     const notAnalyzed = likedSongs.filter(track => getAnalysisStatus(track) === 'not_analyzed').length;
-    
+
     return {
       analyzed,
       pending: 0, // You might want to add logic to detect pending analyses
@@ -264,7 +274,7 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
         <div className="flex justify-center">
           <AnalysisBadge
             status={info.getValue()}
-            onView={() => console.log('View analysis for:', info.row.original.track.name)}
+            onView={() => handleViewAnalysis(info.row.original)}
             onAnalyze={() => console.log('Analyze track:', info.row.original.track.name)}
           />
         </div>
@@ -315,6 +325,17 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
 
   return (
     <div className="h-full flex flex-col space-y-6">
+      {/* Track Analysis Modal */}
+      {selectedTrack && (
+        <TrackAnalysisModal
+          trackName={selectedTrack.track.name}
+          artistName={selectedTrack.track.artist}
+          analysis={selectedTrack.analysis?.analysis}
+          isOpen={isAnalysisModalOpen}
+          onOpenChange={setIsAnalysisModalOpen}
+        />
+      )}
+      
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">Liked Songs Analysis</h1>
