@@ -86,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
           return Response.json({ error: 'API key is required' }, { status: 400 })
         }
 
-        // This would call the validation logic
+        // todo: This would call the validation logic
         // For now, we'll just return success
         return Response.json({ success: true, message: `${provider} API key is valid` }, { status: 200 })
       }
@@ -111,11 +111,9 @@ export async function action({ request }: ActionFunctionArgs) {
   } catch (error) {
     console.error(`Error performing action ${action} for provider ${provider}:`, error)
 
-    // Provide more specific error message based on the error type
     let errorMessage = `Failed to ${action} for ${provider}`
     let errorDetails = error instanceof Error ? error.message : 'Unknown error'
 
-    // Check for specific error types
     if (error instanceof Error) {
       if (error.message.includes('encrypted_key')) {
         errorDetails = 'There was an issue with the encryption process. Please check your encryption configuration.'

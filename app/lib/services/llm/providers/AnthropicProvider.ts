@@ -1,6 +1,6 @@
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { generateText, LanguageModelUsage } from 'ai'
-import type { ProviderInterface } from '../../../domain/LlmProvider'
+import type { ProviderInterface } from '~/lib/models/LlmProvider'
 
 export class AnthropicProvider implements ProviderInterface {
   name = 'anthropic'

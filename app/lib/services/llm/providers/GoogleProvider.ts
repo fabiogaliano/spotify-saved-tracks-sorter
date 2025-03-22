@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { generateText, LanguageModelUsage } from 'ai'
-import type { ProviderInterface } from '../../../domain/LlmProvider'
+import type { ProviderInterface } from '~/lib/models/LlmProvider'
 
 export class GoogleProvider implements ProviderInterface {
   name = 'google'

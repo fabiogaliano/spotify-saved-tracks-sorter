@@ -8,7 +8,7 @@ export class LlmProviderManagerFactory {
    * @param userId The user ID to retrieve API keys for
    * @returns An LlmProviderManager instance or null if no keys are available
    */
-  static async createFromUserKeys(userId: string): Promise<LlmProviderManager | null> {
+  static async createFromUserKeys(userId: number): Promise<LlmProviderManager | null> {
     // Get all provider statuses
     const providerStatuses = await providerKeyService.getProviderStatuses(userId)
 
@@ -37,7 +37,7 @@ export class LlmProviderManagerFactory {
    * @returns An LlmProviderManager instance
    * @throws ApiError if the provider key is not found
    */
-  static async createForProvider(userId: string, provider: string): Promise<LlmProviderManager> {
+  static async createForProvider(userId: number, provider: string): Promise<LlmProviderManager> {
     const apiKey = await providerKeyService.getDecryptedProviderKey(userId, provider)
 
     if (!apiKey) {

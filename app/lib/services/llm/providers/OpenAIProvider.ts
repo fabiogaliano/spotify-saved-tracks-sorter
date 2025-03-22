@@ -1,6 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateText, LanguageModelUsage } from 'ai'
-import type { ProviderInterface } from '../../../domain/LlmProvider'
+import type { ProviderInterface } from '~/lib/models/LlmProvider'
 
 export class OpenAIProvider implements ProviderInterface {
   name = 'openai'
