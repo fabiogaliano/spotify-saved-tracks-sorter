@@ -1,53 +1,36 @@
-import { getSpotifyApi } from '~/lib/api/spotify.api'
 import type { SpotifyTrackDTO } from '~/lib/models/Track'
 import type { SpotifyPlaylistDTO } from '~/lib/models/Playlist'
 import { logger } from '~/lib/logging/Logger'
-import { Market, MaxInt } from '@fostertheweb/spotify-web-sdk'
+import { Market, MaxInt, SpotifyApi } from '@fostertheweb/spotify-web-sdk'
 
 export class SpotifyService {
+  private spotifyApi: SpotifyApi;
+
+  constructor(spotifyApi: SpotifyApi) {
+    this.spotifyApi = spotifyApi;
+  }
+
   async getLikedTracks(since?: string | null): Promise<SpotifyTrackDTO[]> {
-    const LIMIT: MaxInt<50> = 50;
-    let offset = 0;
-    const allTracks: SpotifyTrackDTO[] = [];
-    let shouldContinue = true;
-
     try {
-      logger.info('fetch liked tracks', { since });
-      const spotifyApi = getSpotifyApi();
-
-      while (shouldContinue) {
-        const response = await this.fetchWithRetry(() => spotifyApi.currentUser.tracks.savedTracks(LIMIT, offset));
-
-        // If we have a since date, filter tracks added after that date
-        const tracks = since
-          ? response.items.filter(track => new Date(track.added_at) > new Date(since))
-          : response.items;
-
-        allTracks.push(...tracks as SpotifyTrackDTO[]);
-
-        // If we're doing incremental sync and found older tracks, stop paginating
-        if (since && tracks.length < response.items.length) {
-          shouldContinue = false;
-        }
-        // Otherwise, stop if we've received less than the limit
-        else if (response.items.length < LIMIT) {
-          shouldContinue = false;
-        }
-
-        offset += LIMIT;
-      }
-
-      logger.debug('liked tracks fetched', {
-        count: allTracks.length,
-        since,
+      const allTracks = await this.fetchPaginatedData({
+        fetchFn: (limit, offset) => this.spotifyApi.currentUser.tracks.savedTracks(limit, offset),
+        limit: 50,
+        filterFn: since ? track => new Date(track.added_at) > new Date(since) : undefined,
+        shouldStopEarly: since ? (originalItems, filteredItems) =>
+          filteredItems.length < originalItems.length : undefined
       });
 
-      return allTracks;
+      return allTracks as SpotifyTrackDTO[];
     } catch (error) {
-      logger.error('fetch liked tracks failed', error as Error);
-      throw new logger.AppError('Failed to fetch liked tracks', 'SPOTIFY_API_ERROR', 500, { error });
+      throw new logger.AppError(
+        'Failed to fetch liked tracks',
+        'SPOTIFY_API_ERROR',
+        500,
+        { operation: 'getLikedTracks', since, error }
+      );
     }
   }
+
 
   async getPlaylists(): Promise<SpotifyPlaylistDTO[]> {
     const LIMIT: MaxInt<50> = 50;
@@ -56,14 +39,11 @@ export class SpotifyService {
     let shouldContinue = true;
 
     try {
-      logger.info('fetch playlists');
-      const spotifyApi = getSpotifyApi();
-      const currentUser = await this.fetchWithRetry(() => spotifyApi.currentUser.profile());
-
+      const currentUser = await this.fetchWithRetry(() => this.spotifyApi.currentUser.profile());
       while (shouldContinue) {
-        const playlists = await this.fetchWithRetry(() => spotifyApi.playlists.getUsersPlaylists(currentUser.id, LIMIT, offset));
+        const playlists = await this.fetchWithRetry(() => this.spotifyApi.playlists.getUsersPlaylists(currentUser.id, LIMIT, offset));
         const filteredPlaylists = playlists.items
-          .filter(p => p.owner.id === currentUser.id && p.description?.toLowerCase().startsWith('ai:'))
+          .filter(p => p.owner.id === currentUser.id)
           .map(p => ({
             id: p.id,
             name: p.name,
@@ -81,14 +61,8 @@ export class SpotifyService {
         offset += LIMIT;
       }
 
-      logger.debug('playlists fetched', {
-        totalPlaylists: allPlaylists.length,
-        userId: currentUser.id
-      });
-
       return allPlaylists;
     } catch (error) {
-      logger.error('fetch playlists failed', error as Error);
       throw new logger.AppError('Failed to fetch playlists', 'SPOTIFY_API_ERROR', 500, { error });
     }
   }
@@ -100,12 +74,9 @@ export class SpotifyService {
     let shouldContinue = true
 
     try {
-      logger.info('fetch playlist tracks', { playlistId })
-      const spotifyApi = getSpotifyApi()
-      const market = (await spotifyApi.currentUser.profile()).country as Market
-
+      const market = (await this.spotifyApi.currentUser.profile()).country as Market
       while (shouldContinue) {
-        const response = await this.fetchWithRetry(() => spotifyApi.playlists.getPlaylistItems(playlistId, market, '', LIMIT, offset))
+        const response = await this.fetchWithRetry(() => this.spotifyApi.playlists.getPlaylistItems(playlistId, market, '', LIMIT, offset))
 
         allTracks.push(...response.items as SpotifyTrackDTO[])
 
@@ -116,40 +87,88 @@ export class SpotifyService {
         offset += LIMIT
       }
 
-      logger.debug('playlist tracks fetched', {
-        playlistId,
-        count: allTracks.length
-      })
-
       return allTracks
     } catch (error) {
-      logger.error('fetch playlist tracks failed', error as Error)
       throw new logger.AppError('Failed to fetch playlist tracks', 'SPOTIFY_API_ERROR', 500, { error })
     }
   }
 
-  private async fetchWithRetry<T>(fetchFunction: () => Promise<T>, maxRetries: number = 3): Promise<T> {
+  /**
+   * Fetches paginated data from Spotify API with configurable filtering and stopping conditions
+   */
+  private async fetchPaginatedData<T>({
+    fetchFn,
+    limit,
+    filterFn,
+    shouldStopEarly
+  }: {
+    fetchFn: (limit: MaxInt<50>, offset: number) => Promise<{ items: T[] }>;
+    limit: MaxInt<50>;
+    filterFn?: (item: T) => boolean;
+    shouldStopEarly?: (originalItems: T[], filteredItems: T[]) => boolean;
+  }): Promise<T[]> {
+    const allItems: T[] = [];
+    let offset = 0;
+    let shouldContinue = true;
+
+    while (shouldContinue) {
+      const response = await this.fetchWithRetry(() => fetchFn(limit, offset));
+      const originalItems = response.items;
+
+      const filteredItems = filterFn ? originalItems.filter(filterFn) : originalItems;
+      allItems.push(...filteredItems);
+
+      if (shouldStopEarly && shouldStopEarly(originalItems, filteredItems)) {
+        shouldContinue = false;
+      }
+      else if (originalItems.length < limit) {
+        shouldContinue = false;
+      }
+
+      offset += limit;
+    }
+
+    return allItems;
+  }
+
+  /**
+   * Enhanced retry mechanism with configurable behavior
+   */
+  private async fetchWithRetry<T>(
+    fetchFunction: () => Promise<T>,
+    options: {
+      maxRetries?: number;
+      isRetryable?: (error: any) => boolean;
+      getDelayMs?: (error: any, attempt: number) => number;
+    } = {}
+  ): Promise<T> {
+    const {
+      maxRetries = 3,
+      isRetryable = (error) => error.status === 429,
+      getDelayMs = (error) => {
+        const retryAfter = parseInt(error.headers?.get('Retry-After') || '1', 10);
+        return retryAfter * 1000;
+      }
+    } = options;
+
     let attempt = 0;
 
     while (attempt <= maxRetries) {
       try {
         return await fetchFunction();
-      } catch (error: any) {
-        if (error.status === 429) {
-          const retryAfter = parseInt(error.headers.get('Retry-After') || '1', 10);
-          console.warn(`Rate limited. Retrying after ${retryAfter} seconds... (Attempt ${attempt + 1}/${maxRetries})`);
-          await this.sleep(retryAfter * 1000);
+      } catch (error) {
+        if (isRetryable(error) && attempt < maxRetries) {
+          await this.sleep(getDelayMs(error, attempt));
           attempt++;
         } else {
           throw error;
         }
       }
     }
-
-    throw new Error('Maximum retry attempts reached. Unable to complete the request.');
+    throw new Error(`Maximum retry attempts (${maxRetries}) reached`);
   }
 
-  private sleep(ms: number) {
+  private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }

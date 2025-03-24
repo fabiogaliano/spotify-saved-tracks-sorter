@@ -36,6 +36,7 @@ if (!process.env.SPOTIFY_CALLBACK_URL) {
 
 const scopes = [
   'user-read-email',
+  'user-read-private',
   'playlist-read-private',
   'playlist-modify-private',
   'playlist-modify-public',
