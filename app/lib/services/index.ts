@@ -7,33 +7,20 @@ import { DefaultLyricsService } from './lyrics/LyricsService'
 import { DefaultVectorizationService } from './vectorization/VectorizationService'
 import { MatchingService } from './matching/MatchingService'
 import { SupabaseMatchRepository } from '~/lib/repositories/MatchRepository'
-import { trackRepository } from '~/lib/repositories/TrackRepository'
-import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 
-// Initialize LLM provider manager with Google API key
+// todo: need to at runtime with user keys
 const googleApiKey = process.env.GOOGLE_API_KEY || ''
 const llmProviderManager = new LlmProviderManager('google', googleApiKey)
 
-// Initialize lyrics service with Genius API token
 const lyricsService = new DefaultLyricsService({
   accessToken: process.env.GENIUS_CLIENT_TOKEN || ''
 })
-
-// Initialize analysis services
-const songAnalysisService = new DefaultSongAnalysisService(lyricsService, llmProviderManager)
-const playlistAnalysisService = new DefaultPlaylistAnalysisService(llmProviderManager)
-
-// Initialize vectorization service
-const vectorizationService = new DefaultVectorizationService()
-
-// Initialize repositories
 const matchRepository = new SupabaseMatchRepository()
 
-// Initialize matching service
+const songAnalysisService = new DefaultSongAnalysisService(lyricsService, llmProviderManager)
+const playlistAnalysisService = new DefaultPlaylistAnalysisService(llmProviderManager)
+const vectorizationService = new DefaultVectorizationService()
 const matchingService = new MatchingService(vectorizationService, matchRepository)
-
-// Initialize Spotify service
-const spotifyService = new SpotifyService()
 
 // Export all services
 export {
@@ -44,7 +31,6 @@ export {
   vectorizationService,
   matchRepository,
   matchingService,
-  spotifyService,
   SyncService // Export the class itself, not an instance
 }
 

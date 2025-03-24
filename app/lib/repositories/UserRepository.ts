@@ -1,4 +1,3 @@
-import { useFetcher } from '@remix-run/react'
 import { getSupabase } from '~/lib/services/DatabaseService'
 import { User, CreateUserParams, UserPreferences } from '~/lib/models/User'
 
