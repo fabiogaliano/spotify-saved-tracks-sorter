@@ -2,8 +2,10 @@ import type { ActionFunction } from '@remix-run/node'
 import { SpotifyService } from '~/lib/services/SpotifyService'
 import { SyncService } from '~/lib/services/SyncService'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
+import { trackService } from '~/lib/services/TrackService'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
-import type { Database } from '~/types/database.types'
+import type { Enums } from '~/types/database.types'
+import { getUserSession } from './auth/auth.utils'
 
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData()
@@ -15,8 +17,15 @@ export const action: ActionFunction = async ({ request }) => {
     if (!userIdNumber) throw new Error('User ID not provided')
 
     if (action === 'sync') {
-      const spotifyService = new SpotifyService()
-      const syncService = new SyncService(spotifyService, trackRepository, playlistRepository)
+      // Get user session to get the spotify API instance
+      const userSession = await getUserSession(request)
+      if (!userSession || !userSession.spotifyApi) {
+        throw new Error('User not authenticated or Spotify API not available')
+      }
+
+      // Create service with the spotifyApi instance
+      const spotifyService = new SpotifyService(userSession.spotifyApi)
+      const syncService = new SyncService(spotifyService, trackRepository, playlistRepository, trackService)
 
       const [tracksResult, playlistsResult] = await Promise.all([
         syncService.syncSavedTracks(userIdNumber),
@@ -41,7 +50,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     if (action === 'updateTrackStatus') {
       const trackId = Number(formData.get('trackId'))
-      const status = formData.get('status') as Database['public']['Enums']['sorting_status_enum']
+      const status = formData.get('status') as Enums<'sorting_status_enum'>
       await trackRepository.updateTrackStatus(trackId, status)
       return { success: true }
     }

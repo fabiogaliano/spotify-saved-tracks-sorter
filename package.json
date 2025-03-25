@@ -74,6 +74,7 @@
 		"eslint-plugin-react-hooks": "^4.6.0",
 		"langfuse": "^3.35.2",
 		"postcss": "^8.4.38",
+		"react18-json-view": "^0.2.9",
 		"table": "^6.9.0",
 		"tailwindcss": "^4.0.13",
 		"typescript": "^5.1.6",

@@ -1,7 +1,8 @@
 import { Button } from "~/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/shared/components/ui/Card";
 import { Progress } from "~/shared/components/ui/progress";
-import { Music, RefreshCw } from "lucide-react";
+import { Music, RefreshCw, Beaker } from "lucide-react";
+import { Link } from "@remix-run/react";
 import { TrackAnalysisStats } from "~/lib/models/Track";
 
 export function LibraryStatus({ stats }: { stats: TrackAnalysisStats }) {
@@ -15,13 +16,24 @@ export function LibraryStatus({ stats }: { stats: TrackAnalysisStats }) {
             </div>
             <span className="font-bold">Library Status</span>
           </div>
-          <Button
-            variant="default"
-            size="sm"
-            className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 hover:border-gray-600 transition-colors gap-2"
-          >
-            <RefreshCw className="h-4 w-4" /> Sync Library
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 hover:border-gray-600 transition-colors gap-2"
+            >
+              <RefreshCw className="h-4 w-4" /> Sync Library
+            </Button>
+            <Link to="/test-services">
+              <Button
+                variant="default"
+                size="sm"
+                className="bg-green-700 border-green-600 text-white hover:bg-green-600 hover:border-green-500 transition-colors gap-2"
+              >
+                <Beaker className="h-4 w-4" /> Test Services
+              </Button>
+            </Link>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
