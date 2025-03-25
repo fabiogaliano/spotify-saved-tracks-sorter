@@ -1,7 +1,8 @@
 import { SpotifyService } from './SpotifyService'
+import { TrackService } from './TrackService'
 import type { TrackRepository } from '~/lib/models/Track'
 import type { Playlist, PlaylistRepository, SpotifyPlaylistDTO } from '~/lib/models/Playlist'
-import { mapSpotifyTrackDTOToTrackInsert, mapToSavedTrackInsert, mapPlaylistTrackToTrackInsert } from '~/lib/models/Track'
+import { mapPlaylistTrackToTrackInsert } from '~/lib/models/Track'
 import { mapSpotifyPlaylistToPlaylistInsert } from '~/lib/models/Playlist'
 import { logger } from '~/lib/logging/Logger'
 import { SYNC_STATUS } from '~/lib/repositories/TrackRepository'
@@ -19,21 +20,17 @@ export class SyncService {
   constructor(
     private spotifyService: SpotifyService,
     private trackRepository: TrackRepository,
-    private playlistRepository: PlaylistRepository
+    private playlistRepository: PlaylistRepository,
+    private trackService: TrackService
   ) { }
 
   async syncSavedTracks(userId: number): Promise<SyncResult> {
     try {
-      logger.info('sync saved tracks start', { userId })
-
-      await this.trackRepository.updateSyncStatus(userId, SYNC_STATUS.IN_PROGRESS)
-
-      // get last sync time for incremental sync
-      const lastSyncTime = await this.trackRepository.getLastSyncTime(userId)
+      await this.trackService.updateSyncStatus(userId, SYNC_STATUS.IN_PROGRESS)
+      const lastSyncTime = await this.trackService.getLastSyncTime(userId)
       const spotifyTracks = await this.spotifyService.getLikedTracks(lastSyncTime)
-
       if (!spotifyTracks.length) {
-        await this.trackRepository.updateSyncStatus(userId, SYNC_STATUS.COMPLETED)
+        await this.trackService.updateSyncStatus(userId, SYNC_STATUS.COMPLETED)
         return {
           type: 'tracks',
           totalProcessed: 0,
@@ -43,53 +40,20 @@ export class SyncService {
         }
       }
 
-      logger.info('process tracks', { trackCount: spotifyTracks.length })
+      const { totalProcessed, processedTracks } = await this.trackService.processSpotifyTracks(spotifyTracks)
+      await this.trackService.saveSavedTracksForUser(userId, spotifyTracks, processedTracks)
 
-      const spotifyTrackIds = spotifyTracks.map(t => t.track.id)
-
-      const existingTracks = await this.trackRepository.getTracksBySpotifyIds(spotifyTrackIds)
-      const existingTrackMap = new Map(existingTracks.map(t => [t.spotify_track_id, t]))
-
-      const newTracks = spotifyTracks
-        .filter(t => !existingTrackMap.has(t.track.id))
-        .map(t => mapSpotifyTrackDTOToTrackInsert(t))
-
-      const insertedTracks = newTracks.length > 0
-        ? await this.trackRepository.insertTracks(newTracks)
-        : []
-
-      const allTracksMap = new Map(existingTracks.map(t => [t.spotify_track_id, t]))
-      insertedTracks.forEach(t => allTracksMap.set(t.spotify_track_id, t))
-
-      const savedTracks = spotifyTracks.map(spotifyTrack =>
-        mapToSavedTrackInsert(
-          allTracksMap.get(spotifyTrack.track.id)!.id,
-          userId,
-          spotifyTrack.added_at
-        )
-      )
-
-      await this.trackRepository.saveSavedTracks(savedTracks)
-
-      logger.info('sync saved tracks success', {
-        userId,
-        totalTracks: spotifyTracks.length,
-        newTracks: insertedTracks.length
-      })
-
-      await this.trackRepository.updateSyncStatus(userId, SYNC_STATUS.COMPLETED)
+      await this.trackService.updateSyncStatus(userId, SYNC_STATUS.COMPLETED)
 
       return {
         type: 'tracks',
-        totalProcessed: spotifyTracks.length,
-        newItems: insertedTracks.length,
+        totalProcessed,
+        newItems: processedTracks.length,
         success: true,
-        message: `Successfully synced ${insertedTracks.length} new tracks`
+        message: `Successfully synced ${processedTracks.length} new tracks`
       }
     } catch (error) {
-      logger.error('sync saved tracks failed', error as Error, { userId })
-
-      await this.trackRepository.updateSyncStatus(userId, SYNC_STATUS.FAILED)
+      await this.trackService.updateSyncStatus(userId, SYNC_STATUS.FAILED)
 
       throw new logger.AppError(
         'Failed to sync tracks',
