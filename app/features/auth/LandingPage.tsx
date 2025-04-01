@@ -1,6 +1,7 @@
 import type { MetaFunction } from '@remix-run/node';
-import { Form, Link } from '@remix-run/react';
+import { Form, Link, useNavigation } from '@remix-run/react';
 import React from 'react';
+import { LoadingSpinner } from '~/shared/components/ui/LoadingSpinner';
 
 // Type definitions for improved type safety
 type PlaylistItemProps = {
@@ -386,6 +387,10 @@ const StepCard: React.FC<StepCardProps> = ({ number, title, description, colorCl
 
 // Main landing page component
 const LandingPage: React.FC = () => {
+  const navigation = useNavigation();
+  const isLoggingIn = navigation.state === 'submitting' && 
+                    navigation.formAction?.includes('/auth/spotify');
+  
   // Define feature cards data
   const featureCards = [
     {
@@ -460,8 +465,22 @@ const LandingPage: React.FC = () => {
         </div>
         <div>
           <Form action="/auth/spotify" method="post">
-            <button className="bg-green-500 hover:bg-green-400 transition-all text-white px-6 py-3 rounded-full font-medium inline-block text-center text-base">
-              Log in with Spotify
+            <button 
+              type="submit"
+              disabled={isLoggingIn}
+              className="bg-green-500 hover:bg-green-400 transition-all text-white px-6 py-3 rounded-full font-medium inline-block text-center text-base relative"
+            >
+              {isLoggingIn ? (
+                <>
+                  <span className="opacity-0">Log in with Spotify</span>
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <LoadingSpinner className="w-5 h-5" />
+                    <span className="ml-2">Connecting...</span>
+                  </span>
+                </>
+              ) : (
+                "Log in with Spotify"
+              )}
             </button>
           </Form>
         </div>
@@ -479,8 +498,22 @@ const LandingPage: React.FC = () => {
             </p>
             <div className="pt-4 space-y-4">
               <Form action="/auth/spotify" method="post">
-                <button className="bg-green-500 hover:bg-green-400 transition-all text-white text-xl px-8 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto">
-                  Connect Your Spotify
+                <button 
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="bg-green-500 hover:bg-green-400 transition-all text-white text-xl px-8 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto relative"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <span className="opacity-0">Connect Your Spotify</span>
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <LoadingSpinner className="w-5 h-5" />
+                        <span className="ml-2">Connecting...</span>
+                      </span>
+                    </>
+                  ) : (
+                    "Connect Your Spotify"
+                  )}
                 </button>
               </Form>
               <p className="text-gray-400 text-base md:text-lg">Free to use</p>
@@ -574,12 +607,25 @@ const LandingPage: React.FC = () => {
           <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto mb-10">
             Stop scrolling endlessly through your liked songs. Let Sorted turn your musical mess into perfectly organized playlists.
           </p>
-          <Link
-            to="/auth/spotify"
-            className="bg-green-500 hover:bg-green-400 transition-all text-white text-xl px-10 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto"
-          >
-            Get Started Free
-          </Link>
+          <Form action="/auth/spotify" method="post">
+            <button 
+              type="submit"
+              disabled={isLoggingIn}
+              className="bg-green-500 hover:bg-green-400 transition-all text-white text-xl px-10 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto relative"
+            >
+              {isLoggingIn ? (
+                <>
+                  <span className="opacity-0">Get Started Free</span>
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <LoadingSpinner className="w-5 h-5" />
+                    <span className="ml-2">Connecting...</span>
+                  </span>
+                </>
+              ) : (
+                "Get Started Free"
+              )}
+            </button>
+          </Form>
           <p className="text-gray-400 text-base md:text-lg mt-5">Works with your existing Spotify account</p>
         </div>
       </div>

@@ -11,10 +11,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 		return null
 	} catch (error) {
-		return Response.json(null, { status: 500 })
+		return { error: true }
 	}
 }
-
 
 export default function Index() {
 	return <LandingPage />
