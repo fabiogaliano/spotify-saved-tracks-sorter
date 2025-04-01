@@ -10,6 +10,7 @@ import { SyncService } from '~/lib/services/SyncService'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { trackService } from '~/lib/services/TrackService'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
+import { PlaylistService } from '~/lib/services/PlaylistService'
 import { getUserSession } from '~/features/auth/auth.utils'
 import JsonView from 'react18-json-view'
 import 'react18-json-view/src/style.css'
@@ -69,6 +70,16 @@ export const action: ActionFunction = async ({ request }) => {
 
     // Test Spotify service operations
     if (service === 'spotify') {
+      // Validate operation is a Spotify operation
+      if (operation !== 'all' && operation !== 'likedTracks' && operation !== 'playlists' && operation !== 'playlistTracks') {
+        return Response.json({
+          service: 'spotify',
+          operation,
+          success: false,
+          message: `Invalid operation '${operation}' for Spotify service. Valid operations are: all, likedTracks, playlists, playlistTracks`
+        }, { status: 400 })
+      }
+
       // Test for getting liked tracks
       if (operation === 'all' || operation === 'likedTracks') {
         console.log('🔄 Testing SpotifyService - getLikedTracks...')
@@ -134,7 +145,18 @@ export const action: ActionFunction = async ({ request }) => {
 
     // Test SyncService operations
     if (service === 'sync') {
-      const syncService = new SyncService(spotifyService, trackRepository, playlistRepository, trackService)
+      // Validate operation is a Sync operation
+      if (operation !== 'all' && operation !== 'syncSavedTracks' && operation !== 'syncPlaylists' && operation !== 'syncPlaylistTracks') {
+        return Response.json({
+          service: 'sync',
+          operation,
+          success: false,
+          message: `Invalid operation '${operation}' for Sync service. Valid operations are: all, syncSavedTracks, syncPlaylists, syncPlaylistTracks`
+        }, { status: 400 })
+      }
+
+      const playlistService = new PlaylistService(spotifyService)
+      const syncService = new SyncService(spotifyService, trackService, playlistService)
 
       if (operation === 'all' || operation === 'syncSavedTracks') {
         console.log('🔄 Testing SyncService - syncSavedTracks...')
@@ -153,14 +175,14 @@ export const action: ActionFunction = async ({ request }) => {
           // Actually run the sync operation
           const syncResult = await syncService.syncSavedTracks(userId)
           console.log('✅ Sync completed successfully:', syncResult)
-          
+
           // Log information about the sync
           if (syncResult.newItems > 0) {
             console.log(`🌟 Added ${syncResult.newItems} new tracks to the database`)
           } else {
             console.log('🔄 No new tracks were added to the database')
           }
-          
+
           console.log(`🎵 Total tracks processed: ${syncResult.totalProcessed}`)
 
           if (operation === 'syncSavedTracks') {
@@ -183,14 +205,96 @@ export const action: ActionFunction = async ({ request }) => {
       }
 
       if (operation === 'all' || operation === 'syncPlaylists') {
-        console.log('🔄 Testing SyncService - syncPlaylists without repository persistence...')
+        console.log('🔄 Testing SyncService - syncPlaylists...')
 
-        // Custom implementation to avoid repository interactions
-        const playlists = await spotifyService.getPlaylists()
-        console.log(`✅ Fetched ${playlists.length} playlists from Spotify API`)
+        // Get the user ID from the session
+        const userId = session.userId
 
-        if (operation === 'syncPlaylists') {
-          return buildResponse('syncPlaylists', { playlistsCount: playlists.length })
+        if (!userId) {
+          return buildResponse('syncPlaylists', {
+            success: false,
+            message: 'User ID not found in session'
+          })
+        }
+
+        try {
+          // Actually run the sync operation
+          const syncResult = await syncService.syncPlaylists(userId)
+          console.log('✅ Playlist sync completed successfully:', syncResult)
+
+          // Log information about the sync
+          if (syncResult.newItems > 0) {
+            console.log(`🌟 Added ${syncResult.newItems} new playlists to the database`)
+          } else {
+            console.log('🔄 No new playlists were added to the database')
+          }
+
+          console.log(`📋 Total playlists processed: ${syncResult.totalProcessed}`)
+
+          if (operation === 'syncPlaylists') {
+            return buildResponse('syncPlaylists', {
+              success: true,
+              result: syncResult
+            })
+          }
+        } catch (error) {
+          console.error('❌ Playlist sync failed:', error)
+
+          if (operation === 'syncPlaylists') {
+            return buildResponse('syncPlaylists', {
+              success: false,
+              message: error instanceof Error ? error.message : 'Unknown error',
+              error: error
+            })
+          }
+        }
+      }
+
+      if (operation === 'syncPlaylistTracks') {
+        console.log('🔄 Testing SyncService - syncPlaylistTracks...')
+
+        // Get the user ID from the session
+        const userId = session.userId
+        const playlistId = formData.get('playlistId') ? Number(formData.get('playlistId')) : undefined
+
+        if (!userId) {
+          return buildResponse('syncPlaylistTracks', {
+            success: false,
+            message: 'User ID not found in session'
+          })
+        }
+
+        try {
+          // If a specific playlist ID was provided
+          let playlistIds: number[] | undefined
+          if (playlistId) {
+            // We'll verify if the playlist exists when syncing
+            playlistIds = [playlistId]
+            console.log(`🔍 Syncing tracks for playlist ID: ${playlistId}`)
+          } else {
+            console.log(`🔍 Syncing tracks for all user playlists`)
+          }
+
+          // Actually run the sync operation with the simplified method
+          const syncResult = await syncService.syncPlaylistTracks(
+            userId,
+            playlistIds
+          )
+
+          console.log('✅ Playlist tracks sync completed successfully:', syncResult)
+
+          return buildResponse('syncPlaylistTracks', {
+            success: true,
+            result: syncResult
+          })
+        } catch (error) {
+          console.error('❌ Playlist tracks sync failed:', error)
+
+          return buildResponse('syncPlaylistTracks', {
+            success: false,
+            message: error instanceof Error ? error.message : 'Unknown error',
+            error: error
+          })
         }
       }
 
@@ -220,6 +324,7 @@ export default function TestServicesPage() {
   const loaderData = useLoaderData<{ isAuthenticated: boolean }>()
   const actionData = useActionData<TestResponse | { error: string }>()
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
+  const [selectedService, setSelectedService] = useState('spotify')
 
   // Toggle expanded sections for JSON display
   const toggleSection = (key: string) => {
@@ -303,7 +408,8 @@ export default function TestServicesPage() {
                 <select
                   name="service"
                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
-                  defaultValue="spotify"
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
                 >
                   <option value="spotify">Spotify Service</option>
                   <option value="sync">Sync Service</option>
@@ -315,20 +421,40 @@ export default function TestServicesPage() {
                 <select
                   name="operation"
                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
-                  defaultValue="likedTracks"
+                  defaultValue={selectedService === 'spotify' ? 'likedTracks' : 'syncSavedTracks'}
                 >
                   <option value="all">All Operations</option>
-                  <optgroup label="Spotify Operations">
-                    <option value="likedTracks">Get Liked Tracks</option>
-                    <option value="playlists">Get Playlists</option>
-                    <option value="playlistTracks">Get Playlist Tracks</option>
-                  </optgroup>
-                  <optgroup label="Sync Operations">
-                    <option value="syncSavedTracks">Sync Saved Tracks</option>
-                    <option value="syncPlaylists">Sync Playlists</option>
-                  </optgroup>
+                  {selectedService === 'spotify' ? (
+                    <>
+                      <option value="likedTracks">Get Liked Tracks</option>
+                      <option value="playlists">Get Playlists</option>
+                      <option value="playlistTracks">Get Playlist Tracks</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="syncSavedTracks">Sync Saved Tracks</option>
+                      <option value="syncPlaylists">Sync Playlists</option>
+                      <option value="syncPlaylistTracks">Sync Playlist Tracks</option>
+                    </>
+                  )}
                 </select>
               </div>
+
+              {/* Optional Playlist ID input for syncPlaylistTracks */}
+              {selectedService === 'sync' && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Playlist ID (optional)</label>
+                  <input
+                    type="number"
+                    name="playlistId"
+                    placeholder="Leave empty to sync all playlists"
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Only used for "Sync Playlist Tracks" operation
+                  </p>
+                </div>
+              )}
 
               <div className="flex items-end">
                 <Button type="submit" className="bg-green-700 hover:bg-green-600 text-white w-full">

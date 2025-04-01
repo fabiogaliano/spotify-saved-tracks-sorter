@@ -2,6 +2,7 @@ import { getSupabase } from '~/lib/services/DatabaseService'
 import type { Database } from '~/types/database.types'
 import { SYNC_STATUS, type SyncStatus } from './TrackRepository'
 import type { Playlist, PlaylistInsert, PlaylistTrackInsert, PlaylistRepository as IPlaylistRepository, PlaylistTrack } from '~/lib/models/Playlist'
+import type { Enums } from '~/types/database.types'
 
 class SupabasePlaylistRepository implements IPlaylistRepository {
   async getPlaylists(userId: number): Promise<Playlist[]> {
@@ -62,6 +63,21 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
 
     if (error) throw error
   }
+  
+  async updatePlaylistTracksStatus(
+    playlistId: number, 
+    status: Enums<'playlist_tracks_sync_status_enum'>
+  ): Promise<void> {
+    const { error } = await getSupabase()
+      .from('playlists')
+      .update({
+        tracks_sync_status: status,
+        tracks_last_synced_at: status === 'COMPLETED' ? new Date().toISOString() : undefined
+      })
+      .eq('id', playlistId)
+
+    if (error) throw error
+  }
 
   async getLastSyncTime(userId: number): Promise<string | null> {
     const { data, error } = await getSupabase()
@@ -72,6 +88,17 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
 
     if (error) throw error
     return data?.playlists_last_sync || null
+  }
+  
+  async getPlaylistTracksLastSyncTime(playlistId: number): Promise<string | null> {
+    const { data, error } = await getSupabase()
+      .from('playlists')
+      .select('tracks_last_synced_at')
+      .eq('id', playlistId)
+      .single()
+
+    if (error) throw error
+    return data?.tracks_last_synced_at || null
   }
 
   async savePlaylistTracks(playlistTracks: PlaylistTrackInsert[]): Promise<void> {

@@ -159,6 +159,10 @@ export type Database = {
           name: string
           spotify_playlist_id: string
           track_count: number
+          tracks_last_synced_at: string | null
+          tracks_sync_status:
+            | Database["public"]["Enums"]["playlist_tracks_sync_status_enum"]
+            | null
           updated_at: string | null
           user_id: number | null
         }
@@ -170,6 +174,10 @@ export type Database = {
           name: string
           spotify_playlist_id: string
           track_count?: number
+          tracks_last_synced_at?: string | null
+          tracks_sync_status?:
+            | Database["public"]["Enums"]["playlist_tracks_sync_status_enum"]
+            | null
           updated_at?: string | null
           user_id?: number | null
         }
@@ -181,6 +189,10 @@ export type Database = {
           name?: string
           spotify_playlist_id?: string
           track_count?: number
+          tracks_last_synced_at?: string | null
+          tracks_sync_status?:
+            | Database["public"]["Enums"]["playlist_tracks_sync_status_enum"]
+            | null
           updated_at?: string | null
           user_id?: number | null
         }
@@ -472,6 +484,11 @@ export type Database = {
     }
     Enums: {
       analysis_version_enum: "1.0"
+      playlist_tracks_sync_status_enum:
+        | "NOT_STARTED"
+        | "IN_PROGRESS"
+        | "COMPLETED"
+        | "FAILED"
       sorting_status_enum: "unsorted" | "sorted" | "ignored"
       sync_mode_enum: "manual" | "automatic"
     }
