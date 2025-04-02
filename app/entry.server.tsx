@@ -1,7 +1,7 @@
 /**
- * By default, Remix will handle generating the HTTP Response for you.
- * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
- * For more information, see https://remix.run/file-conventions/entry.server
+ * By default, React Router will handle generating the HTTP Response for you. You can reveal the default entry server file with the following: `npx react-router reveal`
+*
+* For more information, see https://reactrouter.com/explanation/special-files#entryservertsx
  */
 
 import { PassThrough } from 'node:stream';
@@ -26,17 +26,17 @@ export default function handleRequest(
 ) {
   return isbot(request.headers.get('user-agent') || '')
     ? handleBotRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        reactRouterContext
-      )
+      request,
+      responseStatusCode,
+      responseHeaders,
+      reactRouterContext
+    )
     : handleBrowserRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        reactRouterContext
-      );
+      request,
+      responseStatusCode,
+      responseHeaders,
+      reactRouterContext
+    );
 }
 
 function handleBotRequest(

@@ -40,7 +40,7 @@ app/
 
 ## Technology Stack
 
-- [Remix](https://remix.run/) - Full-stack web framework
+- [React Router v7](https://reactrouter.com/) - Full-stack web framework
 - [React](https://reactjs.org/) - UI library
 - [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
 - [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
@@ -64,9 +64,9 @@ app/
 3. Install dependencies: `bun install`
 4. Start the development server: `bun run dev`
 
-# Welcome to Remix!
+# Welcome to React Router!
 
-- 📖 [Remix docs](https://remix.run/docs)
+- 📖 [React Router docs](https://reactrouter.com/)
 
 ## Development
 
@@ -94,9 +94,9 @@ Now you'll need to pick a host to deploy it to.
 
 ### DIY
 
-If you're familiar with deploying Node applications, the built-in Remix app server is production-ready.
+If you're familiar with deploying Node applications, the built-in React Router app server is production-ready.
 
-Make sure to deploy the output of `npm run build`
+Make sure to deploy the output of `bun run build`
 
 - `build/server`
 - `build/client`

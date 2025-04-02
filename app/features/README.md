@@ -6,8 +6,8 @@ This directory contains feature-focused modules that encapsulate specific functi
 
 Each feature directory follows this structure:
 
-- `actions/` - Remix actions related to the feature
-- `loaders/` - Remix loaders related to the feature
+- `actions/` - React Router actions related to the feature
+- `loaders/` - React Router loaders related to the feature
 - `components/` - React components specific to this feature
 - `hooks/` - Custom React hooks specific to this feature
 - `utils/` - Utility functions specific to this feature

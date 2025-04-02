@@ -23,7 +23,7 @@ This document outlines the structure of the application after refactoring.
     - `repositories/` - Data access layer
     - `services/` - Application services
     - `stores/` - State management
-  - `routes/` - Remix routes
+  - `routes/` - React Router routes
   - `types/` - TypeScript type definitions
 
 ## Architecture Principles
@@ -48,7 +48,7 @@ When adding new functionality:
 
 - Use absolute imports with the `~` alias
 - Example: `import { Component } from '~/shared/components/Component'`
-- Order imports: React, Remix, third-party, application
+- Order imports: React, React Router, third-party, application
 
 ## State Management
 
