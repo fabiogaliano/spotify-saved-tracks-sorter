@@ -8,7 +8,7 @@ import { AnalysisStats, LibraryStatus, QuickActions, RecentActivity } from '~/fe
 import { DashboardLoaderData, loader } from '~/features/dashboard/dashboard.loader.server';
 import { Card, CardContent } from '~/shared/components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
-import { Await, useLoaderData, useNavigation } from '@remix-run/react';
+import { Await, useLoaderData, useNavigation } from 'react-router';
 import { Header } from '~/shared/components/Header';
 import { ComponentProps, Suspense } from 'react';
 import { LoadingSpinner } from '~/shared/components/ui/LoadingSpinner';

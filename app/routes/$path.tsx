@@ -1,5 +1,5 @@
-import { LoaderFunction, MetaFunction } from '@remix-run/node';
-import { Link, useRouteError } from '@remix-run/react';
+import { LoaderFunction, MetaFunction } from 'react-router';
+import { Link, useRouteError } from 'react-router';
 import React from 'react';
 
 export const meta: MetaFunction = () => {

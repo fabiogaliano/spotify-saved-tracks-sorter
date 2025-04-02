@@ -1,5 +1,5 @@
-import { ActionFunctionArgs, LoaderFunction, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunction, redirect } from "react-router";
+import { useLoaderData } from "react-router";
 import { getUserSession } from "~/features/auth/auth.utils";
 import InitialSetup from "~/features/initial-setup/InitialSetup";
 import { LibrarySyncMode } from "~/lib/models/User";

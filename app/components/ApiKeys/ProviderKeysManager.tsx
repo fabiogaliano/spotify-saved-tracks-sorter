@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Form, useActionData, useNavigation, useSubmit } from '@remix-run/react'
+import { Form, useActionData, useNavigation, useSubmit } from 'react-router';
 import { Notification, type NotificationType } from '~/components/common/Notification'
 
 type ProviderStatus = {

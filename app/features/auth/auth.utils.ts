@@ -1,5 +1,5 @@
 // auth.utils.ts
-import { redirect } from '@remix-run/node'
+import { redirect } from 'react-router';
 import { Logger } from '~/lib/logging/Logger'
 import { authService } from '~/lib/services/AuthService'
 import { createSpotifyApi } from '~/lib/api/spotify.api'

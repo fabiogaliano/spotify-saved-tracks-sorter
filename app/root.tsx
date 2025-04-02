@@ -1,6 +1,6 @@
-import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
+import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { redirect } from 'react-router';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import { StrictMode } from 'react'
 import { getUserSession } from '~/features/auth/auth.utils'
 import { Toaster } from '~/shared/components/ui/sonner'

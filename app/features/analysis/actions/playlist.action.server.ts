@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs } from '@remix-run/node'
+import type { ActionFunctionArgs } from 'react-router';
 import { llmProviderManager } from '~/lib/services'
 import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisRepository'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'

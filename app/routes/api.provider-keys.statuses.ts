@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from 'react-router';
 import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 // Handle GET requests to fetch provider statuses

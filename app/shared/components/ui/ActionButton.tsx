@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from '@remix-run/react'
+import { Link } from 'react-router';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'back'
 export type ButtonSize = 'small' | 'medium' | 'large'

@@ -1,4 +1,4 @@
-import { ActionFunctionArgs } from '@remix-run/node'
+import { ActionFunctionArgs } from 'react-router';
 import { songAnalysisService } from '~/lib/services'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
 

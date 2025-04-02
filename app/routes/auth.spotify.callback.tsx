@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from 'react-router';
 import { authenticator } from '~/features/auth/auth.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {

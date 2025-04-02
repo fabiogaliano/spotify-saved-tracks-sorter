@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useLoaderData } from '@remix-run/react'
+import { useLoaderData } from 'react-router';
 import { ProviderKeysManager } from './ApiKeys/ProviderKeysManager'
 
 type RootLoaderData = {

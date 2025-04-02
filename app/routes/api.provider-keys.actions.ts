@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs } from '@remix-run/node'
+import type { ActionFunctionArgs } from 'react-router';
 import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 // Handle POST requests to save or delete provider keys

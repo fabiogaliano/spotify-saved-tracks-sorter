@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs } from '@remix-run/node'
+import { LoaderFunctionArgs } from 'react-router';
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
 import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisRepository'

@@ -2,7 +2,7 @@ import { Button } from "~/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/shared/components/ui/Card";
 import { Progress } from "~/shared/components/ui/progress";
 import { Music, RefreshCw, Beaker } from "lucide-react";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 import { TrackAnalysisStats } from "~/lib/models/Track";
 
 export function LibraryStatus({ stats }: { stats: TrackAnalysisStats }) {

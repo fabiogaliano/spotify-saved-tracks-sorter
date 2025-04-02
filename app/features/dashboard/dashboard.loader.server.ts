@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs } from '@remix-run/node'
+import { type LoaderFunctionArgs } from 'react-router';
 import { getUserSession, requireUserSession } from '~/features/auth/auth.utils'
 import { TrackAnalysisStats, TrackWithAnalysis } from '~/lib/models/Track'
 import { playlistService } from '~/lib/services/PlaylistService'

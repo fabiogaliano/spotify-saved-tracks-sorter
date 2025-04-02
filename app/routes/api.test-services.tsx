@@ -1,6 +1,6 @@
-import { ActionFunction, json } from '@remix-run/node'
-import { useLoaderData, useActionData, Form, Link } from '@remix-run/react'
-import { LoaderFunction } from '@remix-run/node'
+import { ActionFunction } from 'react-router';
+import { useLoaderData, useActionData, Form, Link } from 'react-router';
+import { LoaderFunction } from 'react-router';
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/shared/components/ui/Card'
 import { Button } from '~/shared/components/ui/button'
@@ -36,7 +36,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const session = await getUserSession(request)
   const isAuthenticated = session !== null
 
-  return json({ isAuthenticated })
+  return Response.json({ isAuthenticated })
 }
 
 // Handle the service test action

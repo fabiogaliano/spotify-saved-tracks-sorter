@@ -1,5 +1,5 @@
-import type { MetaFunction } from '@remix-run/node';
-import { Form, Link, useNavigation } from '@remix-run/react';
+import type { MetaFunction } from 'react-router';
+import { Form, Link, useNavigation } from 'react-router';
 import React from 'react';
 import { LoadingSpinner } from '~/shared/components/ui/LoadingSpinner';
 

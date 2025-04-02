@@ -1,4 +1,4 @@
-import { redirect, type LoaderFunctionArgs } from '@remix-run/node'
+import { redirect, type LoaderFunctionArgs } from 'react-router';
 import { getUserSession } from '~/features/auth/auth.utils'
 import LandingPage from '~/features/auth/LandingPage'
 

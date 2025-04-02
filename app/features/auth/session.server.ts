@@ -1,5 +1,5 @@
 // session.server.ts
-import { createCookieSessionStorage } from '@remix-run/node'
+import { createCookieSessionStorage } from 'react-router';
 
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable is not set!")
