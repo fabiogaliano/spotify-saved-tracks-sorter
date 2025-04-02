@@ -17,7 +17,7 @@ const Colors = {
   Blue: "\x1b[34m",
   Yellow: "\x1b[33m",
   Red: "\x1b[31m",
-  Green: "\x1b[32m", // Adding green color for values
+  Green: "\x1b[32m",
 } as const;
 
 export class Logger {
@@ -69,19 +69,16 @@ export class Logger {
       [LogLevel.ERROR]: Colors.Red,
     }[level];
 
-    // Create base log object with required fields
     const logObject: Record<string, unknown> = {
       level: LogLevel[level],
       message,
       timestamp: logEntry.timestamp,
     };
 
-    // Add username only if it exists and isn't 'unknown'
     if (logEntry.username && logEntry.username !== 'unknown') {
       logObject.username = logEntry.username;
     }
 
-    // Add remaining context
     if (context) {
       Object.entries(context).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -122,18 +119,28 @@ export class Logger {
     this.log(LogLevel.WARN, message, context);
   }
 
-  error(message: string, error?: Error, context?: Record<string, unknown>) {
-    this.log(LogLevel.ERROR, message, {
-      ...context,
-      error: error ? {
+  error(message: string, error?: unknown, context?: Record<string, unknown>) {
+    let errorDetails: any = undefined;
+    if (error instanceof Error) {
+      errorDetails = {
         name: error.name,
         message: error.message,
         stack: error.stack,
-      } : undefined,
+      };
+    } else if (error !== undefined && error !== null) {
+      try {
+        errorDetails = String(error);
+      } catch (e) {
+        errorDetails = 'Could not convert error to string';
+      }
+    }
+
+    this.log(LogLevel.ERROR, message, {
+      ...context,
+      error: errorDetails,
     });
   }
 
-  // Custom error class that can be instantiated with 'new'
   AppError = class CustomError extends Error {
     code: string;
     statusCode: number;
@@ -151,7 +158,6 @@ export class Logger {
       this.statusCode = statusCode;
       this.metadata = metadata || {};
 
-      // Log the error when it's created
       Logger.getInstance().log(LogLevel.ERROR, message, {
         code,
         statusCode,

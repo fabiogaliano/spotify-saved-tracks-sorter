@@ -1,9 +1,8 @@
 // auth.utils.ts
 import { redirect } from '@remix-run/node'
-import { authenticator } from './auth.server'
-import { createSpotifyApi } from '~/lib/api/spotify.api'
-import type { SpotifySession } from './auth.server'
 import { Logger } from '~/lib/logging/Logger'
+import { authService } from '~/lib/services/AuthService'
+import { createSpotifyApi } from '~/lib/api/spotify.api'
 
 /**
  * Gets user session if it exists, without redirecting
@@ -13,25 +12,21 @@ export async function getUserSession(request: Request) {
   const logger = Logger.getInstance()
 
   try {
-    const session = await authenticator.isAuthenticated(request)
+    const session = await authService.getUserSession(request)
 
     if (!session) {
+      logger.info('No session found')
       return null
     }
 
-    // Check if session is expired
-    if (session.expiresAt <= Date.now()) {
-      return null
-    }
-
-    // Create a Spotify API client for this request
+    const timeUntilExpiry = session.expiresAt - Date.now()
     const spotifyApi = createSpotifyApi({
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,
-      expiresIn: Math.floor((session.expiresAt - Date.now()) / 1000),
+      expiresIn: Math.floor(timeUntilExpiry / 1000),
     })
 
-    logger.info(`login:session: ${session.user.id}`)
+    logger.info(`getUserSession: Valid session found for user ${session.user.id}`)
 
     return {
       session,
@@ -41,13 +36,16 @@ export async function getUserSession(request: Request) {
       spotifyUser: session.user,
     }
   } catch (error) {
+    logger.error('Error in getUserSession:', error)
     return null
   }
 }
 
 /**
- * Requires a user session, redirecting to home page if not found
- * Use this for protected routes that need authentication
+ * Requires a user session, redirecting to home page if not found or expired.
+ * Performs synchronous refresh if needed and relies on Remix/Authenticator 
+ * to commit the potentially updated session.
+ * Use this for protected routes.
  */
 export async function requireUserSession(request: Request) {
   const logger = Logger.getInstance()
@@ -56,15 +54,18 @@ export async function requireUserSession(request: Request) {
     const sessionData = await getUserSession(request)
 
     if (!sessionData) {
-      logger.warn('No session found, redirecting to home page')
+      logger.warn('requireUserSession: No valid session found (expired or requires login), redirecting to home page')
       throw redirect('/')
     }
 
+    logger.info(`requireUserSession: Valid session confirmed for user ${sessionData.spotifyUser.id}`)
     return sessionData
+
   } catch (error) {
     if (error instanceof Response) {
-      throw error // Pass through redirects
+      throw error
     }
+    logger.error('Unexpected error in requireUserSession:', error)
     throw redirect('/')
   }
 }
