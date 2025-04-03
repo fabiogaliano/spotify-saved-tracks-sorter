@@ -56,7 +56,7 @@ const MatchedSong: React.FC<MatchedSongProps> = ({
     <div className="flex justify-between items-center mb-2">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-gray-500 bg-opacity-30 rounded-md overflow-hidden">
-          <img src={imageUrl} alt="Icon" className="w-full h-full object-cover" />
+          <img src={imageUrl} alt="Icon" className="w-full h-full object-cover" data-img-id="" />
         </div>
         <div>
           <p className="text-white font-medium text-base">{title}</p>
@@ -388,9 +388,9 @@ const StepCard: React.FC<StepCardProps> = ({ number, title, description, colorCl
 // Main landing page component
 const LandingPage: React.FC = () => {
   const navigation = useNavigation();
-  const isLoggingIn = navigation.state === 'submitting' && 
-                    navigation.formAction?.includes('/auth/spotify');
-  
+  const isLoggingIn = navigation.state === 'submitting' &&
+    navigation.formAction?.includes('/auth/spotify');
+
   // Define feature cards data
   const featureCards = [
     {
@@ -465,7 +465,7 @@ const LandingPage: React.FC = () => {
         </div>
         <div>
           <Form action="/auth/spotify" method="post">
-            <button 
+            <button
               type="submit"
               disabled={isLoggingIn}
               className="bg-green-500 hover:bg-green-400 transition-all text-white px-6 py-3 rounded-full font-medium inline-block text-center text-base relative"
@@ -498,7 +498,7 @@ const LandingPage: React.FC = () => {
             </p>
             <div className="pt-4 space-y-4">
               <Form action="/auth/spotify" method="post">
-                <button 
+                <button
                   type="submit"
                   disabled={isLoggingIn}
                   className="bg-green-500 hover:bg-green-400 transition-all text-white text-xl px-8 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto relative"
@@ -608,7 +608,7 @@ const LandingPage: React.FC = () => {
             Stop scrolling endlessly through your liked songs. Let Sorted turn your musical mess into perfectly organized playlists.
           </p>
           <Form action="/auth/spotify" method="post">
-            <button 
+            <button
               type="submit"
               disabled={isLoggingIn}
               className="bg-green-500 hover:bg-green-400 transition-all text-white text-xl px-10 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto relative"
