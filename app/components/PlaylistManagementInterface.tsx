@@ -144,6 +144,7 @@ const PlaylistManagement = ({ playlistsWithTracks }: { playlistsWithTracks: Play
     const savedPlaylist = typeof window !== 'undefined' ? localStorage.getItem('selectedPlaylistId') : null;
     return savedPlaylist;
   });
+  const [selectedTab, setSelectedTab] = useState<string>('ai'); // Add state for selected tab
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'info', message: string } | null>(null);
@@ -326,16 +327,16 @@ const PlaylistManagement = ({ playlistsWithTracks }: { playlistsWithTracks: Play
 
             <CardContent className="p-4 space-y-2">
               <ScrollArea className="h-[calc(100vh-350px)] pr-4">
-                <Tabs defaultValue="all" className="mb-4">
+                <Tabs defaultValue="ai" onValueChange={setSelectedTab}>
                   <TabsList className="bg-gray-900/50 border border-gray-800 w-full grid grid-cols-2">
-                    <TabsTrigger value="all" className="data-[state=active]:bg-gray-800 text-gray-400 data-[state=active]:text-white">All Playlists</TabsTrigger>
                     <TabsTrigger value="ai" className="data-[state=active]:bg-gray-800 text-gray-400 data-[state=active]:text-white">AI-Enabled</TabsTrigger>
+                    <TabsTrigger value="all" className="data-[state=active]:bg-gray-800 text-gray-400 data-[state=active]:text-white">Others Playlists</TabsTrigger>
                   </TabsList>
                 </Tabs>
 
                 <div className="space-y-2">
                   {filteredPlaylists
-                    .filter(playlist => TabsList.value !== 'ai' || playlist.aiEnabled)
+                    .filter(playlist => selectedTab !== 'ai' || playlist.aiEnabled)
                     .map((playlist) => {
                       const colors = getColorClasses(playlist.imageColor);
                       return (
