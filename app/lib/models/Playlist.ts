@@ -1,6 +1,6 @@
 import type { Tables, TablesInsert, TablesUpdate } from '~/types/database.types'
 import type { SyncStatus } from '~/lib/repositories/TrackRepository'
-import { SavedTrackRow } from './Track'
+import { Track } from './Track'
 
 export type Playlist = Tables<'playlists'>
 export type PlaylistInsert = TablesInsert<'playlists'>
@@ -8,7 +8,9 @@ export type PlaylistUpdate = TablesUpdate<'playlists'>
 export type PlaylistTrack = Tables<'playlist_tracks'>
 export type PlaylistTrackInsert = TablesInsert<'playlist_tracks'>
 export type PlaylistTrackUpdate = TablesUpdate<'playlist_tracks'>
-export type PlaylistWithTracks = Playlist & { tracks: SavedTrackRow[] }
+// Define a type for tracks with added_at instead of created_at for playlist tracks
+export type TrackWithAddedAt = Omit<Track, 'created_at'> & { added_at: string };
+export type PlaylistWithTracks = Playlist & { tracks: TrackWithAddedAt[] }
 
 // DTO for Spotify's playlist data structure
 export type SpotifyPlaylistDTO = {

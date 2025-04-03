@@ -227,11 +227,11 @@ const PlaylistManagement = ({ playlistsWithTracks }: { playlistsWithTracks: Play
   // Format tracks for display
   const playlistTracks = currentPlaylistWithTracks
     ? currentPlaylistWithTracks.tracks.map(track => ({
-      id: track.track.spotify_track_id,
-      title: track.track.name,
-      artist: track.track.artist,
-      album: track.track.album || 'Unknown Album',
-      dateAdded: formatDate(track.liked_at)
+      id: track.spotify_track_id,
+      title: track.name,
+      artist: track.artist,
+      album: track.album || 'Unknown Album',
+      dateAdded: formatDate(track.added_at || '')
     }))
     : [];
 

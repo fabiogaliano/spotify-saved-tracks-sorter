@@ -1,4 +1,3 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/shared/components/ui/tooltip';
 import { useState } from 'react';
 import LikedSongsAnalysis from '~/components/LikedSongsAnalysis';
 import MatchingInterface from '~/components/MatchingInterface';
@@ -44,7 +43,7 @@ const LoadingFallback = () => (
 );
 
 const Dashboard = () => {
-  const { user, likedSongs, stats, playlistsWithTracks } = useLoaderData<DashboardLoaderData>()
+  const { user, stats, likedSongs, playlistsWithTracks } = useLoaderData<DashboardLoaderData>()
   const navigation = useNavigation();
   const isLoading = navigation.state === 'loading';
   const [activeTab, setActiveTab] = useState('overview');
@@ -93,13 +92,7 @@ const Dashboard = () => {
             <TabsContent value="overview" className="mt-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 <div className="md:col-span-4">
-                  <Suspense fallback={<LoadingFallback />}>
-                    <Await resolve={stats}>
-                      {(resolvedStats: any) => (
-                        <LibraryStatus stats={resolvedStats} />
-                      )}
-                    </Await>
-                  </Suspense>
+                  <LibraryStatus stats={stats} />
                 </div>
                 <div className="md:col-span-8">
                   <QuickActions />
@@ -118,13 +111,7 @@ const Dashboard = () => {
               {loadedTabs.likedsongs && (
                 <Card className="bg-gray-900/80 border-gray-800">
                   <CardContent className="p-6">
-                    <Suspense fallback={<LoadingFallback />}>
-                      <Await resolve={likedSongs}>
-                        {(resolvedLikedSongs: any) => (
-                          <LikedSongsAnalysis likedSongs={resolvedLikedSongs} />
-                        )}
-                      </Await>
-                    </Suspense>
+                    <LikedSongsAnalysis likedSongs={likedSongs} />
                   </CardContent>
                 </Card>
               )}
@@ -136,9 +123,7 @@ const Dashboard = () => {
                   <CardContent className="p-6">
                     <Suspense fallback={<LoadingFallback />}>
                       <Await resolve={playlistsWithTracks}>
-                        {(resolvedPlaylists: any) => (
-                          <PlaylistManagement playlistsWithTracks={resolvedPlaylists} />
-                        )}
+                        {(resolvedPlaylists) => <PlaylistManagement playlistsWithTracks={resolvedPlaylists} />}
                       </Await>
                     </Suspense>
                   </CardContent>

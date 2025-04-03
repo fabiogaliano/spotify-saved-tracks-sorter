@@ -1,9 +1,10 @@
 import { type LoaderFunctionArgs } from 'react-router';
 import { getUserSession, requireUserSession } from '~/features/auth/auth.utils'
 import { TrackAnalysisStats, TrackWithAnalysis } from '~/lib/models/Track'
-import { playlistService } from '~/lib/services/PlaylistService'
+import { PlaylistService } from '~/lib/services/PlaylistService'
 import { trackService } from '~/lib/services/TrackService'
 import { PlaylistWithTracks } from '~/lib/models/Playlist'
+import { SpotifyService } from '~/lib/services/SpotifyService';
 
 export type DashboardLoaderData = {
   user: {
@@ -14,8 +15,8 @@ export type DashboardLoaderData = {
       image: string
     }
   }
-  likedSongs: Promise<TrackWithAnalysis[]>,
-  stats: Promise<TrackAnalysisStats>,
+  likedSongs: TrackWithAnalysis[],
+  stats: TrackAnalysisStats,
   playlistsWithTracks: Promise<PlaylistWithTracks[]>
 }
 
@@ -37,20 +38,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       }
     }
 
-    const likedSongsPromise = trackService.getUserTracksWithAnalysis(userSession.userId)
-    const statsPromise = likedSongsPromise.then(tracks =>
-      trackService.getTrackAnalysisStats(tracks)
-    )
-    const playlistsPromise = likedSongsPromise.then(tracks =>
-      playlistService.getUserPlaylistsWithTracks(userSession.userId, tracks)
-    )
+    const likedSongs = await trackService.getUserTracksWithAnalysis(userSession.userId)
+    const stats = trackService.getTrackAnalysisStats(likedSongs)
+    const playlistService = new PlaylistService(new SpotifyService(userSession.spotifyApi))
+    const playlistsPromise = playlistService.getUserPlaylistsWithTracks(userSession.userId)
 
     return {
       user: userData,
-      likedSongs: likedSongsPromise,
-      stats: statsPromise,
+      stats,
+      likedSongs,
       playlistsWithTracks: playlistsPromise
-    }
+    } as DashboardLoaderData
   } catch (error) {
     if (error instanceof Response) throw error
     return { user: null, error: true }

@@ -33,15 +33,12 @@ export class TrackService {
     })
   }
 
-  async getTrackAnalysisStats(
-    userIdOrTracks: number | TrackWithAnalysis[]
-  ): Promise<TrackAnalysisStats> {
-    const savedTracks = Array.isArray(userIdOrTracks)
-      ? userIdOrTracks
-      : await this.getUserTracksWithAnalysis(userIdOrTracks);
+  getTrackAnalysisStats(
+    likedTracks: TrackWithAnalysis[]
+  ): TrackAnalysisStats {
 
-    const total = savedTracks.length;
-    const withAnalysis = savedTracks.filter(track => track.analysis !== null).length;
+    const total = likedTracks.length;
+    const withAnalysis = likedTracks.filter(track => track.analysis !== null).length;
 
     return {
       total,
