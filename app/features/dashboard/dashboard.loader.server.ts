@@ -1,9 +1,9 @@
 import { type LoaderFunctionArgs } from 'react-router';
 import { getUserSession, requireUserSession } from '~/features/auth/auth.utils'
-import { TrackAnalysisStats, TrackWithAnalysis } from '~/lib/models/Track'
+import { TrackWithAnalysis } from '~/lib/models/Track'
 import { PlaylistService } from '~/lib/services/PlaylistService'
 import { trackService } from '~/lib/services/TrackService'
-import { PlaylistWithTracks } from '~/lib/models/Playlist'
+import { Playlist, PlaylistWithTracks } from '~/lib/models/Playlist'
 import { SpotifyService } from '~/lib/services/SpotifyService';
 
 export type DashboardLoaderData = {
@@ -15,9 +15,9 @@ export type DashboardLoaderData = {
       image: string
     }
   }
-  likedSongs: TrackWithAnalysis[],
-  stats: TrackAnalysisStats,
-  playlistsWithTracks: Promise<PlaylistWithTracks[]>
+  likedSongs: Promise<TrackWithAnalysis[]>,
+  aiEnabledPlaylistsWithTracks: Promise<PlaylistWithTracks[]>,
+  otherPlaylists: Promise<Playlist[]>
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -38,16 +38,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       }
     }
 
-    const likedSongs = await trackService.getUserTracksWithAnalysis(userSession.userId)
-    const stats = trackService.getTrackAnalysisStats(likedSongs)
+    const likedSongsPromise = trackService.getUserTracksWithAnalysis(userSession.userId)
     const playlistService = new PlaylistService(new SpotifyService(userSession.spotifyApi))
-    const playlistsPromise = playlistService.getUserPlaylistsWithTracks(userSession.userId)
+    const aiEnabledPlaylistsPromise = playlistService.getAIEnabledPlaylistsWithTracks(userSession.userId)
+    const otherPlaylistsPromise = playlistService.getUnflaggedPlaylists(userSession.userId)
 
     return {
       user: userData,
-      stats,
-      likedSongs,
-      playlistsWithTracks: playlistsPromise
+      likedSongs: likedSongsPromise,
+      aiEnabledPlaylistsWithTracks: aiEnabledPlaylistsPromise,
+      otherPlaylists: otherPlaylistsPromise
     } as DashboardLoaderData
   } catch (error) {
     if (error instanceof Response) throw error

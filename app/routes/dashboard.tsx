@@ -43,12 +43,12 @@ const LoadingFallback = () => (
 );
 
 const Dashboard = () => {
-  const { user, stats, likedSongs, playlistsWithTracks } = useLoaderData<DashboardLoaderData>()
+  const { user, likedSongs, aiEnabledPlaylistsWithTracks, otherPlaylists } = useLoaderData<DashboardLoaderData>()
   const navigation = useNavigation();
   const isLoading = navigation.state === 'loading';
   const [activeTab, setActiveTab] = useState('overview');
   const [loadedTabs, setLoadedTabs] = useState<LoadedTabs>({
-    overview: true, // Only the default tab is loaded initially
+    overview: true, // only the default tab is loaded initially
   });
 
   const handleTabChange = (value: string) => {
@@ -92,7 +92,11 @@ const Dashboard = () => {
             <TabsContent value="overview" className="mt-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 <div className="md:col-span-4">
-                  <LibraryStatus stats={stats} />
+                  <Suspense fallback={<LoadingFallback />}>
+                    <Await resolve={likedSongs}>
+                      {(resolvedLikedSongs) => <LibraryStatus likedSongs={resolvedLikedSongs} aiEnabledPlaylists={aiEnabledPlaylistsWithTracks} />}
+                    </Await>
+                  </Suspense>
                 </div>
                 <div className="md:col-span-8">
                   <QuickActions />
@@ -111,7 +115,11 @@ const Dashboard = () => {
               {loadedTabs.likedsongs && (
                 <Card className="bg-gray-900/80 border-gray-800">
                   <CardContent className="p-6">
-                    <LikedSongsAnalysis likedSongs={likedSongs} />
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Await resolve={likedSongs}>
+                        {(resolvedLikedSongs) => <LikedSongsAnalysis likedSongs={resolvedLikedSongs} />}
+                      </Await>
+                    </Suspense>
                   </CardContent>
                 </Card>
               )}
@@ -122,8 +130,8 @@ const Dashboard = () => {
                 <Card className="bg-gray-900/80 border-gray-800">
                   <CardContent className="p-6">
                     <Suspense fallback={<LoadingFallback />}>
-                      <Await resolve={playlistsWithTracks}>
-                        {(resolvedPlaylists) => <PlaylistManagement playlistsWithTracks={resolvedPlaylists} />}
+                      <Await resolve={aiEnabledPlaylistsWithTracks}>
+                        {(resolvedPlaylists) => <PlaylistManagement aiEnabledPlaylistsWithTracks={resolvedPlaylists} otherPlaylists={otherPlaylists} />}
                       </Await>
                     </Suspense>
                   </CardContent>

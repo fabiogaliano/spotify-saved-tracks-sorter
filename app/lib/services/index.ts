@@ -31,12 +31,12 @@ export {
   vectorizationService,
   matchRepository,
   matchingService,
-  SyncService // Export the class itself, not an instance
+  SyncService,
+  SpotifyService
 }
 
 // Export types for external use
 export type {
-  SpotifyService,
   LlmProviderManager,
   DefaultLyricsService as LyricsService,
   DefaultSongAnalysisService as SongAnalysisService,

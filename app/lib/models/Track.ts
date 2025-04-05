@@ -11,12 +11,6 @@ export type SavedTrackInsert = TablesInsert<'saved_tracks'>
 export type TrackAnalysis = Tables<'track_analyses'>
 export type TrackAnalysisInsert = TablesInsert<'track_analyses'>
 
-export type TrackAnalysisStats = {
-  total: number
-  withAnalysis: number
-  analysisPercentage: number
-}
-
 export type TrackWithAnalysis = SavedTrackRow & {
   analysis: TrackAnalysis | null
 }

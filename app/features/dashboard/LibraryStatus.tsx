@@ -1,11 +1,13 @@
 import { Button } from "~/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/shared/components/ui/Card";
 import { Progress } from "~/shared/components/ui/progress";
-import { Music, RefreshCw, Beaker } from "lucide-react";
-import { Link } from "react-router";
-import { TrackAnalysisStats } from "~/lib/models/Track";
+import { Music, RefreshCw } from "lucide-react";
+import { TrackWithAnalysis } from "~/lib/models/Track";
+import { Await } from "react-router";
+import { Suspense } from "react";
+import { PlaylistWithTracks } from "~/lib/models/Playlist";
 
-export function LibraryStatus({ stats }: { stats: TrackAnalysisStats }) {
+export function LibraryStatus({ likedSongs, aiEnabledPlaylists }: { likedSongs: TrackWithAnalysis[], aiEnabledPlaylists?: Promise<PlaylistWithTracks[]> }) {
   return (
     <Card className="bg-gray-900/80 border-gray-800 overflow-hidden">
       <CardHeader className="pb-2 border-b border-gray-800">
@@ -24,41 +26,40 @@ export function LibraryStatus({ stats }: { stats: TrackAnalysisStats }) {
             >
               <RefreshCw className="h-4 w-4" /> Sync Library
             </Button>
-            <Link to="/test-services">
-              <Button
-                variant="default"
-                size="sm"
-                className="bg-green-700 border-green-600 text-white hover:bg-green-600 hover:border-green-500 transition-colors gap-2"
-              >
-                <Beaker className="h-4 w-4" /> Test Services
-              </Button>
-            </Link>
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <div className="flex justify-between">
-            <span className="text-gray-300">Songs in library</span>
-            <span className="font-medium text-white">{stats.total}</span>
+            <span className="text-gray-300">Liked songs</span>
+            <span className="font-medium text-white">{likedSongs.length}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-300">Songs analyzed</span>
-            <span className="font-medium text-white">{stats.withAnalysis}</span>
+            <span className="font-medium text-white">{likedSongs.filter(track => track.analysis !== null).length}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-300">AI-flagged playlists</span>
-            <span className="font-medium text-white">? implement</span>
+            <span className="font-medium text-white">
+              {aiEnabledPlaylists ? (
+                <Suspense fallback="?">
+                  <Await resolve={aiEnabledPlaylists}>
+                    {(resolvedPlaylists) => resolvedPlaylists.filter(p => p.is_flagged).length}
+                  </Await>
+                </Suspense>
+              ) : 0}
+            </span>
           </div>
         </div>
 
         <div className="w-full">
           <div className="flex justify-between text-xs mb-1">
             <span className="text-gray-300">Analysis Progress</span>
-            <span className="text-green-400 font-medium">{stats.analysisPercentage.toFixed(1)}%</span>
+            <span className="text-green-400 font-medium">{calculateAnalysisPercentage(likedSongs).toFixed(1)}%</span>
           </div>
           <Progress
-            value={16}
+            value={calculateAnalysisPercentage(likedSongs)}
             className="h-3 bg-gray-800 border border-gray-700"
             indicatorClassName="bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"
           />
@@ -66,4 +67,10 @@ export function LibraryStatus({ stats }: { stats: TrackAnalysisStats }) {
       </CardContent>
     </Card>
   );
+}
+
+function calculateAnalysisPercentage(tracks: TrackWithAnalysis[]): number {
+  const total = tracks.length;
+  const withAnalysis = tracks.filter(track => track.analysis !== null).length;
+  return total > 0 ? (withAnalysis / total) * 100 : 0;
 }

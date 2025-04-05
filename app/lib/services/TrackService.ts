@@ -1,6 +1,6 @@
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { SYNC_STATUS } from '~/lib/repositories/TrackRepository'
-import type { SavedTrackRow, TrackAnalysis, TrackAnalysisStats, TrackWithAnalysis, TrackInsert, Track } from '~/lib/models/Track'
+import type { SavedTrackRow, TrackAnalysis, TrackWithAnalysis, TrackInsert, Track } from '~/lib/models/Track'
 import type { SpotifyTrackDTO } from '~/lib/models/Track'
 import { mapSpotifyTrackDTOToTrackInsert, mapToSavedTrackInsert } from '~/lib/models/Track'
 
@@ -31,20 +31,6 @@ export class TrackService {
         analysis: analysisMap.get(trackId) || null
       }
     })
-  }
-
-  getTrackAnalysisStats(
-    likedTracks: TrackWithAnalysis[]
-  ): TrackAnalysisStats {
-
-    const total = likedTracks.length;
-    const withAnalysis = likedTracks.filter(track => track.analysis !== null).length;
-
-    return {
-      total,
-      withAnalysis,
-      analysisPercentage: total > 0 ? (withAnalysis / total) * 100 : 0
-    }
   }
 
   async getLastSyncTime(userId: number): Promise<string> {

@@ -18,90 +18,89 @@ export class PlaylistService {
     return playlistRepository.getPlaylists(userId)
   }
 
+  async getUnflaggedPlaylists(userId: number): Promise<Playlist[]> {
+    return playlistRepository.getUnflaggedPlaylists(userId)
+  }
+
   async getPlaylistsByIds(playlistIds: number[]): Promise<Playlist[]> {
     return playlistRepository.getPlaylistsByIds(playlistIds)
   }
 
-  async getUserPlaylistsWithTracks(userId: number): Promise<PlaylistWithTracks[]> {
+  async getAIEnabledPlaylistsWithTracks(userId: number): Promise<PlaylistWithTracks[]> {
     try {
-      const extractUniquePlaylistIds = (playlistTracks: PlaylistTrack[]): PlaylistId[] => {
-        return [...new Set(playlistTracks.map(pt => pt.playlist_id))];
-      };
-      const createPlaylistTracksMap = (playlistTracks: PlaylistTrack[]): PlaylistTracksMap => {
-        return playlistTracks.reduce((map, pt) => {
-          if (!map.has(pt.playlist_id)) map.set(pt.playlist_id, [])
-
-          map.get(pt.playlist_id)!.push({ trackId: pt.track_id, addedAt: pt.added_at });
-          return map;
-        }, new Map<PlaylistId, Array<{ trackId: TrackId, addedAt: AddedAt }>>());
-      };;
-
-
-      const createTrackLookupMap = async (playlistTracks: any[]): Promise<Map<TrackId, Track>> => {
-        const allTrackIds = [...new Set(playlistTracks.map(pt => pt.track_id))];
-        const allTracks = await trackRepository.getTracksByIds(allTrackIds);
-        return new Map(allTracks.map(track => [track.id, track]));
-      };
-
-      const mapPlaylistTracksToTracks = (
-        playlistTracks: Array<{ trackId: TrackId; addedAt: AddedAt }>,
-        trackMap: Map<TrackId, Track>
-      ): TrackWithAddedAt[] => {
-        return playlistTracks.flatMap(pt => {
-          const track = trackMap.get(pt.trackId);
-          if (!track) return [];
-          const { created_at, ...baseTrack } = track;
-          return [{ ...baseTrack, added_at: pt.addedAt }];
-        });
-      };
-
-      const buildPlaylistsWithTracks = async (
-        playlists: Playlist[],
-        playlistTracksMap: Map<PlaylistId, Array<{ trackId: TrackId, addedAt: AddedAt }>>,
-        trackMap: Map<TrackId, Track>
-      ): Promise<PromiseSettledResult<PlaylistWithTracks>[]> => {
-        return Promise.allSettled(
-          playlists.map(async playlist => {
-            try {
-              const playlistTracks = playlistTracksMap.get(playlist.id) ?? [];
-              const tracks = mapPlaylistTracksToTracks(playlistTracks, trackMap);
-
-              return {
-                ...playlist,
-                tracks
-              };
-            } catch (error) {
-              logger.error(`Error processing playlist ${playlist.id}: ${error}`);
-              return {
-                ...playlist,
-                tracks: []
-              };
-            }
-          })
-        );
-      };
-
-
-      const extractSuccessfulResults = (results: PromiseSettledResult<PlaylistWithTracks>[]): PlaylistWithTracks[] => {
-        return results
-          .filter((result): result is PromiseFulfilledResult<PlaylistWithTracks> =>
-            result.status === 'fulfilled')
-          .map(result => result.value);
-      };
-
+      const aiEnabledPlaylists = await playlistRepository.getFlaggedPlaylists(userId);
       const userPlaylistTracks = await playlistRepository.getPlaylistTracksByUserId(userId);
-      const playlistIds = extractUniquePlaylistIds(userPlaylistTracks);
-      const playlists = await playlistRepository.getPlaylistsByIds(playlistIds);
 
       const playlistTracksMap = createPlaylistTracksMap(userPlaylistTracks);
       const trackMap = await createTrackLookupMap(userPlaylistTracks);
 
-      const results = await buildPlaylistsWithTracks(playlists, playlistTracksMap, trackMap);
+      const results = await buildPlaylistsWithTracks(aiEnabledPlaylists, playlistTracksMap, trackMap);
 
       return extractSuccessfulResults(results);
     } catch (error) {
-      logger.error(`Error in getUserPlaylistsWithTracks: ${error}`);
+      logger.error(`Error in getAIEnabledPlaylistsWithTracks: ${error}`);
       return [];
+    }
+
+    // Helper functions
+    function createPlaylistTracksMap(playlistTracks: PlaylistTrack[]): PlaylistTracksMap {
+      return playlistTracks.reduce((map, pt) => {
+        if (!map.has(pt.playlist_id)) map.set(pt.playlist_id, [])
+
+        map.get(pt.playlist_id)!.push({ trackId: pt.track_id, addedAt: pt.added_at });
+        return map;
+      }, new Map<PlaylistId, Array<{ trackId: TrackId, addedAt: AddedAt }>>());
+    }
+
+    async function createTrackLookupMap(playlistTracks: any[]): Promise<Map<TrackId, Track>> {
+      const allTrackIds = [...new Set(playlistTracks.map(pt => pt.track_id))];
+      const allTracks = await trackRepository.getTracksByIds(allTrackIds);
+      return new Map(allTracks.map(track => [track.id, track]));
+    }
+
+    function mapPlaylistTracksToTracks(
+      playlistTracks: Array<{ trackId: TrackId; addedAt: AddedAt }>,
+      trackMap: Map<TrackId, Track>
+    ): TrackWithAddedAt[] {
+      return playlistTracks.flatMap(pt => {
+        const track = trackMap.get(pt.trackId);
+        if (!track) return [];
+        const { created_at, ...baseTrack } = track;
+        return [{ ...baseTrack, added_at: pt.addedAt }];
+      });
+    }
+
+    async function buildPlaylistsWithTracks(
+      playlists: Playlist[],
+      playlistTracksMap: Map<PlaylistId, Array<{ trackId: TrackId, addedAt: AddedAt }>>,
+      trackMap: Map<TrackId, Track>
+    ): Promise<PromiseSettledResult<PlaylistWithTracks>[]> {
+      return Promise.allSettled(
+        playlists.map(async playlist => {
+          try {
+            const playlistTracks = playlistTracksMap.get(playlist.id) ?? [];
+            const tracks = mapPlaylistTracksToTracks(playlistTracks, trackMap);
+
+            return {
+              ...playlist,
+              tracks
+            };
+          } catch (error) {
+            logger.error(`Error processing playlist ${playlist.id}: ${error}`);
+            return {
+              ...playlist,
+              tracks: []
+            };
+          }
+        })
+      );
+    }
+
+    function extractSuccessfulResults(results: PromiseSettledResult<PlaylistWithTracks>[]): PlaylistWithTracks[] {
+      return results
+        .filter((result): result is PromiseFulfilledResult<PlaylistWithTracks> =>
+          result.status === 'fulfilled')
+        .map(result => result.value);
     }
   }
 

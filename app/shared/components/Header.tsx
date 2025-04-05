@@ -1,5 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from '~/shared/components/ui/avatar';
 import { SpotifySignOut } from '~/components/SpotifySignOut';
+import { Link } from 'react-router';
+import { Button } from './ui/button';
+import { Beaker } from 'lucide-react';
 
 interface HeaderProps {
   userName: string;
@@ -26,6 +29,17 @@ export const Header = ({ userName, image }: HeaderProps) => {
         </Avatar>
 
         <SpotifySignOut />
+        {process.env.NODE_ENV !== 'production' && (
+          <Link to="/test-services">
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-green-700 border-green-600 text-white hover:bg-green-600 hover:border-green-500 transition-colors gap-2"
+            >
+              <Beaker className="h-4 w-4" /> Test Services
+            </Button>
+          </Link>
+        )}
       </div>
     </header>
   );
