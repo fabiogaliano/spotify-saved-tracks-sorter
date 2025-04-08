@@ -5,13 +5,51 @@ import { SYNC_STATUS } from '~/lib/repositories/TrackRepository'
 import { PlaylistService } from './PlaylistService'
 import type { Playlist, SpotifyPlaylistDTO } from '~/lib/models/Playlist'
 
+// Base interface for all sync operations
 export interface SyncResult {
   type: string
   totalProcessed: number
   newItems: number
   success: boolean
-  message: string
+  message?: string
+  details?: SyncDetails
 }
+
+export type SyncDetails = {
+  noPlaylists?: boolean
+};
+
+export interface PlaylistSyncDetails extends SyncDetails {
+  playlists?: {
+    deleted: Array<{ id: number, name: string }>,
+    created: Array<{ id: number, name: string }>,
+    updated: Array<{ id: number, name: string }>
+  },
+  autoSyncedTracks?: null | {
+    tracksChanged: Array<{
+      id: number,
+      name: string,
+      added: number,
+      removed: number,
+      addedTracks: Array<{ name: string, artist: string }>,
+      removedTracks: Array<{ id: number, name?: string }>
+    }>,
+    totalTracksAdded: number,
+    totalTracksRemoved: number
+  },
+  stats: {
+    newPlaylists: number,
+    updatedPlaylists: number,
+    aiPlaylistsChecked: number,
+    tracksAdded: number,
+    tracksRemoved: number
+  }
+}
+
+// Playlist-specific sync result
+export interface PlaylistSyncResult extends SyncResult {
+  details?: PlaylistSyncDetails
+};
 
 export class SyncService {
   constructor(
@@ -60,7 +98,7 @@ export class SyncService {
     }
   }
 
-  async syncPlaylists(userId: number): Promise<SyncResult & { details?: any }> {
+  async syncPlaylists(userId: number): Promise<PlaylistSyncResult> {
     logger.info('sync playlists start', { userId });
     try {
       await this.playlistService.updateSyncStatus(userId, SYNC_STATUS.IN_PROGRESS);
@@ -74,8 +112,16 @@ export class SyncService {
           totalProcessed: 0,
           newItems: 0,
           success: true,
-          message: 'No playlists to sync',
-          details: { noPlaylists: true }
+          details: {
+            noPlaylists: true,
+            stats: {
+              newPlaylists: 0,
+              updatedPlaylists: 0,
+              aiPlaylistsChecked: 0,
+              tracksAdded: 0,
+              tracksRemoved: 0
+            }
+          }
         };
       }
 
@@ -114,53 +160,31 @@ export class SyncService {
         autoSyncResults = await this.syncPlaylistTracks(userId, playlistIds);
       }
 
-      const syncDetails = {
-        playlists: changes,
-        autoSyncedTracks: autoSyncResults?.details ?? null
-      };
-
-      logger.info('sync playlists success', {
-        userId,
-        totalPlaylists: totalProcessed,
-        newPlaylists,
-        updatedPlaylists,
-        autoSyncedPlaylists: playlistsForAutoSync.length,
-        details: syncDetails
-      });
-
-      await this.playlistService.updateSyncStatus(userId, SYNC_STATUS.COMPLETED);
-
-      // Determine if any tracks were actually changed during auto-sync
       const tracksAdded = autoSyncResults?.details?.totalTracksAdded || 0;
       const tracksRemoved = autoSyncResults?.details?.totalTracksRemoved || 0;
-      const tracksChanged = tracksAdded + tracksRemoved;
 
-      // Build a more accurate message
-      let syncMessage = `Successfully synced ${newPlaylists} new playlists`;
-
-      if (playlistsForAutoSync.length > 0) {
-        if (tracksChanged > 0) {
-          // Tracks were added or removed
-          syncMessage += ` and auto-synced ${autoSyncResults?.details?.totalTracksAdded || 0} new tracks for ${playlistsForAutoSync.length} AI playlists`;
-          if (autoSyncResults?.details?.totalTracksRemoved > 0) {
-            syncMessage += ` (${autoSyncResults?.details?.totalTracksRemoved} tracks removed)`;
-          }
-        } else {
-          // No tracks changed, but we did check
-          syncMessage += ` and verified tracks for ${playlistsForAutoSync.length} AI playlists (no changes needed)`;
+      const syncDetails: PlaylistSyncDetails = {
+        playlists: changes,
+        autoSyncedTracks: autoSyncResults?.details ?? null,
+        stats: {
+          newPlaylists,
+          updatedPlaylists,
+          aiPlaylistsChecked: playlistsForAutoSync.length,
+          tracksAdded,
+          tracksRemoved
         }
-      }
+      };
+
+      await this.playlistService.updateSyncStatus(userId, SYNC_STATUS.COMPLETED);
 
       return {
         type: 'playlists',
         totalProcessed,
         newItems: newPlaylists,
         success: true,
-        message: syncMessage,
         details: syncDetails
       };
     } catch (error) {
-      logger.error('sync playlists failed', error as Error, { userId });
       await this.playlistService.updateSyncStatus(userId, SYNC_STATUS.FAILED);
       throw new logger.AppError(
         'Failed to sync playlists',

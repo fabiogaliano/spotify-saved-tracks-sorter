@@ -5,6 +5,10 @@ import { TrackService } from '~/lib/services/TrackService';
 import { PlaylistService } from '~/lib/services/PlaylistService';
 
 export async function action({ request }: ActionFunctionArgs) {
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+  });
+
   try {
     const userSession = await requireUserSession(request);
 
@@ -15,15 +19,19 @@ export async function action({ request }: ActionFunctionArgs) {
       new PlaylistService(spotifyService)
     );
 
-    const result = await syncService.syncPlaylists(userSession.userId);
+    const result = await Promise.race([
+      syncService.syncPlaylists(userSession.userId),
+      timeoutPromise
+    ]);
 
     return Response.json(result);
   } catch (error) {
+    const isTimeout = error instanceof Error && error.message.includes('timed out');
 
     return Response.json({
       success: false,
-      error: 'Failed to sync playlists',
+      error: isTimeout ? 'Request timed out, but sync may still be processing in the background' : 'Failed to sync playlists',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { status: isTimeout ? 504 : 500 });
   }
 }
