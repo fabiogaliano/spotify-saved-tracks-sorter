@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { ComponentProps, Suspense, useState } from 'react';
+import { Await, useLoaderData, useNavigation } from 'react-router';
 import LikedSongsAnalysis from '~/components/LikedSongsAnalysis';
 import MatchingInterface from '~/components/MatchingInterface';
-import PlaylistManagement from '~/components/PlaylistManagementInterface';
 import SettingsTab from '~/components/Settings';
 import { AnalysisStats, LibraryStatus, QuickActions, RecentActivity } from '~/features/dashboard';
 import { DashboardLoaderData, loader } from '~/features/dashboard/dashboard.loader.server';
-import { Card, CardContent } from '~/shared/components/ui/Card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
-import { Await, useLoaderData, useNavigation } from 'react-router';
+import PlaylistManagement from '~/features/playlist-management/components/PlaylistManagement';
+import { PlaylistTracksProvider } from '~/features/playlist-management/context/PlaylistTracksContext';
 import { Header } from '~/shared/components/Header';
-import { ComponentProps, Suspense } from 'react';
+import { Card, CardContent } from '~/shared/components/ui/Card';
 import { LoadingSpinner } from '~/shared/components/ui/LoadingSpinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 
 export { loader };
 type LoadedTabs = {
@@ -43,7 +43,7 @@ const LoadingFallback = () => (
 );
 
 const Dashboard = () => {
-  const { user, likedSongs, aiEnabledPlaylistsWithTracks, otherPlaylists } = useLoaderData<DashboardLoaderData>()
+  const { user, likedSongs, playlists } = useLoaderData<DashboardLoaderData>()
   const navigation = useNavigation();
   const isLoading = navigation.state === 'loading';
   const [activeTab, setActiveTab] = useState('overview');
@@ -94,7 +94,7 @@ const Dashboard = () => {
                 <div className="md:col-span-4">
                   <Suspense fallback={<LoadingFallback />}>
                     <Await resolve={likedSongs}>
-                      {(resolvedLikedSongs) => <LibraryStatus likedSongs={resolvedLikedSongs} aiEnabledPlaylists={aiEnabledPlaylistsWithTracks} />}
+                      {(resolvedLikedSongs) => <LibraryStatus likedSongs={resolvedLikedSongs} playlists={playlists} />}
                     </Await>
                   </Suspense>
                 </div>
@@ -130,8 +130,8 @@ const Dashboard = () => {
                 <Card className="bg-gray-900/80 border-gray-800">
                   <CardContent className="p-6">
                     <Suspense fallback={<LoadingFallback />}>
-                      <Await resolve={aiEnabledPlaylistsWithTracks}>
-                        {(resolvedPlaylists) => <PlaylistManagement aiEnabledPlaylistsWithTracks={resolvedPlaylists} otherPlaylists={otherPlaylists} />}
+                      <Await resolve={playlists}>
+                        {(resolvedPlaylists) => <PlaylistManagement playlists={resolvedPlaylists} />}
                       </Await>
                     </Suspense>
                   </CardContent>
@@ -165,4 +165,12 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+const DashboardWithProviders = () => {
+  return (
+    <PlaylistTracksProvider>
+      <Dashboard />
+    </PlaylistTracksProvider>
+  );
+};
+
+export default DashboardWithProviders;

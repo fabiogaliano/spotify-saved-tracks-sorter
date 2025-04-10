@@ -6,6 +6,7 @@ import type { PlaylistTrack, PlaylistWithTracks, TrackWithAddedAt } from '~/lib/
 import { SpotifyService } from '~/lib/services/SpotifyService';
 import { SYNC_STATUS } from '~/lib/repositories/TrackRepository';
 import type { Enums } from '~/types/database.types';
+import { getSupabase } from '~/lib/services/DatabaseService';
 
 import { logger } from '~/lib/logging/Logger';
 
@@ -20,6 +21,10 @@ export class PlaylistService {
 
   async getUnflaggedPlaylists(userId: number): Promise<Playlist[]> {
     return playlistRepository.getUnflaggedPlaylists(userId)
+  }
+
+  async getFlaggedPlaylists(userId: number): Promise<Playlist[]> {
+    return playlistRepository.getFlaggedPlaylists(userId)
   }
 
   async getPlaylistsByIds(playlistIds: number[]): Promise<Playlist[]> {
@@ -117,7 +122,54 @@ export class PlaylistService {
   }
 
   async getPlaylistTracksLastSyncTime(playlistId: number): Promise<string | null> {
-    return playlistRepository.getPlaylistTracksLastSyncTime(playlistId);
+    return playlistRepository.getPlaylistTracksLastSyncTime(playlistId)
+  }
+
+  async getPlaylistTracks(playlistId: number): Promise<TrackWithAddedAt[]> {
+    try {
+      // First, get all playlist-track associations for this playlist
+      const { data, error } = await getSupabase()
+        .from('playlist_tracks')
+        .select('*')
+        .eq('playlist_id', playlistId);
+
+      if (error) throw error;
+      const playlistTracks = data || [];
+
+      if (playlistTracks.length === 0) {
+        return [];
+      }
+
+      // Extract track IDs to fetch full track details
+      const trackIds = playlistTracks.map(pt => pt.track_id);
+
+      // Get the full track details
+      const tracks = await trackRepository.getTracksByIds(trackIds);
+
+      // Create a map for quick lookups
+      const trackMap = new Map(tracks.map(track => [track.id, track]));
+
+      // Create a map of track ID to added_at date
+      const addedAtMap = new Map(playlistTracks.map(pt => [pt.track_id, pt.added_at]));
+
+      // Use the same mapPlaylistTracksToTracks pattern as in getAIEnabledPlaylistsWithTracks
+      const mappedTracks = tracks.flatMap(track => {
+        const addedAt = addedAtMap.get(track.id);
+        if (!addedAt) return [];
+
+        const { created_at, ...baseTrack } = track;
+        return [{
+          ...baseTrack,
+          added_at: addedAt
+          // The Track model already has correct fields: name, artist, album
+        }];
+      });
+
+      return mappedTracks;
+    } catch (error) {
+      logger.error(`Error getting tracks for playlist ${playlistId}: ${error}`);
+      return [];
+    }
   }
 
   async processSpotifyPlaylists(

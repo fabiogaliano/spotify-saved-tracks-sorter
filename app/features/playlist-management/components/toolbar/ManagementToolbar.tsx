@@ -1,13 +1,13 @@
 import React from 'react';
 import { Button } from '~/shared/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
-import { useSyncPlaylists } from '../hooks';
+import { useSyncPlaylists } from '../../hooks/useSyncPlaylists';
 
-interface PlaylistManagementHeaderProps {
+interface ManagementToolbarProps {
   isSyncing: boolean;
 }
 
-const PlaylistManagementHeader: React.FC<PlaylistManagementHeaderProps> = ({ isSyncing }) => {
+const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing }) => {
   const { triggerSync } = useSyncPlaylists();
 
   return (
@@ -37,4 +37,4 @@ const PlaylistManagementHeader: React.FC<PlaylistManagementHeaderProps> = ({ isS
   );
 };
 
-export default PlaylistManagementHeader;
+export default ManagementToolbar;

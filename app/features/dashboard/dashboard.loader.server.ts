@@ -16,8 +16,7 @@ export type DashboardLoaderData = {
     }
   }
   likedSongs: Promise<TrackWithAnalysis[]>,
-  aiEnabledPlaylistsWithTracks: Promise<PlaylistWithTracks[]>,
-  otherPlaylists: Promise<Playlist[]>
+  playlists: Promise<Playlist[]>
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -40,14 +39,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     const likedSongsPromise = trackService.getUserTracksWithAnalysis(userSession.userId)
     const playlistService = new PlaylistService(new SpotifyService(userSession.spotifyApi))
-    const aiEnabledPlaylistsPromise = playlistService.getAIEnabledPlaylistsWithTracks(userSession.userId)
-    const otherPlaylistsPromise = playlistService.getUnflaggedPlaylists(userSession.userId)
+    const playlistsPromise = playlistService.getPlaylists(userSession.userId)
 
     return {
       user: userData,
       likedSongs: likedSongsPromise,
-      aiEnabledPlaylistsWithTracks: aiEnabledPlaylistsPromise,
-      otherPlaylists: otherPlaylistsPromise
+      playlists: playlistsPromise
     } as DashboardLoaderData
   } catch (error) {
     if (error instanceof Response) throw error

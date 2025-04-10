@@ -4,21 +4,21 @@ import { Card, CardContent, CardHeader } from '~/shared/components/ui/Card';
 import { Input } from '~/shared/components/ui/input';
 import { ScrollArea } from '~/shared/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
-import { ColoredBox, IconContainer, SectionTitle } from './helpers';
-import { PlaylistUIFormat } from './PlaylistDetailView';
-import { PlaylistDetailViewTabs } from '../hooks/usePlaylistManagement';
+import { ColoredBox, IconContainer, SectionTitle } from '../ui/controls';
+import { PlaylistUIFormat } from '../playlist-viewer/types';
+import { PlaylistDetailViewTabs } from '../../hooks/usePlaylistManagement';
 
-interface PlaylistSidebarProps {
+interface PlaylistSelectorProps {
   filteredPlaylists: PlaylistUIFormat[];
   searchQuery: string;
+  selectedTab: PlaylistDetailViewTabs;
+  selectedPlaylist: string | null;
   onSearchChange: (query: string) => void;
   onTabChange: (value: PlaylistDetailViewTabs) => void;
   onSelectPlaylist: (id: string) => void;
-  selectedPlaylist: string | null;
-  selectedTab: PlaylistDetailViewTabs;
 }
 
-const PlaylistSidebar: React.FC<PlaylistSidebarProps> = ({
+const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
   filteredPlaylists,
   selectedPlaylist,
   selectedTab,
@@ -26,8 +26,7 @@ const PlaylistSidebar: React.FC<PlaylistSidebarProps> = ({
   onSearchChange,
   onTabChange,
   onSelectPlaylist
-}: PlaylistSidebarProps) => {
-  console.log('filteredPlaylists', filteredPlaylists);
+}) => {
   return (
     <div className="md:col-span-4 lg:col-span-3">
       <Card className="bg-gray-900/80 border-gray-800 h-full">
@@ -96,4 +95,4 @@ const PlaylistSidebar: React.FC<PlaylistSidebarProps> = ({
   );
 };
 
-export default PlaylistSidebar;
+export default PlaylistSelector;

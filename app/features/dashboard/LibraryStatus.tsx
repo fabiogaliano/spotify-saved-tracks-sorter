@@ -5,9 +5,9 @@ import { Music, RefreshCw } from "lucide-react";
 import { TrackWithAnalysis } from "~/lib/models/Track";
 import { Await } from "react-router";
 import { Suspense } from "react";
-import { PlaylistWithTracks } from "~/lib/models/Playlist";
+import { Playlist } from "~/lib/models/Playlist";
 
-export function LibraryStatus({ likedSongs, aiEnabledPlaylists }: { likedSongs: TrackWithAnalysis[], aiEnabledPlaylists?: Promise<PlaylistWithTracks[]> }) {
+export function LibraryStatus({ likedSongs, playlists }: { likedSongs: TrackWithAnalysis[], playlists?: Promise<Playlist[]> }) {
   return (
     <Card className="bg-gray-900/80 border-gray-800 overflow-hidden">
       <CardHeader className="pb-2 border-b border-gray-800">
@@ -42,9 +42,9 @@ export function LibraryStatus({ likedSongs, aiEnabledPlaylists }: { likedSongs: 
           <div className="flex justify-between">
             <span className="text-gray-300">AI-flagged playlists</span>
             <span className="font-medium text-white">
-              {aiEnabledPlaylists ? (
+              {playlists ? (
                 <Suspense fallback="?">
-                  <Await resolve={aiEnabledPlaylists}>
+                  <Await resolve={playlists}>
                     {(resolvedPlaylists) => resolvedPlaylists.filter(p => p.is_flagged).length}
                   </Await>
                 </Suspense>
