@@ -30,38 +30,38 @@ async function startWorker(config?: WorkerConfig) {
   try {
     // Log worker startup
     console.log('Starting worker process...');
-    
+
     // Create event emitter for worker events
     const events = new EventEmitter();
-    
+
     // Set up event handlers
     events.on('pool:create', ({ workerPool }) => {
       console.log(`Worker pool created: ${workerPool.workerId}`);
     });
-    
+
     events.on('worker:create', ({ worker, tasks }) => {
       console.log(`Worker created: ${worker.workerId} with ${Object.keys(tasks).length} tasks`);
     });
-    
+
     events.on('job:start', ({ worker, job }) => {
       console.log(`Worker ${worker.workerId} started job ${job.id} (${job.task_identifier})`);
     });
-    
+
     events.on('job:success', ({ worker, job }) => {
       console.log(`Worker ${worker.workerId} completed job ${job.id} successfully`);
     });
-    
+
     events.on('job:error', ({ worker, job, error }) => {
       console.error(`Worker ${worker.workerId} job ${job.id} failed:`, error);
     });
-    
+
     events.on('gracefulShutdown', ({ signal }) => {
       console.log(`Worker shutting down gracefully due to ${signal}...`);
     });
-    
+
     // If config is provided, use it (legacy support)
     // Otherwise, use the configuration from graphile.config.ts
-    const runner = await run({ 
+    const runner = await run({
       preset,
       events,
       ...config // For backward compatibility
