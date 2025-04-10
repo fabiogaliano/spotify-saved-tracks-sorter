@@ -24,7 +24,7 @@ export interface ErrorInfo {
  */
 export function categorizeError(error: any): ErrorCategory {
   const errorMessage = error?.message?.toLowerCase() || '';
-  
+
   if (
     errorMessage.includes('database') ||
     errorMessage.includes('db') ||
@@ -34,7 +34,7 @@ export function categorizeError(error: any): ErrorCategory {
   ) {
     return ErrorCategory.DATABASE;
   }
-  
+
   if (
     errorMessage.includes('api') ||
     errorMessage.includes('http') ||
@@ -43,7 +43,7 @@ export function categorizeError(error: any): ErrorCategory {
   ) {
     return ErrorCategory.API;
   }
-  
+
   if (
     errorMessage.includes('analysis') ||
     errorMessage.includes('analyze') ||
@@ -53,7 +53,7 @@ export function categorizeError(error: any): ErrorCategory {
   ) {
     return ErrorCategory.ANALYSIS;
   }
-  
+
   if (
     errorMessage.includes('auth') ||
     errorMessage.includes('token') ||
@@ -62,7 +62,7 @@ export function categorizeError(error: any): ErrorCategory {
   ) {
     return ErrorCategory.AUTHENTICATION;
   }
-  
+
   return ErrorCategory.UNKNOWN;
 }
 
