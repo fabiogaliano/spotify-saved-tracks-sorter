@@ -4,27 +4,29 @@ import { Card, CardContent, CardHeader } from '~/shared/components/ui/Card';
 import { PlaylistUIFormat, PlaylistTrackUI } from './types';
 import { IconContainer, SectionTitle } from '../ui/controls';
 import { FailedSyncEmptyState, FailedSyncWithTracksState, LoadingTracksState, NotStartedSyncState, TracksTableState } from '../ui/DisplayStates';
+import { useSyncPlaylistTracks } from '../../hooks/useSyncPlaylistTracks';
 
 interface TrackListProps {
   currentPlaylist: PlaylistUIFormat;
   playlistTracks: PlaylistTrackUI[];
-  isLoading: boolean; // Used for both loading tracks and disabling sync buttons
-  syncPlaylistTracks: (playlistId: string) => void;
+  isLoading: boolean;
 }
 
 const TrackList: React.FC<TrackListProps> = ({
   currentPlaylist,
   playlistTracks,
   isLoading,
-  syncPlaylistTracks
 }) => {
+  // Use the syncPlaylistTracks hook to get real-time syncing state
+  const { isSyncing, syncPlaylistTracks: syncTracks } = useSyncPlaylistTracks();
   const renderTrackContent = () => {
     if (currentPlaylist.tracksSyncStatus === 'NOT_STARTED') {
       return (
         <NotStartedSyncState
-          syncPlaylistTracks={syncPlaylistTracks}
+          syncPlaylistTracks={syncTracks}
           currentPlaylistId={currentPlaylist.id}
-          isSyncing={isLoading}
+          isSyncing={isSyncing}
+          playlistIsEmpty={currentPlaylist.songCount === 0}
         />
       );
     }
@@ -32,16 +34,16 @@ const TrackList: React.FC<TrackListProps> = ({
     if (currentPlaylist.tracksSyncStatus === 'FAILED') {
       return currentPlaylist.songCount > 0 ? (
         <FailedSyncWithTracksState
-          syncPlaylistTracks={syncPlaylistTracks}
+          syncPlaylistTracks={syncTracks}
           currentPlaylistId={currentPlaylist.id}
-          isSyncing={isLoading}
+          isSyncing={isSyncing}
           playlistTracks={playlistTracks}
         />
       ) : (
         <FailedSyncEmptyState
-          syncPlaylistTracks={syncPlaylistTracks}
+          syncPlaylistTracks={syncTracks}
           currentPlaylistId={currentPlaylist.id}
-          isSyncing={isLoading}
+          isSyncing={isSyncing}
         />
       );
     }

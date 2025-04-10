@@ -27,23 +27,28 @@ export const NotStartedSyncState: React.FC<{
   syncPlaylistTracks: (playlistId: string) => void;
   currentPlaylistId: string;
   isSyncing: boolean;
-}> = ({ syncPlaylistTracks, currentPlaylistId, isSyncing }) => (
+  playlistIsEmpty?: boolean;
+}> = ({ syncPlaylistTracks, currentPlaylistId, isSyncing, playlistIsEmpty = false }) => (
   <div className="flex flex-col items-center justify-center p-12 h-[calc(100vh-500px)]">
     <div className="bg-gray-800 rounded-full p-5 mb-4">
       <RefreshCcw className="h-10 w-10 text-gray-600" />
     </div>
     <h3 className="text-xl font-medium text-white mb-2">Tracks Not Synced</h3>
     <p className="text-gray-400 max-w-md text-center mb-6">
-      This playlist's tracks haven't been synced yet. Sync now to view and manage tracks in this playlist.
+      {playlistIsEmpty
+        ? "This playlist appears to be empty. No tracks to sync."
+        : "This playlist's tracks haven't been synced yet. Sync now to view and manage tracks in this playlist."}
     </p>
-    <Button
-      onClick={() => syncPlaylistTracks(currentPlaylistId)}
-      disabled={isSyncing}
-      className="bg-green-600 hover:bg-green-700 text-white border-0 transition-colors gap-2"
-    >
-      <RefreshCcw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-      {isSyncing ? 'Syncing...' : 'Sync Playlist Tracks'}
-    </Button>
+    {!playlistIsEmpty && (
+      <Button
+        onClick={() => syncPlaylistTracks(currentPlaylistId)}
+        disabled={isSyncing}
+        className="bg-green-600 hover:bg-green-700 text-white border-0 transition-colors gap-2"
+      >
+        <RefreshCcw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+        {isSyncing ? 'Syncing...' : 'Sync Playlist Tracks'}
+      </Button>
+    )}
   </div>
 );
 

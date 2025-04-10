@@ -1,6 +1,7 @@
 import { useFetcher } from 'react-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useNotificationStore } from '~/lib/stores/notificationStore';
+import { usePlaylistTracksContext } from '../context/PlaylistTracksContext';
 
 interface PlaylistTracksSyncResult {
   success: boolean;
@@ -18,6 +19,8 @@ export function useSyncPlaylistTracks() {
   const notify = useNotificationStore();
   const loadingToastId = useRef<string | number | null>(null);
   const prevState = useRef(syncFetcher.state);
+  const lastSyncedPlaylistId = useRef<string | null>(null);
+  const { loadPlaylistTracks } = usePlaylistTracksContext();
 
   useEffect(() => {
     // Only show loading toast when transitioning from idle to submitting/loading
@@ -53,6 +56,11 @@ export function useSyncPlaylistTracks() {
           } else {
             notify.success('Playlist tracks synced successfully');
           }
+          
+          // Load the tracks for the playlist that was just synced
+          if (lastSyncedPlaylistId.current) {
+            loadPlaylistTracks(lastSyncedPlaylistId.current, true);
+          }
         } else {
           notify.error(data.error || 'Failed to sync playlist tracks');
         }
@@ -64,15 +72,17 @@ export function useSyncPlaylistTracks() {
     prevState.current = syncFetcher.state;
   }, [syncFetcher.data, syncFetcher.state, syncFetcher.formData, notify]);
 
-  const syncPlaylistTracks = (playlistId: string | number) => {
+  const syncPlaylistTracks = useCallback((playlistId: string | number) => {
+    const playlistIdStr = playlistId.toString();
+    lastSyncedPlaylistId.current = playlistIdStr;
     syncFetcher.submit(
-      { playlistId: playlistId.toString() },
+      { playlistId: playlistIdStr },
       {
         method: 'post',
         action: '/actions/sync-playlist-tracks'
       }
     );
-  };
+  }, [syncFetcher]);
 
   return {
     syncFetcher,

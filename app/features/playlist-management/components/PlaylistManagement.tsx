@@ -22,7 +22,6 @@ const PlaylistManagement = ({ playlists }: PlaylistManagementProps) => {
     searchQuery,
     filteredPlaylists,
     currentPlaylist,
-    playlistTracks: aiPlaylistTracks,
     updateSelectedPlaylist,
     updateSelectedTab,
     setSearchQuery
@@ -100,7 +99,6 @@ const PlaylistManagement = ({ playlists }: PlaylistManagementProps) => {
                 currentPlaylist={currentPlaylist}
                 playlistTracks={playlistTracks}
                 isLoading={isLoadingTracks}
-                syncPlaylistTracks={loadPlaylistTracks}
               />
             </>
           )}
