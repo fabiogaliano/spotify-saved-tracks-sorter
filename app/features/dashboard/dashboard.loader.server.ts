@@ -1,9 +1,9 @@
 import { type LoaderFunctionArgs } from 'react-router';
-import { getUserSession, requireUserSession } from '~/features/auth/auth.utils'
+import { requireUserSession } from '~/features/auth/auth.utils'
 import { TrackWithAnalysis } from '~/lib/models/Track'
 import { PlaylistService } from '~/lib/services/PlaylistService'
 import { trackService } from '~/lib/services/TrackService'
-import { Playlist, PlaylistWithTracks } from '~/lib/models/Playlist'
+import { Playlist } from '~/lib/models/Playlist'
 import { SpotifyService } from '~/lib/services/SpotifyService';
 
 export type DashboardLoaderData = {
@@ -22,7 +22,6 @@ export type DashboardLoaderData = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const userSession = await requireUserSession(request)
-
 
     if (!userSession) {
       return { user: null }
