@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { Playlist, PlaylistWithTracks } from '~/lib/models/Playlist';
+import { Playlist } from '~/lib/models/Playlist';
 
 import PlaylistInfo from './playlist-viewer/PlaylistInfo';
 import TrackList from './playlist-viewer/TrackList';

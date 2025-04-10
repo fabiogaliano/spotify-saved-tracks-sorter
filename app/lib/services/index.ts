@@ -7,6 +7,7 @@ import { DefaultLyricsService } from './lyrics/LyricsService'
 import { DefaultVectorizationService } from './vectorization/VectorizationService'
 import { MatchingService } from './matching/MatchingService'
 import { SupabaseMatchRepository } from '~/lib/repositories/MatchRepository'
+import { getAnalysisJobService, AnalysisJobService } from './AnalysisJobService'
 
 // todo: need to at runtime with user keys
 const googleApiKey = process.env.GOOGLE_API_KEY || ''
@@ -32,7 +33,8 @@ export {
   matchRepository,
   matchingService,
   SyncService,
-  SpotifyService
+  SpotifyService,
+  getAnalysisJobService
 }
 
 // Export types for external use
@@ -42,5 +44,6 @@ export type {
   DefaultSongAnalysisService as SongAnalysisService,
   DefaultPlaylistAnalysisService as PlaylistAnalysisService,
   DefaultVectorizationService as VectorizationService,
-  MatchingService
+  MatchingService,
+  AnalysisJobService
 }

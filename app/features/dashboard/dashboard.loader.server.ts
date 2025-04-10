@@ -21,8 +21,8 @@ export type DashboardLoaderData = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    await requireUserSession(request)
-    const userSession = await getUserSession(request)
+    const userSession = await requireUserSession(request)
+
 
     if (!userSession) {
       return { user: null }

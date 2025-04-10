@@ -11,7 +11,9 @@
 		"typecheck": "react-router typegen && tsc",
 		"gendbtypes": "rm -rf ./app/types/database.types.ts && npx supabase gen types --lang=typescript --project-id 'szhpoywveuvfbhcxiafi' --schema public > app/types/database.types.ts",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"worker": "bun run app/workers/index.ts",
+		"migrate": "bun run app/workers/migrations/run-migrations.ts"
 	},
 	"dependencies": {
 		"@ai-sdk/anthropic": "^1.0.4",
@@ -40,6 +42,7 @@
 		"cheerio": "^1.0.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"graphile-worker": "^0.16.6",
 		"isbot": "^4.1.0",
 		"lucide-react": "^0.479.0",
 		"next-themes": "^0.4.6",
