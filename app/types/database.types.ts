@@ -569,7 +569,7 @@ export type Database = {
     Functions: {
       add_track_analysis_job: {
         Args: { p_user_id: number; p_track_ids: number[] }
-        Returns: number
+        Returns: undefined
       }
       batch_update_playlist_track_counts: {
         Args: { updates: Json[] }
@@ -592,6 +592,10 @@ export type Database = {
           tracks_failed: number
           completion_percentage: number
         }[]
+      }
+      queue_analyze_track_task: {
+        Args: { p_job_id: number; p_track_id: number; p_user_id: number }
+        Returns: boolean
       }
     }
     Enums: {
