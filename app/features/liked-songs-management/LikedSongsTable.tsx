@@ -5,21 +5,10 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  Table,
   useReactTable,
   VisibilityState
 } from '@tanstack/react-table';
-import {
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Columns,
-  Eye,
-  Music,
-  RefreshCw,
-  Search,
-  X
-} from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Columns, Music, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { TrackWithAnalysis } from '~/lib/models/Track';
 import {
@@ -29,13 +18,18 @@ import {
   CardHeader,
   CardTitle
 } from '~/shared/components/ui/Card';
+import { Checkbox } from '~/shared/components/ui/checkbox';
+
+import { AnalysisBadge, AnalysisStatus } from './components/AnalysisStatusBadge';
+import { SearchInput } from './components/SearchInput';
+import { StatusCard } from './components/StatusCard';
+import { TablePagination } from './components/TablePagination';
+
+import TrackAnalysisModal from '~/components/TrackAnalysisModal';
 import { Badge } from '~/shared/components/ui/badge';
 import { Button } from '~/shared/components/ui/button';
-import { Checkbox } from '~/shared/components/ui/checkbox';
-import { Input } from '~/shared/components/ui/input';
-import TrackAnalysisModal from './TrackAnalysisModal';
 
-// Styles interface
+// Styles for the component
 interface StylesType {
   card: string;
   iconContainer: string;
@@ -47,7 +41,6 @@ interface StylesType {
   };
 }
 
-// Common styles
 const styles: StylesType = {
   card: "bg-gray-900/80 border-gray-800",
   iconContainer: "p-2 rounded-full",
@@ -67,160 +60,33 @@ const getAnalysisStatus = (track: TrackWithAnalysis): AnalysisStatus => {
   return 'analyzed';
 };
 
-// Component Props Interfaces
-interface StatusCardProps {
-  title: string;
-  value: number;
-  icon: React.ReactNode;
-  iconBg?: string;
-  valueColor?: string;
+interface LikedSongsTableProps {
+  likedSongs: TrackWithAnalysis[];
 }
 
-// Status Card component
-const StatusCard = ({ title, value, icon, iconBg, valueColor = 'text-white' }: StatusCardProps) => {
-  return (
-    <Card className={styles.card}>
-      <CardContent className="p-4 flex items-center justify-between">
-        <div>
-          <p className="text-gray-400 text-sm">{title}</p>
-          <p className={`${valueColor} text-2xl font-bold`}>{value}</p>
-        </div>
-        <div className={`${iconBg || 'bg-gray-800'} ${styles.iconContainer}`}>
-          {icon}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-interface SearchInputProps {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-}
-
-// Search Input component
-const SearchInput = ({ value, onChange, placeholder }: SearchInputProps) => {
-  return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-      <Input
-        value={value || ''}
-        onChange={onChange}
-        placeholder={placeholder || "Search..."}
-        className="pl-9 bg-gray-800 border-gray-700 text-white w-full"
-      />
-      {value && (
-        <button
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-          onClick={() => onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
-    </div>
-  );
-};
-
-type AnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed';
-
-interface AnalysisBadgeProps {
-  status: AnalysisStatus;
-  onAnalyze: () => void;
-  onView: () => void;
-}
-
-// Analysis badge component
-const AnalysisBadge = ({ status, onAnalyze, onView }: AnalysisBadgeProps) => {
-  const badgeStyle: Record<AnalysisStatus, string> = {
-    analyzed: "bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30 cursor-pointer",
-    pending: "bg-blue-500/20 border-blue-500 text-blue-400",
-    not_analyzed: "bg-gray-500/20 border-gray-600 text-gray-400 hover:bg-gray-500/30 cursor-pointer",
-    failed: "bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30 cursor-pointer"
-  };
-
-  const statusText: Record<AnalysisStatus, string> = {
-    analyzed: "Analyzed",
-    pending: "In Progress",
-    not_analyzed: "Not Analyzed",
-    failed: "Failed"
-  };
-
-  const handleClick = () => {
-    if (status === 'analyzed') {
-      onView();
-    } else if (status === 'not_analyzed' || status === 'failed') {
-      onAnalyze();
-    }
-  };
-
-  return (
-    <Badge
-      className={`${badgeStyle[status]} flex items-center gap-1 whitespace-nowrap px-2 py-1 border`}
-      onClick={status !== 'pending' ? handleClick : undefined}
-    >
-      {status === 'analyzed' ? <CheckCircle className="h-3.5 w-3.5" /> :
-        status === 'pending' ? <Clock className="h-3.5 w-3.5" /> :
-          status === 'not_analyzed' ? <Music className="h-3.5 w-3.5" /> :
-            <AlertCircle className="h-3.5 w-3.5" />
-      }
-      {statusText[status]}
-      {status === 'analyzed' && <Eye className="h-3 w-3 ml-1" />}
-      {(status === 'not_analyzed' || status === 'failed') && <RefreshCw className="h-3 w-3 ml-1" />}
-    </Badge>
-  );
-};
-
-interface TablePaginationProps {
-  table: Table<any>;
-}
-
-// Table Pagination component
-const TablePagination = ({ table }: TablePaginationProps) => {
-  return (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        className={styles.button.outline}
-        onClick={() => table.previousPage()}
-        disabled={!table.getCanPreviousPage()}
-      >
-        Previous
-      </Button>
-      <span className="text-white">
-        Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-      </span>
-      <Button
-        variant="outline"
-        size="sm"
-        className={styles.button.outline}
-        onClick={() => table.nextPage()}
-        disabled={!table.getCanNextPage()}
-      >
-        Next
-      </Button>
-    </div>
-  );
-};
-
-// Main component
-const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] }) => {
-  const [rowSelection, setRowSelection] = useState({});
-  const [globalFilter, setGlobalFilter] = useState('');
+// Main LikedSongsTable component
+export const LikedSongsTable = ({ likedSongs }: LikedSongsTableProps) => {
+  // State for tracking visible columns
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    addedAt: false
+    select: true,
+    title: true,
+    artist: true,
+    album: true,
+    status: true
   });
+
+  // State for search functionality
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  // State for row selection
+  const [rowSelection, setRowSelection] = useState({});
 
   // State for track analysis modal
   const [selectedTrack, setSelectedTrack] = useState<TrackWithAnalysis | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
 
-  // Function to handle viewing track analysis
-  const handleViewAnalysis = (track: TrackWithAnalysis) => {
-    setSelectedTrack(track);
-    setIsAnalysisModalOpen(true);
-  };
+  // Create column helper for TypeScript support
+  const columnHelper = createColumnHelper<TrackWithAnalysis>();
 
   // Calculate stats for display
   const stats = useMemo(() => {
@@ -236,9 +102,7 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
     };
   }, [likedSongs]);
 
-  // Column definitions
-  const columnHelper = createColumnHelper<TrackWithAnalysis>();
-
+  // Define table columns
   const columns = useMemo(() => [
     columnHelper.accessor(row => row.track.name, {
       id: 'title',
@@ -268,7 +132,7 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
           <AnalysisBadge
             status={info.getValue()}
             onView={() => handleViewAnalysis(info.row.original)}
-            onAnalyze={() => console.log('Analyze track:', info.row.original.track.name)}
+            onAnalyze={() => handleAnalyzeTrack(info.row.original)}
           />
         </div>
       )
@@ -281,6 +145,7 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
             checked={table.getIsAllPageRowsSelected()}
             onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
+            className="data-[state=checked]:bg-blue-500 border-gray-600"
           />
         </div>
       ),
@@ -291,31 +156,58 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
             disabled={getAnalysisStatus(row.original) === 'pending'}
             onCheckedChange={value => row.toggleSelected(!!value)}
             aria-label="Select row"
+            className="data-[state=checked]:bg-blue-500 border-gray-600"
           />
         </div>
       )
     })
   ], []);
 
-  // Initialize the table
-  // Debug the initial column visibility state
-  console.log('Initial column visibility:', columnVisibility);
+  const handleViewAnalysis = (track: TrackWithAnalysis) => {
+    setSelectedTrack(track);
+    setIsAnalysisModalOpen(true);
+  };
 
-  // Add click outside handler for the dropdown
+  const handleAnalyzeTrack = (track: TrackWithAnalysis) => {
+    console.log('Analyzing track:', track);
+    // Here you would implement the actual track analysis logic
+  };
+
+  const handleAnalyzeSelected = () => {
+    const selectedTracks = Object.keys(rowSelection).map(
+      index => likedSongs[parseInt(index)]
+    );
+    console.log('Analyzing selected tracks:', selectedTracks);
+    // Here you would implement the actual track analysis logic for multiple tracks
+  };
+
+  const table = useReactTable({
+    data: likedSongs,
+    columns,
+    state: {
+      columnVisibility,
+      globalFilter,
+      rowSelection,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: setColumnVisibility,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  });
+
+  // Click outside handler to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const menuElement = document.getElementById('column-visibility-menu');
-      const buttonElement = document.getElementById('column-visibility-button');
-
-      if (
-        menuElement &&
-        buttonElement &&
-        !menuElement.contains(event.target as Node) &&
-        !buttonElement.contains(event.target as Node) &&
-        menuElement.style.display === 'block'
-      ) {
-        menuElement.style.display = 'none';
-      }
+      // Add your click outside logic here if needed
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -323,27 +215,6 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  const table = useReactTable({
-    data: likedSongs,
-    columns,
-    state: {
-      rowSelection,
-      globalFilter,
-      columnVisibility
-    },
-    enableRowSelection: row => getAnalysisStatus(row.original) !== 'pending',
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: (updatedVisibility) => {
-      console.log('Column visibility changed:', updatedVisibility);
-      setColumnVisibility(updatedVisibility as VisibilityState);
-    },
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel()
-  });
 
   return (
     <div className="h-full flex flex-col space-y-6">
@@ -477,7 +348,7 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
               <Button
                 className="bg-white text-gray-900 hover:bg-white/90 border-0"
                 disabled={Object.keys(rowSelection).length === 0}
-                onClick={() => console.log('Analyzing tracks:', Object.keys(rowSelection))}
+                onClick={handleAnalyzeSelected}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Analyze Selected
@@ -564,8 +435,17 @@ const LikedSongsAnalysis = ({ likedSongs }: { likedSongs: TrackWithAnalysis[] })
           </div>
         </CardFooter>
       </Card>
+
+      {/* Track Analysis Modal */}
+      {selectedTrack && (
+        <TrackAnalysisModal
+          trackName={selectedTrack.track.name}
+          artistName={selectedTrack.track.artist}
+          analysis={selectedTrack.analysis?.analysis}
+          isOpen={isAnalysisModalOpen}
+          onOpenChange={setIsAnalysisModalOpen}
+        />
+      )}
     </div>
   );
 };
-
-export default LikedSongsAnalysis;

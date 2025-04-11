@@ -1,6 +1,6 @@
 import { ComponentProps, Suspense, useState } from 'react';
 import { Await, useLoaderData, useNavigation } from 'react-router';
-import LikedSongsAnalysis from '~/components/LikedSongsAnalysis';
+import { LikedSongsTable } from '~/features/liked-songs-management/LikedSongsTable';
 import MatchingInterface from '~/components/MatchingInterface';
 import SettingsTab from '~/components/Settings';
 import { AnalysisStats, LibraryStatus, QuickActions, RecentActivity } from '~/features/dashboard';
@@ -117,7 +117,7 @@ const Dashboard = () => {
                   <CardContent className="p-6">
                     <Suspense fallback={<LoadingFallback />}>
                       <Await resolve={likedSongs}>
-                        {(resolvedLikedSongs) => <LikedSongsAnalysis likedSongs={resolvedLikedSongs} />}
+                        {(resolvedLikedSongs) => <LikedSongsTable likedSongs={resolvedLikedSongs} />}
                       </Await>
                     </Suspense>
                   </CardContent>
