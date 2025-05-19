@@ -24,10 +24,12 @@ import { AnalysisBadge, AnalysisStatus } from './components/AnalysisStatusBadge'
 import { SearchInput } from './components/SearchInput';
 import { StatusCard } from './components/StatusCard';
 import { TablePagination } from './components/TablePagination';
+import { AnalysisJobStatus } from './components/AnalysisJobStatus';
+import { AnalysisControls } from './components/AnalysisControls';
 
 import TrackAnalysisModal from '~/components/TrackAnalysisModal';
 import { Badge } from '~/shared/components/ui/badge';
-import { Button } from '~/shared/components/ui/button';
+import { useLikedSongs } from './context';
 
 // Styles for the component
 interface StylesType {
@@ -60,12 +62,17 @@ const getAnalysisStatus = (track: TrackWithAnalysis): AnalysisStatus => {
   return 'analyzed';
 };
 
-interface LikedSongsTableProps {
-  likedSongs: TrackWithAnalysis[];
-}
-
 // Main LikedSongsTable component
-export const LikedSongsTable = ({ likedSongs }: LikedSongsTableProps) => {
+export const LikedSongsTable = () => {
+  // Get data from context
+  const {
+    likedSongs,
+    rowSelection,
+    setRowSelection,
+    analyzeTracks,
+    currentJob
+  } = useLikedSongs();
+
   // State for tracking visible columns
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     select: true,
@@ -77,9 +84,6 @@ export const LikedSongsTable = ({ likedSongs }: LikedSongsTableProps) => {
 
   // State for search functionality
   const [globalFilter, setGlobalFilter] = useState('');
-
-  // State for row selection
-  const [rowSelection, setRowSelection] = useState({});
 
   // State for track analysis modal
   const [selectedTrack, setSelectedTrack] = useState<TrackWithAnalysis | null>(null);
@@ -168,17 +172,27 @@ export const LikedSongsTable = ({ likedSongs }: LikedSongsTableProps) => {
     setIsAnalysisModalOpen(true);
   };
 
+  // Handle analysis of a single track
   const handleAnalyzeTrack = (track: TrackWithAnalysis) => {
-    console.log('Analyzing track:', track);
-    // Here you would implement the actual track analysis logic
+    console.log('Starting analysis for track:', track.track.id);
+    // Prevent default behavior if this is being triggered from a link or button
+    // that might cause navigation
+    try {
+      analyzeTracks({ trackId: track.track.id });
+      console.log('Analysis request submitted successfully');
+    } catch (error) {
+      console.error('Error submitting analysis request:', error);
+    }
   };
 
+  // Handle analysis of selected tracks
   const handleAnalyzeSelected = () => {
-    const selectedTracks = Object.keys(rowSelection).map(
-      index => likedSongs[parseInt(index)]
-    );
-    console.log('Analyzing selected tracks:', selectedTracks);
-    // Here you would implement the actual track analysis logic for multiple tracks
+    analyzeTracks({ useSelected: true });
+  };
+
+  // Handle analysis of all tracks
+  const handleAnalyzeAll = () => {
+    analyzeTracks({ useAll: true });
   };
 
   const table = useReactTable({
@@ -283,76 +297,28 @@ export const LikedSongsTable = ({ likedSongs }: LikedSongsTableProps) => {
               )}
             </CardTitle>
 
-            <div className="flex items-center gap-2">
-              {/* Column visibility with direct imperative state control */}
-              <div className="relative">
-                <Button
-                  id="column-visibility-button"
-                  variant="outline"
-                  className={`${styles.button.outline} flex gap-1`}
-                  type="button"
-                  onClick={() => {
-                    // Directly toggle a visible state for the dropdown
-                    const menuElement = document.getElementById('column-visibility-menu');
-                    if (menuElement) {
-                      const isVisible = menuElement.style.display === 'block';
-                      menuElement.style.display = isVisible ? 'none' : 'block';
-                    }
-                  }}
-                >
-                  <Columns className="h-4 w-4" />
-                  <span className="hidden md:inline">Columns</span>
-                </Button>
-
-                {/* Custom dropdown implementation */}
-                <div
-                  id="column-visibility-menu"
-                  className="absolute right-0 top-full mt-1 bg-gray-800/95 border border-gray-700 text-white w-52 p-2 rounded-md shadow-lg z-50"
-                  style={{ display: 'none' }}
-                >
-                  <div className="text-gray-300 font-semibold px-2 mb-2">Toggle columns</div>
-                  <div className="h-px bg-gray-700 mb-2" />
-
-                  {table.getAllLeafColumns().filter(column => column.id !== 'select').map((column) => (
-                    <div
-                      key={column.id}
-                      className="flex items-center gap-2 px-2 py-2 hover:bg-gray-700/70 rounded cursor-pointer"
-                      onClick={() => {
-                        // Toggle visibility directly
-                        const newValue = !column.getIsVisible();
-                        column.toggleVisibility(newValue);
-
-                        // Update state explicitly
-                        setColumnVisibility(prev => {
-                          const updatedState: VisibilityState = {
-                            ...prev,
-                            [column.id]: newValue
-                          };
-                          return updatedState;
-                        });
-                      }}
-                    >
-                      <Checkbox
-                        checked={column.getIsVisible()}
-                        className="data-[state=checked]:bg-blue-500 border-gray-600"
-                      />
-                      <span className="capitalize">
-                        {column.id.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                    </div>
-                  ))}
+            <div className="space-y-4">
+              {/* Display job status when a job is active */}
+              {job && (
+                <div className="mb-4">
+                  <AnalysisJobStatus
+                    status={job.status}
+                    tracksProcessed={job.tracksProcessed}
+                    trackCount={job.trackCount}
+                    tracksSucceeded={job.tracksSucceeded}
+                    tracksFailed={job.tracksFailed}
+                  />
                 </div>
-              </div>
+              )}
 
-              {/* Analyze selected tracks button */}
-              <Button
-                className="bg-white text-gray-900 hover:bg-white/90 border-0"
-                disabled={Object.keys(rowSelection).length === 0}
-                onClick={handleAnalyzeSelected}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Analyze Selected
-              </Button>
+              {/* Analysis controls with integrated column visibility */}
+              <AnalysisControls
+                rowSelection={rowSelection}
+                onAnalyzeSelected={handleAnalyzeSelected}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
+                columns={table.getAllColumns().filter(column => column.id !== 'select')}
+              />
             </div>
           </div>
         </CardHeader>
