@@ -13,10 +13,10 @@ interface AnalysisControlsProps {
 }
 
 export const AnalysisControls = ({
-  rowSelection,
-  onAnalyzeSelected,
-  columnVisibility,
   onColumnVisibilityChange,
+  onAnalyzeSelected,
+  rowSelection,
+  columnVisibility,
   columns
 }: AnalysisControlsProps) => {
 

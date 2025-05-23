@@ -1,60 +1,51 @@
-import { ActionFunctionArgs } from 'react-router';
-import { songAnalysisService } from '~/lib/services'
-import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
+import { ActionFunctionArgs } from '@remix-run/node';
+import { trackAnalysisRepository } from "~/lib/repositories/TrackAnalysisRepository";
+import { sqsService, AnalysisJobPayload } from "~/lib/services/queue/SQSService";
+import { requireUserSession } from '~/features/auth/auth.utils';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const formData = await request.formData()
-  const action = formData.get('action')
+  const userSession = await requireUserSession(request);
+  if (!userSession) {
+    return { success: false, error: 'Authentication required', status: 401 };
+  }
 
-  if (action === 'analyze') {
-    const trackId = formData.get('trackId')
-    const spotifyTrackId = formData.get('spotifyTrackId')
-    const artist = formData.get('artist')
-    const name = formData.get('name')
+  const formData = await request.formData();
+  const formAction = formData.get('action');
 
-    if (!trackId || !spotifyTrackId || !artist || !name) {
-      return { success: false, error: 'Missing required track information', status: 400 }
+  if (formAction === 'analyze') {
+    const trackId = formData.get('trackId') as string;
+    const artist = formData.get('artist') as string;
+    const name = formData.get('name') as string;
+
+    if (!trackId || !artist || !name) {
+      return { success: false, error: 'Missing required track information', status: 400 };
     }
 
     try {
-      const existingAnalysis = await trackAnalysisRepository.getByTrackId(Number(trackId))
+      const existingAnalysis = await trackAnalysisRepository.getByTrackId(Number(trackId));
 
       if (existingAnalysis) {
-        return { success: true, trackId, analysisId: existingAnalysis.id, alreadyAnalyzed: true }
+        return { success: true, trackId, analysisId: existingAnalysis.id, alreadyAnalyzed: true };
       }
 
-      try {
-        const { model, analysisJson } = JSON.parse(
-          await songAnalysisService.analyzeSong(artist.toString(), name.toString())
-        )
+      const jobPayload: AnalysisJobPayload = {
+        trackId,
+        artist,
+        title: name,
+        userId: userSession.userId,
+      };
 
-        const newAnalysis = await trackAnalysisRepository.insertAnalysis({
-          track_id: Number(trackId),
-          analysis: analysisJson,
-          model_name: model,
-          version: 1,
-        })
+      await sqsService.enqueueAnalysisJob(jobPayload);
+      console.log(`Enqueued analysis for trackId: ${trackId}`);
+      return { success: true, trackId, queued: true };
 
-        return { success: true, trackId, analysisId: newAnalysis.id }
-      } catch (analysisError) {
-        console.error('Error during track analysis:', analysisError)
-        return {
-          success: false,
-          error: 'Failed to analyze track',
-          trackId,
-          details: analysisError instanceof Error ? analysisError.message : String(analysisError),
-          status: 500
-        }
-      }
-    } catch (dbError) {
-      console.error('Database error during analysis:', dbError)
+    } catch (error) {
+      console.error('Error in analysis action:', error);
       return {
         success: false,
-        error: 'Database error',
-        trackId,
-        details: dbError instanceof Error ? dbError.message : String(dbError),
-        status: 500
-      }
+        error: 'Failed to process analysis request.',
+        status: 500,
+      };
     }
   }
 

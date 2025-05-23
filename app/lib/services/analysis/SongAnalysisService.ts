@@ -75,6 +75,89 @@ export class DefaultSongAnalysisService implements SongAnalysisService {
     return JSON.stringify(lyrics, null, 2)
   }
 
+  private extractJsonFromLLMResponse(responseText: string): any {
+    // First try to parse the entire response as JSON
+    try {
+      return JSON.parse(responseText);
+    } catch (parseError) {
+      console.log('Initial JSON parse failed, trying alternative methods');
+    }
+
+    // Try multiple extraction methods in sequence
+    let extracted = false;
+    let analysisJson: any = null;
+
+    // 1. Try to extract JSON from markdown code blocks
+    if (!extracted) {
+      const jsonMatch = responseText.match(/```(?:json)?([\s\S]*?)```/s);
+      if (jsonMatch && jsonMatch[1]) {
+        const extractedContent = jsonMatch[1].trim();
+        try {
+          analysisJson = JSON.parse(extractedContent);
+          extracted = true;
+          console.log('Successfully extracted JSON from code block');
+        } catch (extractError) {
+          console.error('Failed to parse code block content as JSON');
+        }
+      }
+    }
+
+    // 2. Try to find anything that looks like JSON with curly braces
+    if (!extracted) {
+      const possibleJson = responseText.match(/{[\s\S]*}/s);
+      if (possibleJson) {
+        try {
+          analysisJson = JSON.parse(possibleJson[0]);
+          extracted = true;
+          console.log('Successfully extracted JSON from curly braces');
+        } catch (jsonError) {
+          console.error('Failed to parse curly brace content as JSON');
+        }
+      }
+    }
+
+    // 3. Try to clean and fix common JSON issues
+    if (!extracted) {
+      try {
+        // Replace escaped quotes that might be causing issues
+        let cleanedText = responseText.replace(/\\"([^"]*)\\"/, '"$1"');
+        // Try to extract anything between outermost curly braces
+        const jsonCandidate = cleanedText.match(/{[\s\S]*}/s);
+        if (jsonCandidate) {
+          analysisJson = JSON.parse(jsonCandidate[0]);
+          extracted = true;
+          console.log('Successfully parsed JSON after cleaning');
+        }
+      } catch (cleanError) {
+        console.error('Failed to parse cleaned JSON');
+      }
+    }
+
+    // 4. Try to fix double-escaped quotes (common in LLM outputs)
+    if (!extracted) {
+      try {
+        // Replace double-escaped quotes with proper JSON quotes
+        let fixedText = responseText.replace(/\\\\"([^\\]*?)\\\\"/, '"$1"');
+        const fixedJson = fixedText.match(/{[\s\S]*}/s);
+        if (fixedJson) {
+          analysisJson = JSON.parse(fixedJson[0]);
+          extracted = true;
+          console.log('Successfully parsed JSON after fixing double-escaped quotes');
+        }
+      } catch (fixError) {
+        console.error('Failed to parse after fixing double-escaped quotes');
+      }
+    }
+
+    // If all extraction methods fail, throw a detailed error
+    if (!extracted) {
+      console.error('All JSON extraction methods failed. Full response:', responseText);
+      throw new Error('Failed to extract valid JSON from LLM response');
+    }
+
+    return analysisJson;
+  }
+
   async analyzeSong(artist: string, song: string): Promise<string> {
     try {
       const lyrics = await this.lyricsService.getLyrics(artist, song)
@@ -87,24 +170,10 @@ export class DefaultSongAnalysisService implements SongAnalysisService {
       }
 
       const result = await this.providerManager.generateText(filledPrompt)
-      console.log('Result:', result)
-      let analysisJson
-      try {
-        analysisJson = JSON.parse(result.text)
-      } catch (parseError) {
-        const jsonMatch = result.text.match(/```(?:json)?(\n|\r\n|\r)?(.*?)```/s)
-        if (jsonMatch && jsonMatch[2]) {
-          try {
-            analysisJson = JSON.parse(jsonMatch[2].trim())
-          } catch (extractError) {
-            throw new Error('Failed to parse extracted content as JSON')
-          }
-        } else {
-          throw new Error('Failed to parse analysis result as JSON - no JSON code block found')
-        }
-      }
 
-      return JSON.stringify({ model: this.providerManager.getCurrentModel(), analysisJson })
+      const analysisJson = this.extractJsonFromLLMResponse(result.text);
+
+      return JSON.stringify({ model: this.providerManager.getCurrentModel(), analysis: analysisJson })
     } catch (error) {
       throw new Error(`Failed to analyze song ${artist} - ${song}: ${error instanceof Error ? error.message : String(error)}`)
     }
