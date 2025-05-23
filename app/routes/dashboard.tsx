@@ -119,7 +119,7 @@ const Dashboard = () => {
                     <Suspense fallback={<LoadingFallback />}>
                       <Await resolve={likedSongs}>
                         {(resolvedLikedSongs) => (
-                          <LikedSongsProvider initialSongs={resolvedLikedSongs}>
+                          <LikedSongsProvider initialSongs={resolvedLikedSongs} userId={user.id}>
                             <LikedSongsTable />
                           </LikedSongsProvider>
                         )}

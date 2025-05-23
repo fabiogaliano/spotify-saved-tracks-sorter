@@ -3,6 +3,7 @@ import { llmProviderManager } from '~/lib/services'
 import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisRepository'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
+import { logger } from '~/lib/logging/Logger';
 
 // Define a more specific type for playlist tracks that matches database return
 interface DbPlaylistTrack {
@@ -71,19 +72,38 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       .replace('{tracks}', formattedTracks)
 
     // Generate analysis using LLM
-    const analysis = await llmProviderManager.getProvider().analyze()
-
-    if (!analysis) {
-      return { success: false, playlistId, error: 'Failed to generate analysis' }
+    const llmResponse = await llmProviderManager.generateText(filledPrompt);
+    let analysisJson: any;
+    try {
+      analysisJson = JSON.parse(llmResponse.text);
+    } catch (e) {
+      const jsonMatch = llmResponse.text.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        try {
+          analysisJson = JSON.parse(jsonMatch[1].trim());
+        } catch (extractError) {
+          logger.error('Failed to parse extracted LLM content as JSON', { playlistId, extractError });
+          return { success: false, playlistId, error: 'Failed to parse extracted LLM content as JSON' };
+        }
+      } else {
+        logger.error('Failed to parse LLM analysis result as JSON - no JSON code block found', { playlistId });
+        return { success: false, playlistId, error: 'Failed to parse LLM analysis result as JSON - no JSON code block found' };
+      }
     }
+
+    if (!analysisJson) {
+      return { success: false, playlistId, error: 'Failed to generate analysis' };
+    }
+
+    const modelUsed = llmProviderManager.getCurrentModel();
 
     // Store analysis in database
     try {
       const analysisId = await playlistAnalysisRepository.createAnalysis(
         Number(playlistId),
         1, // TODO: Replace with actual user ID from session
-        analysis,
-        'gpt-4', // Specify the model used
+        analysisJson,
+        modelUsed,
         1 // Version number
       )
 

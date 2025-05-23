@@ -1,50 +1,383 @@
-import React, { createContext, useState, useContext, useCallback, ReactNode } from 'react';
-import { TrackWithAnalysis } from '~/lib/models/Track';
-import { useSubmit } from 'react-router';
-import { AnalysisJob } from '~/lib/services/analysis/AnalysisJobService';
+import React, { createContext, useState, useContext, useCallback, ReactNode, useEffect, useRef } from 'react';
+import { TrackWithAnalysis, UIAnalysisStatus, TrackAnalysis } from '~/lib/models/Track';
+import { useWebSocket } from '~/lib/hooks/useWebSocket';
+
+// Define AnalysisJob type for batch job tracking
+export interface AnalysisJob {
+  id: string; // The batch job ID
+  status: 'pending' | 'in_progress' | 'completed' | 'failed'; // Batch job status
+  trackCount: number;
+  trackStates: Map<number, 'queued' | 'in_progress' | 'completed' | 'failed'>; // Per-track status
+  startedAt?: Date; // When the job started
+  // Database-persisted stats - always present
+  dbStats: {
+    tracksProcessed: number;
+    tracksSucceeded: number;
+    tracksFailed: number;
+  };
+}
 
 interface LikedSongsContextType {
+  // State
   likedSongs: TrackWithAnalysis[];
   setLikedSongs: (songs: TrackWithAnalysis[]) => void;
   rowSelection: Record<string, boolean>;
-  setRowSelection: (value: Record<string, boolean>) => void;
+  setRowSelection: (value: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => void;
   selectedTracks: () => TrackWithAnalysis[];
-  analyzeSelectedTracks: () => void;
-  analyzeTracks: (options: { trackId?: number, useSelected?: boolean, useAll?: boolean }) => void;
+
+  // Analysis operations
+  analyzeSelectedTracks: () => Promise<void>;
+  analyzeTracks: (options: { trackId?: number, useSelected?: boolean, useAll?: boolean }) => Promise<void>;
+
+  // Job tracking
   currentJob: AnalysisJob | null;
-  setCurrentJob: (job: AnalysisJob | null) => void;
   isAnalyzing: boolean;
+
+  // Computed properties from job state
+  tracksProcessed: number;
+  tracksSucceeded: number;
+  tracksFailed: number;
+
+  // Track status updates
+  updateSongAnalysisDetails: (trackId: number, analysisData: TrackAnalysis | null, status: UIAnalysisStatus) => void;
+
+  // WebSocket status
+  isWebSocketConnected: boolean;
+  webSocketLastMessage: any;
 }
 
-// Create the context with default values
 const LikedSongsContext = createContext<LikedSongsContextType>({
+  // State
   likedSongs: [],
   setLikedSongs: () => { },
   rowSelection: {},
   setRowSelection: () => { },
   selectedTracks: () => [],
-  analyzeSelectedTracks: () => { },
-  analyzeTracks: () => { },
+
+  // Analysis operations
+  analyzeSelectedTracks: () => Promise.resolve(),
+  analyzeTracks: () => Promise.resolve(),
+
+  // Job tracking
   currentJob: null,
-  setCurrentJob: () => { },
   isAnalyzing: false,
+
+  // Computed properties
+  tracksProcessed: 0,
+  tracksSucceeded: 0,
+  tracksFailed: 0,
+
+  // Track status updates
+  updateSongAnalysisDetails: () => { },
+
+  // WebSocket status
+  isWebSocketConnected: false,
+  webSocketLastMessage: null,
 });
 
 interface LikedSongsProviderProps {
   children: ReactNode;
   initialSongs?: TrackWithAnalysis[];
+  userId?: number;
 }
 
 export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
   children,
   initialSongs = [],
+  userId,
 }) => {
+  // State management
   const [likedSongs, setLikedSongs] = useState<TrackWithAnalysis[]>(initialSongs);
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [currentJob, setCurrentJob] = useState<AnalysisJob | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Persistent job stats that survive job clearing
+  const [lastJobStats, setLastJobStats] = useState({ processed: 0, succeeded: 0, failed: 0 });
 
-  const submit = useSubmit();
+  // Track if we've already initialized to prevent duplicate initialization
+  const initializedRef = useRef(false);
+  const jobRecoveryRef = useRef(false);
+
+  // WebSocket connection
+  const WEBSOCKET_URL = 'ws://localhost:3001/ws';
+  const {
+    isConnected: isWebSocketConnected,
+    lastMessage: webSocketLastMessage,
+    subscribeToTrack,
+    connect: connectWebSocket,
+    disconnect: disconnectWebSocket
+  } = useWebSocket(WEBSOCKET_URL, { autoConnect: false });
+
+  // Helper function to get computed values from job state
+  const getJobCounts = useCallback((job: AnalysisJob | null) => {
+    if (!job) return lastJobStats; // Use persistent stats when no job
+
+    // Always use database stats - all jobs have dbStats
+    return {
+      processed: job.dbStats.tracksProcessed,
+      succeeded: job.dbStats.tracksSucceeded,
+      failed: job.dbStats.tracksFailed
+    };
+  }, [lastJobStats]);
+
+  // Effect to update persistent stats when job stats change
+  useEffect(() => {
+    if (currentJob) {
+      const currentStats = {
+        processed: currentJob.dbStats.tracksProcessed,
+        succeeded: currentJob.dbStats.tracksSucceeded,
+        failed: currentJob.dbStats.tracksFailed
+      };
+      setLastJobStats(currentStats);
+    }
+  }, [currentJob?.dbStats.tracksProcessed, currentJob?.dbStats.tracksSucceeded, currentJob?.dbStats.tracksFailed]);
+
+  // Note: Track status updates are now handled atomically in the WebSocket handler
+
+  // Update a single song's analysis details
+  const updateSongAnalysisDetails = useCallback((trackId: number, analysisData: TrackAnalysis | null, status: UIAnalysisStatus) => {
+    setLikedSongs(prevSongs =>
+      prevSongs.map(song =>
+        song.track.id === trackId
+          ? { ...song, analysis: analysisData, uiAnalysisStatus: status }
+          : song
+      )
+    );
+
+    // Job status updates are handled in the WebSocket message handler to prevent double counting
+    // This function only updates the UI state for individual tracks
+  }, [setLikedSongs]);
+
+  // Effect to initialize songs with proper status from server
+  useEffect(() => {
+    if (initialSongs && initialSongs.length > 0 && !initializedRef.current) {
+      // Songs now come with proper uiAnalysisStatus from the server
+      // This includes 'failed' status for tracks that failed analysis
+      console.log('Initializing songs with status:', initialSongs.slice(0, 5).map(s => ({ id: s.track.id, status: s.uiAnalysisStatus })));
+      setLikedSongs(initialSongs);
+      initializedRef.current = true;
+    }
+    // We only want to run this when initialSongs array itself changes, not on every render of setLikedSongs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSongs]);
+
+  // Effect to recover active jobs when user loads the app
+  useEffect(() => {
+    const recoverActiveJob = async () => {
+      if (!userId || jobRecoveryRef.current) return;
+
+      try {
+        console.log('Checking for active jobs for user:', userId);
+        jobRecoveryRef.current = true;
+        const response = await fetch(`/api/analysis/active-job?userId=${userId}`);
+        
+        if (response.ok) {
+          const activeJob = await response.json();
+          if (activeJob && activeJob.id) {
+            console.log('Found active job to resume:', activeJob);
+            
+            // Convert trackStates from object back to Map (JSON serialization converts Maps to objects)
+            console.log('Raw trackStates from server:', activeJob.trackStates);
+            const trackStatesMap = new Map(
+              Object.entries(activeJob.trackStates || {}).map(([key, value]) => [parseInt(key, 10), value])
+            );
+            console.log('Converted trackStates Map:', Array.from(trackStatesMap.entries()));
+            
+            const recoveredJob: AnalysisJob = {
+              ...activeJob,
+              trackStates: trackStatesMap,
+              startedAt: new Date(activeJob.startedAt),
+              dbStats: activeJob.dbStats // Always present from proper recovery
+            };
+            
+            setCurrentJob(recoveredJob);
+            
+            // Update UI track states to match the recovered job states
+            console.log('Updating track states for recovered job. TrackStates Map size:', trackStatesMap.size);
+            setLikedSongs(prevSongs =>
+              prevSongs.map(song => {
+                const trackJobState = trackStatesMap.get(song.track.id);
+                if (trackJobState !== undefined) {
+                  // Map job states to UI states
+                  let uiStatus: UIAnalysisStatus;
+                  switch (trackJobState) {
+                    case 'queued':
+                    case 'in_progress':
+                      uiStatus = 'pending';
+                      break;
+                    case 'completed':
+                      uiStatus = 'analyzed';
+                      break;
+                    case 'failed':
+                      uiStatus = 'failed';
+                      break;
+                    default:
+                      uiStatus = song.uiAnalysisStatus; // Keep existing status
+                  }
+                  console.log(`Track ${song.track.id}: ${trackJobState} → ${uiStatus}`);
+                  return { ...song, uiAnalysisStatus: uiStatus };
+                }
+                return song;
+              })
+            );
+            
+            // WebSocket connection will be handled by the existing effect
+          } else {
+            console.log('No active jobs found for user');
+          }
+        }
+      } catch (error) {
+        console.error('Error recovering active job:', error);
+      }
+    };
+
+    recoverActiveJob();
+  }, [userId]);
+
+  // Connect to WebSocket only once when a job starts and disconnect when it completes
+  useEffect(() => {
+    if (!currentJob) {
+      if (isWebSocketConnected) {
+        console.log('No active job, disconnecting from WebSocket');
+        disconnectWebSocket();
+      }
+      return;
+    }
+
+    // Connect to WebSocket when a job starts, but only if we're not already connected
+    if ((currentJob.status === 'pending' || currentJob.status === 'in_progress') && !isWebSocketConnected) {
+      console.log('Job active, connecting to WebSocket');
+      connectWebSocket();
+
+      // Subscribe to all track IDs in the job
+      for (const trackId of Array.from(currentJob.trackStates.keys())) {
+        console.log(`Subscribing to track ${trackId}`);
+        subscribeToTrack(String(trackId));
+      }
+    }
+    // Disconnect when job is done
+    else if (currentJob.status === 'completed' && isWebSocketConnected) {
+      console.log('Job completed, disconnecting from WebSocket in 5 seconds');
+      setTimeout(() => {
+        disconnectWebSocket();
+        setCurrentJob(null); // Clear completed job
+      }, 5000);
+    }
+  }, [currentJob?.status, isWebSocketConnected, connectWebSocket, disconnectWebSocket, subscribeToTrack, currentJob?.id]);
+
+  // Store processed message IDs to prevent duplicate processing
+  const processedMessageIds = useRef<Set<string>>(new Set());
+
+  // Handle WebSocket messages for job status updates
+  useEffect(() => {
+    if (!webSocketLastMessage) return;
+
+    try {
+      // Process the WebSocket message
+      if (webSocketLastMessage.type === 'job_status') {
+        const statusUpdate = webSocketLastMessage.data;
+        const { trackId, status } = statusUpdate;
+
+        if (!trackId) {
+          console.warn('Received job status update without trackId');
+          return;
+        }
+
+        // Create a unique message ID based on trackId and status only
+        // This prevents duplicate processing of the same status change
+        const messageId = `${trackId}-${status}`;
+
+        // Skip if we've already processed this exact status for this track
+        if (processedMessageIds.current.has(messageId)) {
+          console.log(`Skipping duplicate status ${status} for track ${trackId}`);
+          return;
+        }
+
+        // Add to processed messages
+        processedMessageIds.current.add(messageId);
+
+        console.log(`WebSocket status update for track ${trackId}: ${status}`);
+
+        // Map the worker status to UI status
+        let uiStatus: UIAnalysisStatus = 'not_analyzed';
+        let trackJobStatus: 'queued' | 'in_progress' | 'completed' | 'failed' = 'queued';
+
+        switch (status) {
+          case 'QUEUED':
+            uiStatus = 'pending';
+            trackJobStatus = 'queued';
+            break;
+          case 'IN_PROGRESS':
+            uiStatus = 'pending';
+            trackJobStatus = 'in_progress';
+            break;
+          case 'COMPLETED':
+            uiStatus = 'analyzed';
+            trackJobStatus = 'completed';
+            break;
+          case 'FAILED':
+          case 'SKIPPED':
+            uiStatus = 'failed';
+            trackJobStatus = 'failed';
+            break;
+          default:
+            return; // Unknown status, ignore
+        }
+
+        // Update the track status in the UI
+        updateSongAnalysisDetails(trackId, null, uiStatus);
+
+        // Update job status if this track is part of the current job
+        if (currentJob?.trackStates.has(trackId)) {
+          // Update both trackStates and dbStats atomically
+          setCurrentJob(prevJob => {
+            if (!prevJob || !prevJob.trackStates.has(trackId)) return prevJob;
+
+            const newTrackStates = new Map(prevJob.trackStates);
+            newTrackStates.set(trackId, trackJobStatus);
+
+            let newDbStats = { ...prevJob.dbStats };
+
+            // Update dbStats when tracks complete or fail
+            if (trackJobStatus === 'completed' || trackJobStatus === 'failed') {
+              // Only increment if this track wasn't already processed
+              const prevStatus = prevJob.trackStates.get(trackId);
+              if (prevStatus !== 'completed' && prevStatus !== 'failed') {
+                newDbStats.tracksProcessed = newDbStats.tracksProcessed + 1;
+                
+                if (trackJobStatus === 'completed') {
+                  newDbStats.tracksSucceeded = newDbStats.tracksSucceeded + 1;
+                } else {
+                  newDbStats.tracksFailed = newDbStats.tracksFailed + 1;
+                }
+              }
+            }
+
+            // Calculate if job is complete
+            const allProcessed = Array.from(newTrackStates.values()).every(s => s === 'completed' || s === 'failed');
+
+            return {
+              ...prevJob,
+              trackStates: newTrackStates,
+              dbStats: newDbStats,
+              status: allProcessed ? 'completed' : 'in_progress'
+            };
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error processing WebSocket message:', error);
+    }
+  }, [webSocketLastMessage, currentJob, updateSongAnalysisDetails]);
+
+  // Clear processed messages when starting a new job
+  useEffect(() => {
+    if (currentJob) {
+      console.log(`New job started with ID: ${currentJob.id}, clearing processed messages`);
+      processedMessageIds.current.clear();
+    }
+  }, [currentJob?.id]);
 
   // Derive selected tracks from row selection
   const selectedTracks = useCallback(() => {
@@ -55,53 +388,132 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
   }, [likedSongs, rowSelection]);
 
   // Function to analyze tracks - can handle individual, selected, or all tracks
-  const analyzeTracks = useCallback((options: { trackId?: string, useSelected?: boolean, useAll?: boolean } = {}) => {
-    let trackIds: string[] = [];
+  const analyzeTracks = useCallback((options: { trackId?: number, useSelected?: boolean, useAll?: boolean } = {}) => {
+    let tracksToAnalyze: TrackWithAnalysis[] = [];
 
-    // Single track analysis
     if (options.trackId) {
-      trackIds = [options.trackId];
+      const singleTrack = likedSongs.find(song => song.track.id === options.trackId);
+      if (singleTrack) {
+        tracksToAnalyze = [singleTrack];
+      }
     }
     // Selected tracks analysis
     else if (options.useSelected) {
-      trackIds = selectedTracks().map(track => track.track.id);
-      if (trackIds.length === 0) {
+      tracksToAnalyze = selectedTracks();
+      if (tracksToAnalyze.length === 0) {
         console.warn('No tracks selected for analysis');
-        return;
+        return Promise.resolve();
       }
     }
     // All tracks analysis
     else if (options.useAll) {
-      trackIds = likedSongs.map(song => song.track.id);
-      if (trackIds.length === 0) {
+      tracksToAnalyze = likedSongs;
+      if (tracksToAnalyze.length === 0) {
         console.warn('No tracks available for analysis');
-        return;
+        return Promise.resolve();
       }
     }
 
-    if (trackIds.length === 0) {
+    if (tracksToAnalyze.length === 0) {
       console.warn('No tracks specified for analysis');
-      return;
+      return Promise.resolve();
+    }
+
+    // Filter out tracks that have already been analyzed or failed
+    const tracksNeedingAnalysis = tracksToAnalyze.filter(track =>
+      track.uiAnalysisStatus !== 'analyzed' &&
+      track.uiAnalysisStatus !== 'pending' &&
+      track.uiAnalysisStatus !== 'failed'
+    );
+
+    console.log(`Filtered ${tracksToAnalyze.length} tracks → ${tracksNeedingAnalysis.length} need analysis`);
+
+    if (tracksNeedingAnalysis.length === 0) {
+      console.warn('All specified tracks are already analyzed or in progress');
+      return Promise.resolve();
+    }
+
+    // Prevent multiple concurrent analysis requests
+    if (isAnalyzing) {
+      console.warn('Analysis already in progress, ignoring additional request');
+      return Promise.resolve();
     }
 
     setIsAnalyzing(true);
 
+    const mappedTracksForApi = tracksNeedingAnalysis.map(twa => ({
+      id: twa.track.id,
+      spotifyTrackId: twa.track.spotify_track_id,
+      artist: twa.track.artist,
+      name: twa.track.name,
+    }));
+
+    const trackIdsBeingProcessed = tracksNeedingAnalysis.map(t => t.track.id);
+
+    // Update songs to 'pending' status immediately
+    setLikedSongs(prevSongs =>
+      prevSongs.map(song =>
+        trackIdsBeingProcessed.includes(song.track.id)
+          ? { ...song, uiAnalysisStatus: 'pending' as UIAnalysisStatus }
+          : song
+      )
+    );
+
+    // Clear any existing job before starting a new one
+    setCurrentJob(null);
+    // Don't clear lastJobStats here - wait until the new job is created
+
     // Use fetch to send a JSON request instead of form data
-    fetch('/actions/analyze-liked-songs', {
+    return fetch('/actions/analyze-liked-songs', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ trackIds }),
+      body: JSON.stringify({ tracks: mappedTracksForApi }),
     })
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          console.log('Analysis job created successfully, ID:', data.jobId);
-          // Set the job ID to trigger polling and status updates
-          setCurrentJob({ id: data.jobId, status: 'pending', tracksProcessed: 0, trackCount: trackIds.length, tracksSucceeded: 0, tracksFailed: 0 });
+          console.log('Analysis submission successful:', data.message);
+
+          // Create track states map - all start as 'queued'
+          const trackStates = new Map<number, 'queued' | 'in_progress' | 'completed' | 'failed'>();
+          trackIdsBeingProcessed.forEach(trackId => {
+            trackStates.set(trackId, 'queued');
+          });
+
+          // Create new job with proper state
+          const newJob: AnalysisJob = {
+            id: data.batchId || crypto.randomUUID(),
+            status: 'pending',
+            trackCount: tracksNeedingAnalysis.length,
+            trackStates,
+            startedAt: new Date(),
+            dbStats: {
+              tracksProcessed: 0,
+              tracksSucceeded: 0,
+              tracksFailed: 0
+            }
+          };
+
+          console.log(`Creating new job with ID: ${newJob.id}, track count: ${newJob.trackCount}, tracks: [${trackIdsBeingProcessed.join(', ')}]`);
+          
+          // Clear lastJobStats when we actually create the new job
+          setLastJobStats({ processed: 0, succeeded: 0, failed: 0 });
+          setCurrentJob(newJob);
+
+          // Subscribe to track updates via WebSocket
+          trackIdsBeingProcessed.forEach(trackId => {
+            subscribeToTrack(String(trackId));
+          });
+
+          setIsAnalyzing(false);
+
+          if (data.errors && data.errors.length > 0) {
+            console.warn('Some tracks failed to enqueue:', data.errors);
+          }
         } else {
-          console.error('Error creating analysis job:', data.error);
+          console.error('Error submitting analysis job:', data.error, data.details);
           setIsAnalyzing(false);
         }
       })
@@ -109,24 +521,47 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
         console.error('Error submitting analysis request:', error);
         setIsAnalyzing(false);
       });
-  }, [selectedTracks, submit, likedSongs]);
+  }, [selectedTracks, likedSongs, setLikedSongs, subscribeToTrack]);
 
   // Legacy method for backward compatibility
   const analyzeSelectedTracks = useCallback(() => {
-    analyzeTracks({ useSelected: true });
+    return analyzeTracks({ useSelected: true });
   }, [analyzeTracks]);
 
+
+
+  // No cleanup needed for WebSocket as it's handled in the hook
+
+  // Compute derived values from current job
+  const counts = getJobCounts(currentJob);
+
   const value = {
-    likedSongs,
-    setLikedSongs,
+    // State
     rowSelection,
     setRowSelection,
+    likedSongs,
+    setLikedSongs,
     selectedTracks,
+
+    // Analysis operations
     analyzeSelectedTracks,
     analyzeTracks,
+
+    // Job tracking
     currentJob,
-    setCurrentJob,
     isAnalyzing,
+
+    // Computed properties
+    tracksProcessed: counts.processed,
+    tracksSucceeded: counts.succeeded,
+    tracksFailed: counts.failed,
+
+    // Track status updates
+    updateSongAnalysisDetails,
+
+    // WebSocket status
+    isWebSocketConnected,
+    webSocketLastMessage,
   };
 
   return (

@@ -11,8 +11,12 @@ export type SavedTrackInsert = TablesInsert<'saved_tracks'>
 export type TrackAnalysis = Tables<'track_analyses'>
 export type TrackAnalysisInsert = TablesInsert<'track_analyses'>
 
+// NEW: Define and export UIAnalysisStatus
+export type UIAnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed' | 'unknown';
+
 export type TrackWithAnalysis = SavedTrackRow & {
-  analysis: TrackAnalysis | null
+  analysis: TrackAnalysis | null;
+  uiAnalysisStatus: UIAnalysisStatus; // ADDED
 }
 
 export interface SavedTrackRow {

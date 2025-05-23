@@ -20,16 +20,24 @@ import {
 } from '~/shared/components/ui/Card';
 import { Checkbox } from '~/shared/components/ui/checkbox';
 
-import { AnalysisBadge, AnalysisStatus } from './components/AnalysisStatusBadge';
+import { TrackRowAnalysisIndicator } from './components/TrackRowAnalysisIndicator';
 import { SearchInput } from './components/SearchInput';
 import { StatusCard } from './components/StatusCard';
+import { StatusCardWithJobStatus } from './components/StatusCardWithJobStatus';
 import { TablePagination } from './components/TablePagination';
 import { AnalysisJobStatus } from './components/AnalysisJobStatus';
 import { AnalysisControls } from './components/AnalysisControls';
+import { useTrackAnalysis } from './hooks/useTrackAnalysis';
 
 import TrackAnalysisModal from '~/components/TrackAnalysisModal';
 import { Badge } from '~/shared/components/ui/badge';
 import { useLikedSongs } from './context';
+
+// Define UIAnalysisStatus (can be moved to a shared types file later)
+export type UIAnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed' | 'unknown';
+
+// Assume TrackWithAnalysis from context will now include:
+// uiAnalysisStatus: UIAnalysisStatus;
 
 // Styles for the component
 interface StylesType {
@@ -54,13 +62,11 @@ const styles: StylesType = {
   }
 };
 
-// Helper function to determine analysis status
-const getAnalysisStatus = (track: TrackWithAnalysis): AnalysisStatus => {
-  if (!track.analysis) return 'not_analyzed';
-  // You might want to add more logic here based on your application's requirements
-  // For example, checking if analysis.analysis contains certain fields or values
-  return 'analyzed';
-};
+// Helper function getAnalysisStatus is less relevant now as we rely on track.uiAnalysisStatus
+// const getAnalysisStatus = (track: TrackWithAnalysis): AnalysisStatus => {
+//   if (!track.analysis) return 'not_analyzed';
+//   return 'analyzed';
+// };
 
 // Main LikedSongsTable component
 export const LikedSongsTable = () => {
@@ -69,8 +75,11 @@ export const LikedSongsTable = () => {
     likedSongs,
     rowSelection,
     setRowSelection,
-    analyzeTracks,
-    currentJob
+    currentJob,
+    updateSongAnalysisDetails,
+    tracksProcessed,
+    tracksSucceeded,
+    tracksFailed,
   } = useLikedSongs();
 
   // State for tracking visible columns
@@ -85,6 +94,12 @@ export const LikedSongsTable = () => {
   // State for search functionality
   const [globalFilter, setGlobalFilter] = useState('');
 
+  // State for pagination to prevent resetting when analysis is triggered
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 20,
+  });
+
   // State for track analysis modal
   const [selectedTrack, setSelectedTrack] = useState<TrackWithAnalysis | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
@@ -94,14 +109,17 @@ export const LikedSongsTable = () => {
 
   // Calculate stats for display
   const stats = useMemo(() => {
-    const analyzed = likedSongs.filter(track => getAnalysisStatus(track) === 'analyzed').length;
-    const notAnalyzed = likedSongs.filter(track => getAnalysisStatus(track) === 'not_analyzed').length;
+    // Updated to use uiAnalysisStatus
+    const analyzed = likedSongs.filter(track => track.uiAnalysisStatus === 'analyzed').length;
+    const pending = likedSongs.filter(track => track.uiAnalysisStatus === 'pending').length;
+    const notAnalyzed = likedSongs.filter(track => track.uiAnalysisStatus === 'not_analyzed').length;
+    const failed = likedSongs.filter(track => track.uiAnalysisStatus === 'failed').length;
 
     return {
       analyzed,
-      pending: 0, // You might want to add logic to detect pending analyses
+      pending,
       notAnalyzed,
-      failed: 0, // You might want to add logic to detect failed analyses
+      failed,
       total: likedSongs.length
     };
   }, [likedSongs]);
@@ -128,18 +146,22 @@ export const LikedSongsTable = () => {
       header: 'Date Added',
       cell: info => new Date(info.getValue()).toLocaleDateString()
     }),
-    columnHelper.accessor(row => getAnalysisStatus(row), {
+    columnHelper.accessor('uiAnalysisStatus', { // Accesses the new field directly
       id: 'analysisStatus',
       header: 'Status',
-      cell: info => (
-        <div className="flex justify-start">
-          <AnalysisBadge
-            status={info.getValue()}
-            onView={() => handleViewAnalysis(info.row.original)}
-            onAnalyze={() => handleAnalyzeTrack(info.row.original)}
-          />
-        </div>
-      )
+      cell: ({ row }) => {
+        const track = row.original;
+        return (
+          <div className="flex justify-start">
+            <TrackRowAnalysisIndicator
+              trackId={track.track.id}
+              initialStatus={track.uiAnalysisStatus}
+              onView={() => handleViewAnalysis(track)}
+              onAnalyze={() => analyzeTrack(track.track.id)}
+            />
+          </div>
+        );
+      }
     }),
     columnHelper.display({
       id: 'select',
@@ -157,7 +179,7 @@ export const LikedSongsTable = () => {
         <div className="flex justify-center">
           <Checkbox
             checked={row.getIsSelected()}
-            disabled={getAnalysisStatus(row.original) === 'pending'}
+            disabled={row.original.uiAnalysisStatus === 'pending' || row.original.uiAnalysisStatus === 'analyzed'} // Disable for both pending and analyzed tracks
             onCheckedChange={value => row.toggleSelected(!!value)}
             aria-label="Select row"
             className="data-[state=checked]:bg-blue-500 border-gray-600"
@@ -165,57 +187,60 @@ export const LikedSongsTable = () => {
         </div>
       )
     })
-  ], []);
+  ], [likedSongs, updateSongAnalysisDetails]); // Added updateSongAnalysisDetails and likedSongs as dependency for columns that use it.
 
-  const handleViewAnalysis = (track: TrackWithAnalysis) => {
+  const handleViewAnalysis = async (track: TrackWithAnalysis) => {
+    // If the track is analyzed but doesn't have analysis data yet, fetch it first
+    if (track.uiAnalysisStatus === 'analyzed' && !track.analysis?.analysis) {
+      try {
+        console.log('Fetching analysis data before showing modal...');
+        const response = await fetch(`/api/analysis/${track.track.id}`);
+        if (response.ok) {
+          const analysisData = await response.json();
+          // Update the context with the full analysis data
+          updateSongAnalysisDetails(track.track.id, analysisData, 'analyzed');
+          // Update our local reference to include the analysis data
+          track = { ...track, analysis: analysisData };
+          console.log('Successfully fetched analysis data for modal');
+        } else {
+          console.error('Failed to fetch analysis data for modal');
+        }
+      } catch (error) {
+        console.error('Error fetching analysis data for modal:', error);
+      }
+    }
+
+    // Now set the track and open the modal
     setSelectedTrack(track);
     setIsAnalysisModalOpen(true);
   };
 
-  // Handle analysis of a single track
-  const handleAnalyzeTrack = (track: TrackWithAnalysis) => {
-    console.log('Starting analysis for track:', track.track.id);
-    // Prevent default behavior if this is being triggered from a link or button
-    // that might cause navigation
-    try {
-      analyzeTracks({ trackId: track.track.id });
-      console.log('Analysis request submitted successfully');
-    } catch (error) {
-      console.error('Error submitting analysis request:', error);
-    }
-  };
+  // Use custom hook for track analysis operations
+  const { analyzeTrack, analyzeSelectedTracks, analyzeAllTracks } = useTrackAnalysis();
 
-  // Handle analysis of selected tracks
-  const handleAnalyzeSelected = () => {
-    analyzeTracks({ useSelected: true });
-  };
-
-  // Handle analysis of all tracks
-  const handleAnalyzeAll = () => {
-    analyzeTracks({ useAll: true });
-  };
+  // Use a stable key for the table data to prevent full remounts
+  const tableData = useMemo(() => likedSongs, [likedSongs]);
 
   const table = useReactTable({
-    data: likedSongs,
+    data: tableData,
     columns,
     state: {
       columnVisibility,
       globalFilter,
       rowSelection,
+      pagination,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
+    // Add autoResetPageIndex: false to prevent page reset when data changes
+    autoResetPageIndex: false,
   });
 
   // Click outside handler to close dropdowns
@@ -265,12 +290,17 @@ export const LikedSongsTable = () => {
           icon={<CheckCircle className="h-6 w-6 text-green-400" />}
         />
 
-        <StatusCard
+        <StatusCardWithJobStatus
           title="In Progress"
           value={stats.pending}
           valueColor="text-blue-400"
           iconBg="bg-blue-500/20"
           icon={<Clock className="h-6 w-6 text-blue-400" />}
+          currentJob={currentJob}
+          showJobStatus={!!currentJob}
+          tracksProcessed={tracksProcessed}
+          tracksSucceeded={tracksSucceeded}
+          tracksFailed={tracksFailed}
         />
 
         <StatusCard
@@ -298,38 +328,25 @@ export const LikedSongsTable = () => {
             </CardTitle>
 
             <div className="space-y-4">
-              {/* Display job status when a job is active */}
-              {job && (
-                <div className="mb-4">
-                  <AnalysisJobStatus
-                    status={job.status}
-                    tracksProcessed={job.tracksProcessed}
-                    trackCount={job.trackCount}
-                    tracksSucceeded={job.tracksSucceeded}
-                    tracksFailed={job.tracksFailed}
-                  />
-                </div>
-              )}
-
               {/* Analysis controls with integrated column visibility */}
               <AnalysisControls
                 rowSelection={rowSelection}
-                onAnalyzeSelected={handleAnalyzeSelected}
+                onAnalyzeSelected={analyzeSelectedTracks}
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={setColumnVisibility}
                 columns={table.getAllColumns().filter(column => column.id !== 'select')}
               />
             </div>
           </div>
-        </CardHeader>
 
-        <div className="p-4 border-b border-gray-800">
-          <SearchInput
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder="Search all columns..."
-          />
-        </div>
+          <div className="mt-4">
+            <SearchInput
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              placeholder="Search all columns..."
+            />
+          </div>
+        </CardHeader>
 
         <CardContent className="p-0">
           <div className="relative overflow-auto">

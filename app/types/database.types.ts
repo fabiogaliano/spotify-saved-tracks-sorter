@@ -11,36 +11,42 @@ export type Database = {
     Tables: {
       analysis_jobs: {
         Row: {
-          created_at: string
-          id: number
-          status: string
+          batch_id: string
+          created_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["analysis_job_status"]
           track_count: number
+          track_ids: Json | null
           tracks_failed: number
           tracks_processed: number
           tracks_succeeded: number
-          updated_at: string
+          updated_at: string | null
           user_id: number
         }
         Insert: {
-          created_at?: string
-          id?: number
-          status: string
-          track_count?: number
+          batch_id: string
+          created_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["analysis_job_status"]
+          track_count: number
+          track_ids?: Json | null
           tracks_failed?: number
           tracks_processed?: number
           tracks_succeeded?: number
-          updated_at?: string
+          updated_at?: string | null
           user_id: number
         }
         Update: {
-          created_at?: string
-          id?: number
-          status?: string
+          batch_id?: string
+          created_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["analysis_job_status"]
           track_count?: number
+          track_ids?: Json | null
           tracks_failed?: number
           tracks_processed?: number
           tracks_succeeded?: number
-          updated_at?: string
+          updated_at?: string | null
           user_id?: number
         }
         Relationships: [
@@ -377,8 +383,8 @@ export type Database = {
           error_message: string | null
           error_type: string | null
           id: number
-          job_id: number
-          status: string
+          job_id: string
+          status: Database["public"]["Enums"]["analysis_status_enum"] | null
           track_id: number
           updated_at: string
         }
@@ -387,8 +393,8 @@ export type Database = {
           error_message?: string | null
           error_type?: string | null
           id?: number
-          job_id: number
-          status: string
+          job_id: string
+          status?: Database["public"]["Enums"]["analysis_status_enum"] | null
           track_id: number
           updated_at?: string
         }
@@ -397,19 +403,12 @@ export type Database = {
           error_message?: string | null
           error_type?: string | null
           id?: number
-          job_id?: number
-          status?: string
+          job_id?: string
+          status?: Database["public"]["Enums"]["analysis_status_enum"] | null
           track_id?: number
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "track_analysis_attempts_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "analysis_jobs"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "track_analysis_attempts_track_id_fkey"
             columns: ["track_id"]
@@ -599,6 +598,8 @@ export type Database = {
       }
     }
     Enums: {
+      analysis_job_status: "pending" | "in_progress" | "completed" | "failed"
+      analysis_status_enum: "FAILED" | "IN_PROGRESS"
       analysis_version_enum: "1.0"
       playlist_tracks_sync_status_enum:
         | "NOT_STARTED"
@@ -722,6 +723,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      analysis_job_status: ["pending", "in_progress", "completed", "failed"],
+      analysis_status_enum: ["FAILED", "IN_PROGRESS"],
       analysis_version_enum: ["1.0"],
       playlist_tracks_sync_status_enum: [
         "NOT_STARTED",

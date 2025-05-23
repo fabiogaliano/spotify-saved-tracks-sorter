@@ -5,6 +5,7 @@ import type { LyricsSection } from '~/lib/models/Lyrics'
 import { SearchResponse, ResponseReferents, } from './types/genius.types'
 import { LyricsParser } from './utils/lyrics-parser'
 import { LyricsTransformer, TransformedLyricsBySection } from './utils/lyrics-transformer'
+import { calculateSimilarity } from './utils/string-similarity'
 
 export interface GeniusServiceConfig {
 	accessToken: string
@@ -58,12 +59,17 @@ export class DefaultLyricsService implements LyricsService {
 				throw new logger.AppError(`Song not found: ${artist} - ${song}`, 'LYRICS_SERVICE_ERROR', 404)
 			}
 
-			if (!firstHit.primary_artist.name.toLowerCase().includes(artist.toLowerCase())) {
+			const similarityScore = calculateSimilarity(
+				firstHit.primary_artist.name,
+				artist
+			);
+
+			if (similarityScore < 0.7) {
 				throw new logger.AppError(
-					`Found song "${firstHit.title}" but artist "${firstHit.primary_artist.name}" doesn't match "${artist}"`,
+					`Found song "${firstHit.title}" but artist "${firstHit.primary_artist.name}" doesn't match "${artist}" (similarity: ${(similarityScore * 100).toFixed(1)}%)`,
 					'LYRICS_SERVICE_ERROR',
 					404
-				)
+				);
 			}
 
 			return firstHit

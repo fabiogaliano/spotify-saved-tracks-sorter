@@ -2,11 +2,12 @@ import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { Card, CardContent } from '~/shared/components/ui/Card';
 
 interface AnalysisJobStatusProps {
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
   tracksProcessed: number;
   trackCount: number;
   tracksSucceeded: number;
   tracksFailed: number;
+  startedAt?: Date;
 }
 
 export const AnalysisJobStatus = ({
@@ -25,11 +26,11 @@ export const AnalysisJobStatus = ({
           <h3 className="text-white font-medium">Analysis Job Status</h3>
           <div className="flex items-center">
             {status === 'completed' && <CheckCircle className="h-4 w-4 text-green-500 mr-1" />}
-            {status === 'processing' && <Clock className="h-4 w-4 text-blue-500 mr-1 animate-spin" />}
+            {status === 'in_progress' && <Clock className="h-4 w-4 text-blue-500 mr-1 animate-spin" />}
             {status === 'pending' && <Clock className="h-4 w-4 text-yellow-500 mr-1" />}
             {status === 'failed' && <AlertCircle className="h-4 w-4 text-red-500 mr-1" />}
             <span className="capitalize text-sm">
-              {status}
+              {status === 'in_progress' ? 'processing' : status}
             </span>
           </div>
         </div>

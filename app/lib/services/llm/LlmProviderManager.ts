@@ -5,15 +5,17 @@ import type { LlmProviderManager as ILlmProviderManager } from '~/lib/services'
 import type { ProviderInterface, LlmProviderResponse } from '~/lib/models/LlmProvider'
 import { logger } from '~/lib/logging/Logger'
 
+export type LlmProviderName = 'openai' | 'anthropic' | 'google'
+
 
 export class LlmProviderManager implements ILlmProviderManager {
   private provider: ProviderInterface | null = null
 
-  constructor(providerName: string, apiKey: string) {
+  constructor(providerName: LlmProviderName, apiKey: string) {
     this.switchProvider(providerName, apiKey)
   }
 
-  switchProvider(providerName: string, apiKey: string): void {
+  switchProvider(providerName: LlmProviderName, apiKey: string): void {
     try {
       switch (providerName) {
         case 'openai':
