@@ -32,21 +32,24 @@ export function useWebSocket(url: string, options: WebSocketHookOptions = { auto
   }, [DEBUG]);
 
   const connect = useCallback(() => {
+    // Reset manual disconnect flag when explicitly connecting
+    manualDisconnectRef.current = false;
+    
     // Prevent multiple simultaneous connection attempts
     if (connectingRef.current) {
       log('Connection attempt already in progress');
       return;
     }
     
-    // Don't reconnect if manually disconnected
-    if (manualDisconnectRef.current) {
-      log('Not connecting - manually disconnected');
-      return;
-    }
-    
     // Don't attempt to reconnect if we're already connected
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       log('Already connected');
+      return;
+    }
+    
+    // Don't reconnect if manually disconnected
+    if (manualDisconnectRef.current) {
+      log('Not connecting - manually disconnected');
       return;
     }
     
