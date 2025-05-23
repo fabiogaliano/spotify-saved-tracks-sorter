@@ -27,7 +27,6 @@ import { StatusCardWithJobStatus } from './components/StatusCardWithJobStatus';
 import { TablePagination } from './components/TablePagination';
 import { AnalysisJobStatus } from './components/AnalysisJobStatus';
 import { AnalysisControls } from './components/AnalysisControls';
-import { useTrackAnalysis } from './hooks/useTrackAnalysis';
 
 import TrackAnalysisModal from '~/components/TrackAnalysisModal';
 import { Badge } from '~/shared/components/ui/badge';
@@ -80,6 +79,7 @@ export const LikedSongsTable = () => {
     tracksProcessed,
     tracksSucceeded,
     tracksFailed,
+    analyzeTracks,
   } = useLikedSongs();
 
   // State for tracking visible columns
@@ -189,34 +189,27 @@ export const LikedSongsTable = () => {
     })
   ], [likedSongs, updateSongAnalysisDetails]); // Added updateSongAnalysisDetails and likedSongs as dependency for columns that use it.
 
-  const handleViewAnalysis = async (track: TrackWithAnalysis) => {
-    // If the track is analyzed but doesn't have analysis data yet, fetch it first
-    if (track.uiAnalysisStatus === 'analyzed' && !track.analysis?.analysis) {
-      try {
-        console.log('Fetching analysis data before showing modal...');
-        const response = await fetch(`/api/analysis/${track.track.id}`);
-        if (response.ok) {
-          const analysisData = await response.json();
-          // Update the context with the full analysis data
-          updateSongAnalysisDetails(track.track.id, analysisData, 'analyzed');
-          // Update our local reference to include the analysis data
-          track = { ...track, analysis: analysisData };
-          console.log('Successfully fetched analysis data for modal');
-        } else {
-          console.error('Failed to fetch analysis data for modal');
-        }
-      } catch (error) {
-        console.error('Error fetching analysis data for modal:', error);
-      }
-    }
-
-    // Now set the track and open the modal
+  const handleViewAnalysis = (track: TrackWithAnalysis) => {
     setSelectedTrack(track);
     setIsAnalysisModalOpen(true);
   };
 
-  // Use custom hook for track analysis operations
-  const { analyzeTrack, analyzeSelectedTracks, analyzeAllTracks } = useTrackAnalysis();
+  // Inline analysis functions (replacing useTrackAnalysis hook)
+  const analyzeTrack = async (trackId: number) => {
+    try {
+      await analyzeTracks({ trackId });
+    } catch (error) {
+      console.error('Error analyzing track:', error);
+    }
+  };
+
+  const analyzeSelectedTracks = () => {
+    analyzeTracks({ useSelected: true });
+  };
+
+  const analyzeAllTracks = () => {
+    analyzeTracks({ useAll: true });
+  };
 
   // Use a stable key for the table data to prevent full remounts
   const tableData = useMemo(() => likedSongs, [likedSongs]);
@@ -331,7 +324,7 @@ export const LikedSongsTable = () => {
               {/* Analysis controls with integrated column visibility */}
               <AnalysisControls
                 rowSelection={rowSelection}
-                onAnalyzeSelected={analyzeSelectedTracks}
+                onAnalyzeSelected={() => analyzeSelectedTracks()}
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={setColumnVisibility}
                 columns={table.getAllColumns().filter(column => column.id !== 'select')}

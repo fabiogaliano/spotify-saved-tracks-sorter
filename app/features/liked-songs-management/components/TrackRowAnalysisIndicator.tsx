@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
 import { Badge } from '~/shared/components/ui/badge';
-import { useLikedSongs } from '../context';
+import { useLikedSongs } from '../context/';
 import type { UIAnalysisStatus } from '~/lib/models/Track';
 import { AlertCircle, CheckCircle, Clock, Eye, Music, RefreshCw } from 'lucide-react';
-import type { AnalysisStatusResponse, ErrorStatusResponse } from '~/routes/api.analysis.status';
+import { jobSubscriptionManager } from '~/lib/services/JobSubscriptionManager';
+import { useEffect, useState } from 'react';
 
 interface TrackRowAnalysisIndicatorProps {
   trackId: number;
@@ -36,67 +36,51 @@ export const TrackRowAnalysisIndicator: React.FC<TrackRowAnalysisIndicatorProps>
 }) => {
   const [status, setStatus] = useState<UIAnalysisStatus>(initialStatus);
   const { updateSongAnalysisDetails } = useLikedSongs();
-  
+
   // Update local status when initialStatus changes from parent
   useEffect(() => {
     setStatus(initialStatus);
   }, [initialStatus]);
 
+  // Subscribe to job status updates for this track
   useEffect(() => {
-    let pollingInterval: NodeJS.Timeout | null = null;
-
-    if (status === 'pending') {
-      const checkStatus = async () => {
-        try {
-          const response = await fetch(`/api/analysis/status?trackId=${trackId}`);
-          if (response.ok) {
-            const data = await response.json() as AnalysisStatusResponse | ErrorStatusResponse;
-
-            // Handle error response
-            if ('error' in data && data.status === 'unknown') {
-              console.error('Error from API:', data.error);
-              return false;
-            }
-
-            if (data.status === 'analyzed' || data.status === 'failed') {
-              console.log(`[Polling] Track ${trackId} analysis ${data.status}`);
-              setStatus(data.status);
-
-              // Just update the status without fetching the full analysis data
-              // The analysis data will be fetched on-demand when the user clicks the badge
-              if (data.status === 'failed' && 'error' in data) {
-                console.warn(`Analysis failed: ${data.error} (${data.errorType})`);
-              }
-
-              // Just update the status for now
-              updateSongAnalysisDetails(trackId, null, data.status);
-
-              return true;
-            }
-          }
-          return false;
-        } catch (error) {
-          console.error('Error polling for analysis status:', error);
-          return false;
-        }
-      };
-
-      checkStatus();
-
-      pollingInterval = setInterval(async () => {
-        const statusChanged = await checkStatus();
-        if (statusChanged && pollingInterval) {
-          clearInterval(pollingInterval);
-          pollingInterval = null;
-        }
-      }, 3000);
+    if (status !== 'pending') {
+      return;
     }
 
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+    console.log(`TrackRowAnalysisIndicator: Subscribing to job updates for track ${trackId}`);
+    
+    const unsubscribe = jobSubscriptionManager.subscribe((update) => {
+      // Only process updates for this specific track
+      if (update.trackId === trackId) {
+        console.log(`TrackRowAnalysisIndicator: Received update for track ${trackId}:`, update);
+        
+        let newStatus: UIAnalysisStatus;
+        switch (update.status) {
+          case 'COMPLETED':
+            newStatus = 'analyzed';
+            break;
+          case 'FAILED':
+            newStatus = 'failed';
+            break;
+          case 'IN_PROGRESS':
+          case 'QUEUED':
+            newStatus = 'pending';
+            break;
+          default:
+            newStatus = 'pending';
+        }
+        
+        setStatus(newStatus);
+        
+        // Update the context with the new status
+        if (newStatus === 'analyzed' || newStatus === 'failed') {
+          updateSongAnalysisDetails(trackId, null, newStatus);
+        }
       }
-    };
+    });
+
+    return unsubscribe;
   }, [trackId, status, updateSongAnalysisDetails]);
 
   const handleClick = () => {

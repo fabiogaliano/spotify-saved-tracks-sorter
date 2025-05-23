@@ -47,58 +47,19 @@ export const StatusCardWithJobStatus = ({
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastJobIdRef = useRef<string | null>(null);
 
-  // Persistent job state to survive context clearing
-  const [persistentJob, setPersistentJob] = useState<AnalysisJob | null>(null);
-  const [persistentStats, setPersistentStats] = useState({ processed: 0, succeeded: 0, failed: 0 });
+  // Remove persistent state - causes state contamination
+  // const [persistentJob, setPersistentJob] = useState<AnalysisJob | null>(null);
+  // const [persistentStats, setPersistentStats] = useState({ processed: 0, succeeded: 0, failed: 0 });
 
-  // Show tooltip if we have showJobStatus enabled and either a current job OR a recently completed persistent job
-  const shouldShowTooltip = showJobStatus && (currentJob || persistentJob);
+  // Show tooltip only if we have showJobStatus enabled and a current job
+  const shouldShowTooltip = showJobStatus && currentJob;
 
-  // Track the job and update persistent state
+  // Use current job and stats directly from props - no persistent state
+  const activeJob = currentJob;
+  const stableValues = { processed: tracksProcessed, succeeded: tracksSucceeded, failed: tracksFailed };
+
+  // Handle job state changes using only current job from props
   useEffect(() => {
-    console.log('StatusCardWithJobStatus: Job state update', {
-      hasCurrentJob: !!currentJob,
-      currentJobId: currentJob?.id,
-      currentJobStatus: currentJob?.status,
-      tracksProcessed,
-      tracksSucceeded,
-      tracksFailed,
-      hasPersistentJob: !!persistentJob,
-      persistentJobId: persistentJob?.id
-    });
-
-    if (currentJob) {
-      // We have an active job - always update persistent state
-      console.log('StatusCardWithJobStatus: Updating persistent state with current job');
-      setPersistentJob(currentJob);
-      setPersistentStats({ 
-        processed: tracksProcessed, 
-        succeeded: tracksSucceeded, 
-        failed: tracksFailed 
-      });
-    }
-    // If currentJob is null, DO NOT update persistent stats - keep the last known values
-  }, [currentJob]); // Only depend on currentJob, not the counters
-
-  // Separate effect to update stats when counters change (only if we have a current job)
-  useEffect(() => {
-    if (currentJob) {
-      console.log('StatusCardWithJobStatus: Updating counter stats');
-      setPersistentStats({ 
-        processed: tracksProcessed, 
-        succeeded: tracksSucceeded, 
-        failed: tracksFailed 
-      });
-    }
-  }, [tracksProcessed, tracksSucceeded, tracksFailed, currentJob]);
-
-  // Stable display values - use persistent stats when available
-  const stableValues = persistentStats;
-
-  // Handle job state changes using persistentJob
-  useEffect(() => {
-    const activeJob = currentJob || persistentJob;
-    
     console.log('StatusCardWithJobStatus: Job state change handler', {
       hasActiveJob: !!activeJob,
       activeJobId: activeJob?.id,
@@ -109,12 +70,23 @@ export const StatusCardWithJobStatus = ({
     });
     
     if (!activeJob) {
-      // Only close immediately if we had no previous job (initial state)
-      if (!lastJobIdRef.current) {
-        console.log('StatusCardWithJobStatus: No job and no previous job, closing tooltip');
-        setOpen(false);
-        setManuallyClosedByUser(false);
+      // Job cleared - close tooltip and reset state
+      console.log('StatusCardWithJobStatus: No active job, closing tooltip');
+      setOpen(false);
+      setManuallyClosedByUser(false);
+      lastJobIdRef.current = null;
+      
+      // Clear any existing timer
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
       }
+      return;
+    }
+
+    // Don't reopen tooltip if user manually closed it
+    if (manuallyClosedByUser) {
+      console.log('StatusCardWithJobStatus: User manually closed tooltip, not reopening');
       return;
     }
 
@@ -127,9 +99,6 @@ export const StatusCardWithJobStatus = ({
       lastJobIdRef.current = activeJob.id;
       setManuallyClosedByUser(false);
       setOpen(true);
-      
-      // Reset persistent stats for new job
-      setPersistentStats({ processed: 0, succeeded: 0, failed: 0 });
 
       // Clear any existing timer
       if (autoCloseTimerRef.current) {
@@ -143,25 +112,17 @@ export const StatusCardWithJobStatus = ({
         setOpen(false);
       }, 30000);
     } else if (activeJob.status === 'completed' || activeJob.status === 'failed') {
-      // Job finished - KEEP tooltip open and set 30s timer to close it
-      console.log('StatusCardWithJobStatus: Job completed/failed, keeping tooltip open for 30s');
+      // Job finished - KEEP tooltip open permanently until manually closed
+      console.log('StatusCardWithJobStatus: Job completed/failed, keeping tooltip open until manually closed');
       if (autoCloseTimerRef.current) {
         clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
       }
       
-      // Keep tooltip open to show final status
+      // Keep tooltip open to show final status - no auto-close timer
       setOpen(true);
-      
-      autoCloseTimerRef.current = setTimeout(() => {
-        console.log('StatusCardWithJobStatus: Cleanup timer fired, clearing persistent state');
-        setOpen(false);
-        setManuallyClosedByUser(false);
-        lastJobIdRef.current = null;
-        setPersistentJob(null);
-        setPersistentStats({ processed: 0, succeeded: 0, failed: 0 });
-      }, 30000);
     }
-  }, [currentJob?.id, currentJob?.status, persistentJob?.id, persistentJob?.status, manuallyClosedByUser]);
+  }, [activeJob?.id, activeJob?.status, manuallyClosedByUser]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -180,14 +141,10 @@ export const StatusCardWithJobStatus = ({
       clearTimeout(autoCloseTimerRef.current);
       autoCloseTimerRef.current = null;
     }
-    // Clear persistent state when manually closed
-    setPersistentJob(null);
-    setPersistentStats({ processed: 0, succeeded: 0, failed: 0 });
     lastJobIdRef.current = null;
   };
 
   // Calculate remaining tracks from stable values
-  const activeJob = currentJob || persistentJob;
   const displayValue = activeJob ? 
     Math.max(0, activeJob.trackCount - stableValues.processed) : value;
     

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useCallback, ReactNode, useEffect, useRef } from 'react';
 import { TrackWithAnalysis, UIAnalysisStatus, TrackAnalysis } from '~/lib/models/Track';
 import { useWebSocket } from '~/lib/hooks/useWebSocket';
+import { jobSubscriptionManager, JobStatusUpdate } from '~/lib/services/JobSubscriptionManager';
 
 // Define AnalysisJob type for batch job tracking
 export interface AnalysisJob {
@@ -91,9 +92,6 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [currentJob, setCurrentJob] = useState<AnalysisJob | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
-  // Persistent job stats that survive job clearing
-  const [lastJobStats, setLastJobStats] = useState({ processed: 0, succeeded: 0, failed: 0 });
 
   // Track if we've already initialized to prevent duplicate initialization
   const initializedRef = useRef(false);
@@ -111,7 +109,10 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
 
   // Helper function to get computed values from job state
   const getJobCounts = useCallback((job: AnalysisJob | null) => {
-    if (!job) return lastJobStats; // Use persistent stats when no job
+    if (!job) {
+      // Return zeros when no job - no persistent state
+      return { processed: 0, succeeded: 0, failed: 0 };
+    }
 
     // Always use database stats - all jobs have dbStats
     return {
@@ -119,21 +120,7 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       succeeded: job.dbStats.tracksSucceeded,
       failed: job.dbStats.tracksFailed
     };
-  }, [lastJobStats]);
-
-  // Effect to update persistent stats when job stats change
-  useEffect(() => {
-    if (currentJob) {
-      const currentStats = {
-        processed: currentJob.dbStats.tracksProcessed,
-        succeeded: currentJob.dbStats.tracksSucceeded,
-        failed: currentJob.dbStats.tracksFailed
-      };
-      setLastJobStats(currentStats);
-    }
-  }, [currentJob?.dbStats.tracksProcessed, currentJob?.dbStats.tracksSucceeded, currentJob?.dbStats.tracksFailed]);
-
-  // Note: Track status updates are now handled atomically in the WebSocket handler
+  }, []);
 
   // Update a single song's analysis details
   const updateSongAnalysisDetails = useCallback((trackId: number, analysisData: TrackAnalysis | null, status: UIAnalysisStatus) => {
@@ -144,9 +131,6 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
           : song
       )
     );
-
-    // Job status updates are handled in the WebSocket message handler to prevent double counting
-    // This function only updates the UI state for individual tracks
   }, [setLikedSongs]);
 
   // Effect to initialize songs with proper status from server
@@ -170,29 +154,33 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       try {
         console.log('Checking for active jobs for user:', userId);
         jobRecoveryRef.current = true;
+
         const response = await fetch(`/api/analysis/active-job?userId=${userId}`);
-        
+
         if (response.ok) {
           const activeJob = await response.json();
           if (activeJob && activeJob.id) {
             console.log('Found active job to resume:', activeJob);
-            
+
             // Convert trackStates from object back to Map (JSON serialization converts Maps to objects)
             console.log('Raw trackStates from server:', activeJob.trackStates);
             const trackStatesMap = new Map(
               Object.entries(activeJob.trackStates || {}).map(([key, value]) => [parseInt(key, 10), value])
             );
             console.log('Converted trackStates Map:', Array.from(trackStatesMap.entries()));
-            
+
             const recoveredJob: AnalysisJob = {
               ...activeJob,
               trackStates: trackStatesMap,
               startedAt: new Date(activeJob.startedAt),
               dbStats: activeJob.dbStats // Always present from proper recovery
             };
-            
+
+            // Ensure job recovery is atomic - set job and update subscription manager together
+            console.log('Setting recovered job atomically');
             setCurrentJob(recoveredJob);
-            
+            jobSubscriptionManager.setCurrentJob(recoveredJob.id);
+
             // Update UI track states to match the recovered job states
             console.log('Updating track states for recovered job. TrackStates Map size:', trackStatesMap.size);
             setLikedSongs(prevSongs =>
@@ -221,23 +209,29 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
                 return song;
               })
             );
-            
-            // WebSocket connection will be handled by the existing effect
+
+            console.log('Job recovery completed successfully');
           } else {
             console.log('No active jobs found for user');
           }
         }
+
+        // Reset recovery flag after successful completion (whether job found or not)
+        jobRecoveryRef.current = false;
       } catch (error) {
         console.error('Error recovering active job:', error);
+        // Reset recovery flag on error to allow retry
+        jobRecoveryRef.current = false;
       }
     };
 
     recoverActiveJob();
   }, [userId]);
 
-  // Connect to WebSocket only once when a job starts and disconnect when it completes
+  // WebSocket connection management based on job status
   useEffect(() => {
     if (!currentJob) {
+      // No job active, ensure WebSocket is disconnected
       if (isWebSocketConnected) {
         console.log('No active job, disconnecting from WebSocket');
         disconnectWebSocket();
@@ -249,135 +243,123 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
     if ((currentJob.status === 'pending' || currentJob.status === 'in_progress') && !isWebSocketConnected) {
       console.log('Job active, connecting to WebSocket');
       connectWebSocket();
-
-      // Subscribe to all track IDs in the job
-      for (const trackId of Array.from(currentJob.trackStates.keys())) {
-        console.log(`Subscribing to track ${trackId}`);
-        subscribeToTrack(String(trackId));
-      }
     }
-    // Disconnect when job is done
-    else if (currentJob.status === 'completed' && isWebSocketConnected) {
-      console.log('Job completed, disconnecting from WebSocket in 5 seconds');
-      setTimeout(() => {
-        disconnectWebSocket();
-        setCurrentJob(null); // Clear completed job
-      }, 5000);
-    }
-  }, [currentJob?.status, isWebSocketConnected, connectWebSocket, disconnectWebSocket, subscribeToTrack, currentJob?.id]);
-
-  // Store processed message IDs to prevent duplicate processing
-  const processedMessageIds = useRef<Set<string>>(new Set());
+    // For completed jobs, keep WebSocket connected until job is cleared
+    // The job will be cleared when a new job starts or manually cleared
+  }, [currentJob?.status, isWebSocketConnected, connectWebSocket, disconnectWebSocket, currentJob?.id]);
 
   // Handle WebSocket messages for job status updates
   useEffect(() => {
-    if (!webSocketLastMessage) return;
+    const handleJobStatusUpdate = (update: JobStatusUpdate) => {
+      const { trackId, status } = update;
 
-    try {
-      // Process the WebSocket message
-      if (webSocketLastMessage.type === 'job_status') {
-        const statusUpdate = webSocketLastMessage.data;
-        const { trackId, status } = statusUpdate;
+      if (!trackId) {
+        console.warn('Received job status update without trackId');
+        return;
+      }
 
-        if (!trackId) {
-          console.warn('Received job status update without trackId');
-          return;
-        }
+      console.log(`Job status update for track ${trackId}: ${status}`);
 
-        // Create a unique message ID based on trackId and status only
-        // This prevents duplicate processing of the same status change
-        const messageId = `${trackId}-${status}`;
+      // Map the worker status to UI status
+      let uiStatus: UIAnalysisStatus = 'not_analyzed';
+      let trackJobStatus: 'queued' | 'in_progress' | 'completed' | 'failed' = 'queued';
 
-        // Skip if we've already processed this exact status for this track
-        if (processedMessageIds.current.has(messageId)) {
-          console.log(`Skipping duplicate status ${status} for track ${trackId}`);
-          return;
-        }
+      switch (status) {
+        case 'QUEUED':
+          uiStatus = 'pending';
+          trackJobStatus = 'queued';
+          break;
+        case 'IN_PROGRESS':
+          uiStatus = 'pending';
+          trackJobStatus = 'in_progress';
+          break;
+        case 'COMPLETED':
+          uiStatus = 'analyzed';
+          trackJobStatus = 'completed';
+          break;
+        case 'FAILED':
+        case 'SKIPPED':
+          uiStatus = 'failed';
+          trackJobStatus = 'failed';
+          break;
+        default:
+          return; // Unknown status, ignore
+      }
 
-        // Add to processed messages
-        processedMessageIds.current.add(messageId);
+      // Update the track status in the UI
+      updateSongAnalysisDetails(trackId, null, uiStatus);
 
-        console.log(`WebSocket status update for track ${trackId}: ${status}`);
+      // Update job status if this track is part of the current job
+      if (currentJob?.trackStates.has(trackId)) {
+        // Update both trackStates and dbStats atomically
+        setCurrentJob(prevJob => {
+          if (!prevJob || !prevJob.trackStates.has(trackId)) return prevJob;
 
-        // Map the worker status to UI status
-        let uiStatus: UIAnalysisStatus = 'not_analyzed';
-        let trackJobStatus: 'queued' | 'in_progress' | 'completed' | 'failed' = 'queued';
+          const newTrackStates = new Map(prevJob.trackStates);
+          newTrackStates.set(trackId, trackJobStatus);
 
-        switch (status) {
-          case 'QUEUED':
-            uiStatus = 'pending';
-            trackJobStatus = 'queued';
-            break;
-          case 'IN_PROGRESS':
-            uiStatus = 'pending';
-            trackJobStatus = 'in_progress';
-            break;
-          case 'COMPLETED':
-            uiStatus = 'analyzed';
-            trackJobStatus = 'completed';
-            break;
-          case 'FAILED':
-          case 'SKIPPED':
-            uiStatus = 'failed';
-            trackJobStatus = 'failed';
-            break;
-          default:
-            return; // Unknown status, ignore
-        }
+          let newDbStats = { ...prevJob.dbStats };
 
-        // Update the track status in the UI
-        updateSongAnalysisDetails(trackId, null, uiStatus);
+          // Update dbStats when tracks complete or fail
+          if (trackJobStatus === 'completed' || trackJobStatus === 'failed') {
+            // Only increment if this track wasn't already processed
+            const prevStatus = prevJob.trackStates.get(trackId);
+            if (prevStatus !== 'completed' && prevStatus !== 'failed') {
+              newDbStats.tracksProcessed = newDbStats.tracksProcessed + 1;
 
-        // Update job status if this track is part of the current job
-        if (currentJob?.trackStates.has(trackId)) {
-          // Update both trackStates and dbStats atomically
-          setCurrentJob(prevJob => {
-            if (!prevJob || !prevJob.trackStates.has(trackId)) return prevJob;
-
-            const newTrackStates = new Map(prevJob.trackStates);
-            newTrackStates.set(trackId, trackJobStatus);
-
-            let newDbStats = { ...prevJob.dbStats };
-
-            // Update dbStats when tracks complete or fail
-            if (trackJobStatus === 'completed' || trackJobStatus === 'failed') {
-              // Only increment if this track wasn't already processed
-              const prevStatus = prevJob.trackStates.get(trackId);
-              if (prevStatus !== 'completed' && prevStatus !== 'failed') {
-                newDbStats.tracksProcessed = newDbStats.tracksProcessed + 1;
-                
-                if (trackJobStatus === 'completed') {
-                  newDbStats.tracksSucceeded = newDbStats.tracksSucceeded + 1;
-                } else {
-                  newDbStats.tracksFailed = newDbStats.tracksFailed + 1;
-                }
+              if (trackJobStatus === 'completed') {
+                newDbStats.tracksSucceeded = newDbStats.tracksSucceeded + 1;
+              } else {
+                newDbStats.tracksFailed = newDbStats.tracksFailed + 1;
               }
             }
+          }
 
-            // Calculate if job is complete
-            const allProcessed = Array.from(newTrackStates.values()).every(s => s === 'completed' || s === 'failed');
+          // Calculate if job is complete
+          const allProcessed = Array.from(newTrackStates.values()).every(s => s === 'completed' || s === 'failed');
 
-            return {
-              ...prevJob,
-              trackStates: newTrackStates,
-              dbStats: newDbStats,
-              status: allProcessed ? 'completed' : 'in_progress'
-            };
-          });
-        }
+          return {
+            ...prevJob,
+            trackStates: newTrackStates,
+            dbStats: newDbStats,
+            status: allProcessed ? 'completed' : 'in_progress'
+          };
+        });
       }
-    } catch (error) {
-      console.error('Error processing WebSocket message:', error);
-    }
-  }, [webSocketLastMessage, currentJob, updateSongAnalysisDetails]);
+    };
 
-  // Clear processed messages when starting a new job
+    // Subscribe to job updates through the subscription manager
+    const unsubscribe = jobSubscriptionManager.subscribe(handleJobStatusUpdate);
+
+    return unsubscribe;
+  }, [currentJob, updateSongAnalysisDetails]);
+
+  // Route WebSocket messages through the subscription manager
+  useEffect(() => {
+    if (webSocketLastMessage) {
+      jobSubscriptionManager.processMessage(webSocketLastMessage);
+    }
+  }, [webSocketLastMessage]);
+
+  // Update subscription manager and WebSocket subscriptions when job changes
   useEffect(() => {
     if (currentJob) {
-      console.log(`New job started with ID: ${currentJob.id}, clearing processed messages`);
-      processedMessageIds.current.clear();
+      console.log(`Setting JobSubscriptionManager to job ${currentJob.id}`);
+      jobSubscriptionManager.setCurrentJob(currentJob.id);
+
+      // Subscribe to all track IDs in the job via WebSocket
+      // Only subscribe if WebSocket is connected
+      if (isWebSocketConnected) {
+        for (const trackId of Array.from(currentJob.trackStates.keys())) {
+          console.log(`Subscribing to track ${trackId}`);
+          subscribeToTrack(String(trackId));
+        }
+      }
+    } else {
+      console.log('Clearing JobSubscriptionManager job');
+      jobSubscriptionManager.setCurrentJob(null);
     }
-  }, [currentJob?.id]);
+  }, [currentJob?.id, isWebSocketConnected, subscribeToTrack]);
 
   // Derive selected tracks from row selection
   const selectedTracks = useCallback(() => {
@@ -439,6 +421,12 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       return Promise.resolve();
     }
 
+    // Prevent new job creation while recovery is in progress
+    if (jobRecoveryRef.current) {
+      console.warn('Job recovery in progress, cannot start new analysis');
+      return Promise.resolve();
+    }
+
     setIsAnalyzing(true);
 
     const mappedTracksForApi = tracksNeedingAnalysis.map(twa => ({
@@ -459,9 +447,7 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       )
     );
 
-    // Clear any existing job before starting a new one
-    setCurrentJob(null);
-    // Don't clear lastJobStats here - wait until the new job is created
+    setIsAnalyzing(true);
 
     // Use fetch to send a JSON request instead of form data
     return fetch('/actions/analyze-liked-songs', {
@@ -497,16 +483,14 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
           };
 
           console.log(`Creating new job with ID: ${newJob.id}, track count: ${newJob.trackCount}, tracks: [${trackIdsBeingProcessed.join(', ')}]`);
-          
-          // Clear lastJobStats when we actually create the new job
-          setLastJobStats({ processed: 0, succeeded: 0, failed: 0 });
+
+          // Atomic job transition - clear old job and set new job simultaneously
+          // This prevents UI state gaps where no job exists
+          if (currentJob) {
+            console.log(`Clearing previous job ${currentJob.id} before setting new job ${newJob.id}`);
+          }
+          jobSubscriptionManager.setCurrentJob(newJob.id);
           setCurrentJob(newJob);
-
-          // Subscribe to track updates via WebSocket
-          trackIdsBeingProcessed.forEach(trackId => {
-            subscribeToTrack(String(trackId));
-          });
-
           setIsAnalyzing(false);
 
           if (data.errors && data.errors.length > 0) {
@@ -521,7 +505,7 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
         console.error('Error submitting analysis request:', error);
         setIsAnalyzing(false);
       });
-  }, [selectedTracks, likedSongs, setLikedSongs, subscribeToTrack]);
+  }, [selectedTracks, likedSongs, setLikedSongs]);
 
   // Legacy method for backward compatibility
   const analyzeSelectedTracks = useCallback(() => {
@@ -529,8 +513,6 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
   }, [analyzeTracks]);
 
 
-
-  // No cleanup needed for WebSocket as it's handled in the hook
 
   // Compute derived values from current job
   const counts = getJobCounts(currentJob);
