@@ -32,7 +32,7 @@ export function Config() {
 			{/* API Key Notification */}
 			{user?.id && <ApiKeyNotification hasApiKeys={hasApiKeys} />}
 
-			<div className="bg-gray-50 rounded-2xl p-8">
+			<div className="bg-muted rounded-2xl p-8">
 				<h2 className="text-lg font-semibold mb-6">Configuration</h2>
 
 				<div className="space-y-8">
@@ -40,7 +40,7 @@ export function Config() {
 					<div className="flex items-center justify-between gap-8">
 						<div className="flex-1">
 							<h3 className="text-sm font-medium">Remove from Liked Songs</h3>
-							<p className="text-xs text-gray-600 mt-1.5">
+							<p className="text-xs text-muted-foreground/60 mt-1.5">
 								Automatically remove tracks from your Liked Songs after sorting them into
 								playlists
 							</p>
@@ -49,7 +49,7 @@ export function Config() {
 						{/* Toggle Switch */}
 						<div className="relative w-[100px]">
 							<div
-								className="h-9 rounded-full bg-gray-100/80 cursor-pointer backdrop-blur-xs"
+								className="h-9 rounded-full bg-muted/80 cursor-pointer backdrop-blur-xs"
 								onClick={() => setRemoveLikedSongs(!removeLikedSongs)}
 							>
 								{/* Status indicators */}
@@ -139,7 +139,7 @@ export function Config() {
 
 					{/* API Key Management */}
 					{user?.id && (
-						<div className="pt-6 border-t border-gray-200">
+						<div className="pt-6 border-t border-border">
 							<ProviderKeysManager
 								userId={user.id.toString()}
 								providerStatuses={providerStatuses}
@@ -148,7 +148,7 @@ export function Config() {
 					)}
 				</div>
 
-				<p className="text-xs text-gray-600 mt-8">Changes are saved automatically</p>
+				<p className="text-xs text-muted-foreground/60 mt-8">Changes are saved automatically</p>
 			</div>
 		</div>
 	)

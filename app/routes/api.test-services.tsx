@@ -343,7 +343,7 @@ export default function TestServicesPage() {
     return (
       <div className="mt-2">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-medium text-gray-300">{label}</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">{label}</h3>
           <button
             onClick={() => toggleSection(label)}
             className="text-xs text-blue-400 hover:underline"
@@ -351,7 +351,7 @@ export default function TestServicesPage() {
             {isExpanded ? 'Collapse' : 'Expand'}
           </button>
         </div>
-        <div className="mt-1 bg-gray-800 p-2 rounded overflow-auto">
+        <div className="mt-1 bg-card p-2 rounded overflow-auto">
           <JsonView
             src={data}
             className="text-xs"
@@ -366,12 +366,12 @@ export default function TestServicesPage() {
   if (!loaderData.isAuthenticated) {
     return (
       <div className="p-8">
-        <Card className="bg-gray-900/80 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-lg text-white">Authentication Required</CardTitle>
+            <CardTitle className="text-lg text-foreground">Authentication Required</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-300">Please log in to test the Spotify and Sync services.</p>
+            <p className="text-muted-foreground">Please log in to test the Spotify and Sync services.</p>
           </CardContent>
         </Card>
       </div>
@@ -381,15 +381,15 @@ export default function TestServicesPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Link to="/" className="inline-flex items-center text-white hover:text-gray-300 transition-colors">
+        <Link to="/" className="inline-flex items-center text-foreground hover:text-muted-foreground transition-colors">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Dashboard
         </Link>
-        <h1 className="text-2xl font-bold text-white">Service Test Results</h1>
+        <h1 className="text-2xl font-bold text-foreground">Service Test Results</h1>
       </div>
 
-      <Card className="bg-gray-900/80 border-gray-800 mb-6">
-        <CardHeader className="pb-2 border-b border-gray-800">
-          <CardTitle className="text-lg text-white flex justify-between">
+      <Card className="bg-card border-border mb-6">
+        <CardHeader className="pb-2 border-b border-border">
+          <CardTitle className="text-lg text-foreground flex justify-between">
             <span>Run Another Test</span>
             {actionData && (
               <div className="text-sm font-normal">
@@ -404,10 +404,10 @@ export default function TestServicesPage() {
           <Form method="post" className="flex gap-4">
             <div className="grid grid-cols-3 gap-3 w-full">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Service</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Service</label>
                 <select
                   name="service"
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
+                  className="w-full bg-card border border-border text-foreground rounded-md px-3 py-2 text-sm"
                   value={selectedService}
                   onChange={(e) => setSelectedService(e.target.value)}
                 >
@@ -417,10 +417,10 @@ export default function TestServicesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Operation</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Operation</label>
                 <select
                   name="operation"
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
+                  className="w-full bg-card border border-border text-foreground rounded-md px-3 py-2 text-sm"
                   defaultValue={selectedService === 'spotify' ? 'likedTracks' : 'syncSavedTracks'}
                 >
                   <option value="all">All Operations</option>
@@ -443,21 +443,21 @@ export default function TestServicesPage() {
               {/* Optional Playlist ID input for syncPlaylistTracks */}
               {selectedService === 'sync' && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Playlist ID (optional)</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">Playlist ID (optional)</label>
                   <input
                     type="number"
                     name="playlistId"
                     placeholder="Leave empty to sync all playlists"
-                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
+                    className="w-full bg-card border border-border text-foreground rounded-md px-3 py-2 text-sm"
                   />
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Only used for "Sync Playlist Tracks" operation
                   </p>
                 </div>
               )}
 
               <div className="flex items-end">
-                <Button type="submit" className="bg-green-700 hover:bg-green-600 text-white w-full">
+                <Button type="submit" className="bg-green-700 hover:bg-green-600 text-foreground w-full">
                   <RefreshCw className="h-4 w-4 mr-2" /> Run Test
                 </Button>
               </div>
@@ -467,9 +467,9 @@ export default function TestServicesPage() {
       </Card>
 
       {actionData && (
-        <Card className="bg-gray-900/80 border-gray-800">
-          <CardHeader className="pb-2 border-b border-gray-800">
-            <CardTitle className="text-lg text-white">
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2 border-b border-border">
+            <CardTitle className="text-lg text-foreground">
               {actionData.error ? 'Error' : `Test Results: ${actionData.operation || ''}`}
             </CardTitle>
           </CardHeader>
@@ -478,29 +478,29 @@ export default function TestServicesPage() {
               <div className="text-red-400">
                 <p className="font-medium mb-2">{actionData.error}</p>
                 {actionData.stack && (
-                  <pre className="text-xs bg-gray-800 p-2 rounded overflow-auto max-h-60">{actionData.stack}</pre>
+                  <pre className="text-xs bg-card p-2 rounded overflow-auto max-h-60">{actionData.stack}</pre>
                 )}
               </div>
             ) : (
               <div>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p className="text-sm text-gray-400">Service</p>
-                    <p className="text-white font-medium">{actionData.service}</p>
+                    <p className="text-sm text-muted-foreground">Service</p>
+                    <p className="text-foreground font-medium">{actionData.service}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-400">Operation</p>
-                    <p className="text-white font-medium">{actionData.operation}</p>
+                    <p className="text-sm text-muted-foreground">Operation</p>
+                    <p className="text-foreground font-medium">{actionData.operation}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-400">Status</p>
+                    <p className="text-sm text-muted-foreground">Status</p>
                     <p className={`font-medium ${actionData.success ? 'text-green-400' : 'text-red-400'}`}>
                       {actionData.success ? 'Success' : 'Failed'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-400">Message</p>
-                    <p className="text-white">{actionData.message}</p>
+                    <p className="text-sm text-muted-foreground">Message</p>
+                    <p className="text-foreground">{actionData.message}</p>
                   </div>
                 </div>
 

@@ -50,10 +50,10 @@ export function ConfigButton() {
           rounded-full
           font-medium
           text-sm
-          bg-gray-100 
-          text-gray-700 
+          bg-muted 
+          text-muted-foreground/50 
           flex items-center justify-center 
-          hover:bg-gray-200 hover:text-gray-500 
+          hover:bg-muted hover:text-muted-foreground/70 
           transition-all duration-200 
           active:scale-95"
 			>
@@ -81,7 +81,7 @@ export function ConfigButton() {
 				<>
 					{/* Modal backdrop */}
 					<div
-						className="fixed inset-0 bg-black/25 z-40"
+						className="fixed inset-0 bg-background/25 z-40"
 						onClick={closeModal}
 					/>
 
@@ -104,7 +104,7 @@ export function ConfigButton() {
 														providerStatuses={providerStatuses}
 													/>
 												) : (
-													<div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-md">
+													<div className="text-sm text-muted-foreground/70 p-4 border border-border rounded-md">
 														Please log in to manage your API keys.
 													</div>
 												)}

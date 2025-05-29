@@ -8,7 +8,7 @@ interface StylesType {
 
 // Common styles
 const styles: StylesType = {
-  card: "bg-gray-900/80 border-gray-800",
+  card: "bg-card border-border",
   iconContainer: "p-2 rounded-full"
 };
 
@@ -21,15 +21,15 @@ interface StatusCardProps {
 }
 
 // Status Card component
-export const StatusCard = ({ title, value, icon, iconBg, valueColor = 'text-white' }: StatusCardProps) => {
+export const StatusCard = ({ title, value, icon, iconBg, valueColor = 'text-foreground' }: StatusCardProps) => {
   return (
     <Card className={styles.card}>
       <CardContent className="p-4 flex items-center justify-between">
         <div>
-          <p className="text-gray-400 text-sm">{title}</p>
+          <p className="text-muted-foreground text-sm">{title}</p>
           <p className={`${valueColor} text-2xl font-bold`}>{value}</p>
         </div>
-        <div className={`${iconBg || 'bg-gray-800'} ${styles.iconContainer}`}>
+        <div className={`${iconBg || 'bg-card'} ${styles.iconContainer}`}>
           {icon}
         </div>
       </CardContent>

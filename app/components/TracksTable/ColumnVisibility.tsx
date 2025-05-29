@@ -23,7 +23,7 @@ export function ColumnToggle({
           className={`text-sm transition-colors ${
             showAlbum 
               ? 'text-gray-900 font-medium' 
-              : 'text-gray-400 hover:text-gray-600'
+              : 'text-muted-foreground hover:text-muted-foreground/60'
           }`}
         >
           {showAlbum ? 'Album' : <s>Album</s>}
@@ -33,7 +33,7 @@ export function ColumnToggle({
           className={`text-sm transition-colors ${
             showAddedDate 
               ? 'text-gray-900 font-medium' 
-              : 'text-gray-400 hover:text-gray-600'
+              : 'text-muted-foreground hover:text-muted-foreground/60'
           }`}
         >
           {showAddedDate ? 'Added Date' : <s>Added Date</s>}

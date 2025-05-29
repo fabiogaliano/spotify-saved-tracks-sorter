@@ -57,7 +57,7 @@ export function ProviderKeysManager({
 			case 'openai':
 				return (
 					<svg
-						className="w-5 h-5 text-gray-500"
+						className="w-5 h-5 text-muted-foreground/70"
 						viewBox="0 0 24 24"
 						fill="none"
 						xmlns="http://www.w3.org/2000/svg"
@@ -71,7 +71,7 @@ export function ProviderKeysManager({
 			case 'anthropic':
 				return (
 					<svg
-						className="w-5 h-5 text-gray-500"
+						className="w-5 h-5 text-muted-foreground/70"
 						viewBox="0 0 24 24"
 						fill="none"
 						xmlns="http://www.w3.org/2000/svg"
@@ -85,7 +85,7 @@ export function ProviderKeysManager({
 			case 'google':
 				return (
 					<svg
-						className="w-5 h-5 text-gray-500"
+						className="w-5 h-5 text-muted-foreground/70"
 						viewBox="0 0 24 24"
 						fill="none"
 						xmlns="http://www.w3.org/2000/svg"
@@ -420,7 +420,7 @@ export function ProviderKeysManager({
 		<div className="space-y-6">
 			<div className="flex flex-col gap-4">
 				<h3 className="text-sm font-medium">API Keys</h3>
-				<p className="text-xs text-gray-600">
+				<p className="text-xs text-muted-foreground/60">
 					Add your own API keys for language models to use in the application.
 				</p>
 				{notification && (
@@ -444,7 +444,7 @@ export function ProviderKeysManager({
                   ${
 										status.hasKey
 											? 'bg-blue-50/50 border-blue-200'
-											: 'bg-gray-50 border-gray-200 hover:border-gray-300'
+											: 'bg-muted border-border hover:border-gray-300'
 									}
                   ${activeProvider === status.provider ? 'rounded-t-xl' : 'rounded-xl'}
                   cursor-pointer
@@ -558,7 +558,7 @@ export function ProviderKeysManager({
 											<div>
 												<label
 													htmlFor="apiKey"
-													className="block text-xs font-medium text-gray-700 mb-1"
+													className="block text-xs font-medium text-muted-foreground/50 mb-1"
 												>
 													API Key
 												</label>
@@ -577,7 +577,7 @@ export function ProviderKeysManager({
 													/>
 													<button
 														type="button"
-														className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+														className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-muted-foreground/60"
 														onClick={() => setShowApiKey(!showApiKey)}
 													>
 														{showApiKey ? (
@@ -617,7 +617,7 @@ export function ProviderKeysManager({
 														)}
 													</button>
 												</div>
-												<p className="mt-1 text-xs text-gray-500">
+												<p className="mt-1 text-xs text-muted-foreground/70">
 													Your API key is encrypted before being stored and never shared.
 												</p>
 											</div>
@@ -669,7 +669,7 @@ export function ProviderKeysManager({
 														disabled={navigation.state === 'submitting' || !apiKey.trim()}
 														className={`
                               inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
-                              text-white bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                              text-foreground bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                               ${
 																navigation.state === 'submitting' ||
 																!apiKey.trim() ||
@@ -684,7 +684,7 @@ export function ProviderKeysManager({
 														loading === 'validating' ? (
 															<span className="flex items-center">
 																<svg
-																	className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+																	className="animate-spin -ml-1 mr-2 h-4 w-4 text-foreground"
 																	xmlns="http://www.w3.org/2000/svg"
 																	fill="none"
 																	viewBox="0 0 24 24"

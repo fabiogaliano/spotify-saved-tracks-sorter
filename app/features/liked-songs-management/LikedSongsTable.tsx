@@ -51,13 +51,13 @@ interface StylesType {
 }
 
 const styles: StylesType = {
-  card: "bg-gray-900/80 border-gray-800",
+  card: "bg-card border-border",
   iconContainer: "p-2 rounded-full",
-  tableHeader: "text-left px-4 py-3 text-sm font-medium text-gray-400",
-  tableCell: "px-4 py-3 text-white",
-  tableRow: "border-b border-gray-800/50 hover:bg-gray-800/30",
+  tableHeader: "text-left px-4 py-3 text-sm font-medium text-muted-foreground",
+  tableCell: "px-4 py-3 text-foreground",
+  tableRow: "border-b border-border/50 hover:bg-card/30",
   button: {
-    outline: "border-gray-700 text-white hover:bg-gray-800 bg-gray-800/50"
+    outline: "border-border text-foreground hover:bg-card bg-card/50"
   }
 };
 
@@ -129,7 +129,7 @@ export const LikedSongsTable = () => {
     columnHelper.accessor(row => row.track.name, {
       id: 'title',
       header: 'Title',
-      cell: info => <div className="font-medium text-white">{info.getValue()}</div>
+      cell: info => <div className="font-medium text-foreground">{info.getValue()}</div>
     }),
     columnHelper.accessor(row => row.track.artist, {
       id: 'artist',
@@ -171,7 +171,7 @@ export const LikedSongsTable = () => {
             checked={table.getIsAllPageRowsSelected()}
             onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
-            className="data-[state=checked]:bg-blue-500 border-gray-600"
+            className="data-[state=checked]:bg-blue-500 border-border"
           />
         </div>
       ),
@@ -182,7 +182,7 @@ export const LikedSongsTable = () => {
             disabled={row.original.uiAnalysisStatus === 'pending' || row.original.uiAnalysisStatus === 'analyzed'} // Disable for both pending and analyzed tracks
             onCheckedChange={value => row.toggleSelected(!!value)}
             aria-label="Select row"
-            className="data-[state=checked]:bg-blue-500 border-gray-600"
+            className="data-[state=checked]:bg-blue-500 border-border"
           />
         </div>
       )
@@ -263,8 +263,8 @@ export const LikedSongsTable = () => {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">Liked Songs Analysis</h1>
-        <p className="text-white">Manage and analyze your liked songs from Spotify</p>
+        <h1 className="text-2xl font-bold text-foreground mb-1">Liked Songs Analysis</h1>
+        <p className="text-foreground">Manage and analyze your liked songs from Spotify</p>
       </div>
 
       {/* Status Cards */}
@@ -272,7 +272,7 @@ export const LikedSongsTable = () => {
         <StatusCard
           title="Total Tracks"
           value={stats.total}
-          icon={<Music className="h-6 w-6 text-white" />}
+          icon={<Music className="h-6 w-6 text-foreground" />}
         />
 
         <StatusCard
@@ -299,15 +299,15 @@ export const LikedSongsTable = () => {
         <StatusCard
           title="Not Analyzed"
           value={stats.notAnalyzed + stats.failed}
-          icon={<AlertCircle className="h-6 w-6 text-gray-400" />}
+          icon={<AlertCircle className="h-6 w-6 text-muted-foreground" />}
         />
       </div>
 
       {/* Table Card */}
       <Card className={`${styles.card} flex-1`}>
-        <CardHeader className="pb-2 border-b border-gray-800">
+        <CardHeader className="pb-2 border-b border-border">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <CardTitle className="text-lg flex items-center gap-2 text-white">
+            <CardTitle className="text-lg flex items-center gap-2 text-foreground">
               <div className="bg-blue-500/20 p-1.5 rounded-md">
                 <Music className="h-5 w-5 text-blue-400" />
               </div>
@@ -344,7 +344,7 @@ export const LikedSongsTable = () => {
         <CardContent className="p-0">
           <div className="relative overflow-auto">
             <table className="w-full">
-              <thead className="border-b border-gray-800">
+              <thead className="border-b border-border">
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map(header => {
@@ -402,9 +402,9 @@ export const LikedSongsTable = () => {
           </div>
         </CardContent>
 
-        <CardFooter className="border-t border-gray-800 p-4">
+        <CardFooter className="border-t border-border p-4">
           <div className="flex justify-between w-full">
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-muted-foreground">
               {table.getFilteredRowModel().rows.length} results
             </div>
             <TablePagination table={table} />

@@ -81,11 +81,11 @@ export function ActionButton({
 }: ActionButtonProps) {
 	// Variant styling
 	const variantClasses = {
-		primary: 'bg-blue-500 hover:bg-blue-600 text-white',
-		secondary: 'bg-gray-500 hover:bg-gray-600 text-white',
-		danger: 'bg-red-500 hover:bg-red-600 text-white',
-		success: 'bg-green-500 hover:bg-green-600 text-white',
-		back: 'bg-gray-500 hover:bg-gray-600 text-white', // Back button is just secondary with an icon
+		primary: 'bg-blue-500 hover:bg-blue-600 text-foreground',
+		secondary: 'bg-secondary hover:bg-secondary text-foreground',
+		danger: 'bg-red-500 hover:bg-red-600 text-foreground',
+		success: 'bg-green-500 hover:bg-green-600 text-foreground',
+		back: 'bg-secondary hover:bg-secondary text-foreground', // Back button is just secondary with an icon
 	}
 
 	// Size styling

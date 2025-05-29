@@ -28,7 +28,7 @@ const DashboardTab = ({ value, ...props }: ComponentProps<typeof TabsTrigger>) =
   return (
     <TabsTrigger
       value={value}
-      className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-500 rounded-none px-4 py-2 text-gray-400 hover:text-white"
+      className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-green-500 rounded-none px-4 py-2 text-muted-foreground hover:text-foreground"
       {...props}
     >
       {formatDisplayText(value)}
@@ -39,7 +39,7 @@ const DashboardTab = ({ value, ...props }: ComponentProps<typeof TabsTrigger>) =
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-64">
     <LoadingSpinner className="w-8 h-8 text-green-500" />
-    <span className="ml-2 text-gray-300">Loading data...</span>
+    <span className="ml-2 text-muted-foreground">Loading data...</span>
   </div>
 );
 
@@ -66,22 +66,22 @@ const Dashboard = () => {
   return (
     <>
       {isLoading && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-gray-900 p-8 rounded-lg shadow-xl flex flex-col items-center max-w-md">
+        <div className="fixed inset-0 bg-background/70 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-card p-8 rounded-lg shadow-xl flex flex-col items-center max-w-md">
             <LoadingSpinner className="w-12 h-12 text-green-500 mb-4" />
-            <h2 className="text-xl font-bold text-white mb-2">Loading your library</h2>
-            <p className="text-gray-400 text-center">Please wait while we prepare your dashboard...</p>
+            <h2 className="text-xl font-bold text-foreground mb-2">Loading your library</h2>
+            <p className="text-muted-foreground text-center">Please wait while we prepare your dashboard...</p>
           </div>
         </div>
       )}
-      <div className="min-h-screen bg-gradient-to-b from-blue-950 to-black text-white p-4 md:p-6">
+      <div className="min-h-screen bg-theme-gradient text-foreground p-4 md:p-6">
         <div className="container mx-auto max-w-7xl">
           {/* Header */}
           <Header userName={user.spotify.name} image={user.spotify.image} />
 
           {/* Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">
-            <TabsList className="bg-gray-900/50 border-b border-gray-800 w-full justify-start rounded-none px-0 h-auto">
+            <TabsList className="bg-card/50 border-b border-border w-full justify-start rounded-none px-0 h-auto">
               <DashboardTab value="overview" />
               <DashboardTab value="likedsongs" />
               <DashboardTab value="matching" />
@@ -114,7 +114,7 @@ const Dashboard = () => {
             {/* Other Tab Contents - Only render if they've been loaded */}
             <TabsContent value="likedsongs" className="mt-6">
               {loadedTabs.likedsongs && (
-                <Card className="bg-gray-900/80 border-gray-800">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <Suspense fallback={<LoadingFallback />}>
                       <Await resolve={likedSongs}>
@@ -132,7 +132,7 @@ const Dashboard = () => {
 
             <TabsContent value="playlists" className="mt-6">
               {loadedTabs.playlists && (
-                <Card className="bg-gray-900/80 border-gray-800">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <Suspense fallback={<LoadingFallback />}>
                       <Await resolve={playlists}>
@@ -146,7 +146,7 @@ const Dashboard = () => {
 
             <TabsContent value="matching" className="mt-6">
               {loadedTabs.matching && (
-                <Card className="bg-gray-900/80 border-gray-800">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <MatchingInterface />
                   </CardContent>
@@ -156,7 +156,7 @@ const Dashboard = () => {
 
             <TabsContent value="settings" className="mt-6">
               {loadedTabs.settings && (
-                <Card className="bg-gray-900/80 border-gray-800">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <SettingsTab />
                   </CardContent>

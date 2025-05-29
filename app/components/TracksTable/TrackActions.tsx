@@ -69,7 +69,7 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
 	return (
 		<div className="relative w-[120px] mx-auto">
 			<div
-				className="relative h-8 rounded-full bg-gray-100/80 cursor-pointer backdrop-blur-xs"
+				className="relative h-8 rounded-full bg-muted/80 cursor-pointer backdrop-blur-xs"
 				onClick={handleClick}
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
@@ -90,7 +90,7 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
 					</svg>
 
 					{/* Skip/Pause icon */}
-					<svg className="w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+					<svg className="w-3 h-3 text-muted-foreground" viewBox="0 0 24 24" fill="currentColor">
 						<path
 							d="M8 5v14m8-14v14"
 							strokeWidth="2"
@@ -120,7 +120,7 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
 								? 'bg-emerald-50 border-2 border-emerald-200 scale-110'
 								: storeStatus === 'ignored'
 								? 'bg-rose-50 border-2 border-rose-200 scale-110'
-								: 'bg-white border border-gray-200'
+								: 'bg-white border border-border'
 						}
             ${isDragging ? 'scale-105' : ''}
           `}
@@ -166,7 +166,7 @@ export function TrackActions({ userId, trackId }: TrackActionsProps) {
             ${storeStatus === 'unsorted' ? 'opacity-100' : 'opacity-0'}`}
 					>
 						<svg
-							className="w-3 h-3 text-gray-400"
+							className="w-3 h-3 text-muted-foreground"
 							viewBox="0 0 24 24"
 							fill="currentColor"
 						>

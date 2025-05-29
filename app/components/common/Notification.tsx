@@ -41,7 +41,7 @@ export function Notification({
 			case 'info':
 				return 'bg-blue-50/90 text-blue-700 border border-blue-200/50'
 			default:
-				return 'bg-gray-50/90 text-gray-700 border border-gray-200/50'
+				return 'bg-muted/90 text-muted-foreground/50 border border-border/50'
 		}
 	}
 
@@ -56,7 +56,7 @@ export function Notification({
 			case 'info':
 				return 'hover:bg-blue-100 active:bg-blue-200'
 			default:
-				return 'hover:bg-gray-100 active:bg-gray-200'
+				return 'hover:bg-muted active:bg-gray-200'
 		}
 	}
 

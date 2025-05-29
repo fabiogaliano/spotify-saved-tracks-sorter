@@ -40,8 +40,8 @@ export function SyncLibraryButton({ userId }: SyncLibraryButtonProps) {
 						transition-all duration-200
 						${
 							isLoading
-								? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-								: 'bg-[#1DB954] text-white hover:bg-[#1ed760] active:scale-95'
+								? 'bg-muted text-muted-foreground cursor-not-allowed'
+								: 'bg-[#1DB954] text-foreground hover:bg-[#1ed760] active:scale-95'
 						}
 					`}
 				>
@@ -54,4 +54,4 @@ export function SyncLibraryButton({ userId }: SyncLibraryButtonProps) {
 	)
 }
 
-// ;<button class=" text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+// ;<button class=" text-sm font-medium text-muted-foreground/50 bg-muted rounded-full hover:bg-muted transition-colors">

@@ -67,7 +67,7 @@ export function LoadingSpinner({
           mb-${text ? '4' : '0'}
         `}
 			></div>
-			{text && <p className={`${textSizes[size]} text-gray-600`}>{text}</p>}
+			{text && <p className={`${textSizes[size]} text-muted-foreground/60`}>{text}</p>}
 		</div>
 	)
 }

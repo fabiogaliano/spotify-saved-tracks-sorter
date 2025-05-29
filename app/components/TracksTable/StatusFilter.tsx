@@ -33,7 +33,7 @@ export function StatusFilter({ showStatus, onStatusChange, showExtraStatus = fal
   }
 
   return (
-    <div className="inline-flex p-1.5 rounded-full bg-gray-100/80 shadow-xs">
+    <div className="inline-flex p-1.5 rounded-full bg-muted/80 shadow-xs">
       <div className="relative inline-flex bg-white/95 rounded-full">
         <div
           className="absolute transition-all duration-200 ease-out"
@@ -60,8 +60,8 @@ export function StatusFilter({ showStatus, onStatusChange, showExtraStatus = fal
             className={`relative px-6 py-1.5 text-sm font-medium transition-colors duration-200
               rounded-full z-10 min-w-[100px] select-none
               ${showStatus === status 
-                ? 'text-white' 
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'text-foreground' 
+                : 'text-muted-foreground/60 hover:text-gray-900'
               }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}

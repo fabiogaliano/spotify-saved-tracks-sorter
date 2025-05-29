@@ -96,7 +96,7 @@ const InitialSetup = ({ userId }: InitialSetupProps) => {
   const isSubmitting = fetcher.state === 'submitting';
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-900 to-black p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-theme-gradient p-4">
       <SpotifySignOut className="absolute top-4 right-4" />
       <div className="w-full max-w-md">
         <Tabs value={activeStep} className="w-full">
@@ -124,7 +124,7 @@ const InitialSetup = ({ userId }: InitialSetupProps) => {
               </CardHeader>
 
               <CardContent className="space-y-4">
-                <div className="rounded-lg bg-black/5 p-4">
+                <div className="rounded-lg bg-background/5 p-4">
                   <h3 className="font-medium mb-2 flex items-center gap-2">
                     <PlayCircle size={18} className="text-green-500" />
                     How it works
@@ -135,7 +135,7 @@ const InitialSetup = ({ userId }: InitialSetupProps) => {
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-black/5 p-4">
+                <div className="rounded-lg bg-background/5 p-4">
                   <h3 className="font-medium mb-2">Key Features</h3>
                   <ul className="text-sm text-muted-foreground space-y-2">
                     <li className="flex items-start gap-2">

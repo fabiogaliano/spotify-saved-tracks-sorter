@@ -4,6 +4,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import { StrictMode } from 'react'
 import { getUserSession } from '~/features/auth/auth.utils'
 import { Toaster } from '~/shared/components/ui/sonner'
+import { ThemeProvider } from '~/lib/providers/theme-provider';
 
 import './tailwind.css'
 
@@ -68,14 +69,21 @@ export const meta: MetaFunction = () => {
 
 export function Layout({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className="text-[100%] 2xl:text-[110%] 3xl:text-[125%]">
+		<html lang="en" className="text-[100%] 2xl:text-[110%] 3xl:text-[125%]" suppressHydrationWarning>
 			<head>
 				<Meta />
 				<Links />
 			</head>
-			<body className="min-h-screen bg-gray-50">
-				<main>{children}</main>
-				<Toaster richColors position="bottom-right" duration={5000} closeButton={true} />
+			<body className="min-h-screen">
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="system"
+					enableSystem
+					disableTransitionOnChange={false}
+				>
+					<main>{children}</main>
+					<Toaster richColors position="bottom-right" duration={5000} closeButton={true} />
+				</ThemeProvider>
 				<ScrollRestoration />
 				<Scripts />
 			</body>

@@ -34,12 +34,12 @@ type StepCardProps = {
 
 // Playlist card component for better composition
 const PlaylistItem: React.FC<PlaylistItemProps> = ({ name, isActive = false }) => (
-  <div className={`p-4 ${isActive ? 'bg-indigo-900/50 border-indigo-500' : 'bg-gray-800/70 border-gray-800'} rounded-md transition-all hover:bg-indigo-900/30 cursor-pointer border`}>
+  <div className={`p-4 ${isActive ? 'bg-indigo-900/50 border-indigo-500' : 'bg-card/70 border-border'} rounded-md transition-all hover:bg-indigo-900/30 cursor-pointer border`}>
     <div className="flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${isActive ? 'text-indigo-400' : 'text-gray-500'}`} viewBox="0 0 20 20" fill="currentColor">
+      <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${isActive ? 'text-indigo-400' : 'text-muted-foreground/70'}`} viewBox="0 0 20 20" fill="currentColor">
         <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
       </svg>
-      <p className={`${isActive ? 'text-white' : 'text-gray-300'} font-medium text-base`}>{name}</p>
+      <p className={`${isActive ? 'text-foreground' : 'text-muted-foreground'} font-medium text-base`}>{name}</p>
     </div>
   </div>
 );
@@ -52,29 +52,29 @@ const MatchedSong: React.FC<MatchedSongProps> = ({
   imageUrl,
   matchedPlaylists
 }) => (
-  <div className="p-5 bg-gray-800 bg-opacity-70 rounded-md hover:bg-opacity-80 transition-all border border-gray-800 hover:border-gray-700">
+  <div className="p-5 bg-card bg-opacity-70 rounded-md hover:bg-opacity-80 transition-all border border-border hover:border-border">
     <div className="flex justify-between items-center mb-2">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gray-500 bg-opacity-30 rounded-md overflow-hidden">
+        <div className="w-10 h-10 bg-secondary bg-opacity-30 rounded-md overflow-hidden">
           <img src={imageUrl} alt="Icon" className="w-full h-full object-cover" data-img-id="" />
         </div>
         <div>
-          <p className="text-white font-medium text-base">{title}</p>
-          <p className="text-gray-400 text-sm">{artist}</p>
+          <p className="text-foreground font-medium text-base">{title}</p>
+          <p className="text-muted-foreground text-sm">{artist}</p>
         </div>
       </div>
-      <div className={`px-3 py-1.5 text-white text-sm font-medium ${matchPercentage > 90 ? 'bg-green-500' : 'bg-blue-500'} bg-opacity-80 rounded-full`}>
+      <div className={`px-3 py-1.5 text-foreground text-sm font-medium ${matchPercentage > 90 ? 'bg-green-500' : 'bg-blue-500'} bg-opacity-80 rounded-full`}>
         {matchPercentage}% match
       </div>
     </div>
     <div className="flex justify-between items-center text-sm mt-4">
-      <p className="text-gray-400 flex items-center">
+      <p className="text-muted-foreground flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
           <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
         </svg>
         Matches: {matchedPlaylists.join(', ')}
       </p>
-      <button className="px-4 py-1.5 text-indigo-300 hover:text-white hover:bg-indigo-500/30 rounded-md transition-all text-sm font-medium">Sort</button>
+      <button className="px-4 py-1.5 text-indigo-300 hover:text-foreground hover:bg-indigo-500/30 rounded-md transition-all text-sm font-medium">Sort</button>
     </div>
   </div>
 );
@@ -118,20 +118,20 @@ const AppInterface: React.FC = () => {
   const mobileSongIndexes = [0, 1];
 
   return (
-    <div className="w-full max-w-4xl mx-auto overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-2xl transform transition-all duration-300 hover:shadow-indigo-500/20 hover:border-gray-700">
+    <div className="w-full max-w-4xl mx-auto overflow-hidden rounded-xl bg-card border border-border shadow-2xl transform transition-all duration-300 hover:shadow-indigo-500/20 hover:border-border">
       {/* Window Controls - Only visible on desktop */}
-      <div className="hidden lg:flex items-center px-4 py-2 space-x-2 border-b border-gray-800 bg-gradient-to-r from-gray-900 to-gray-800">
+      <div className="hidden lg:flex items-center px-4 py-2 space-x-2 border-b border-border bg-gradient-to-r from-gray-900 to-gray-800">
         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-        <div className="ml-auto text-xs text-gray-500 font-mono">SpotifySort v1.0</div>
+        <div className="ml-auto text-xs text-muted-foreground/70 font-mono">SpotifySort v1.0</div>
       </div>
 
       {/* App Content - Desktop Version */}
       <div className="hidden lg:flex lg:flex-row">
         {/* Playlists Column - Desktop */}
-        <div className="w-1/3 border-r border-gray-800 p-5 bg-gradient-to-b from-gray-900 to-gray-900/90">
-          <h2 className="text-gray-300 font-medium mb-4 flex items-center">
+        <div className="w-1/3 border-r border-border p-5 bg-gradient-to-b from-gray-900 to-gray-900/90">
+          <h2 className="text-muted-foreground font-medium mb-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
               <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
             </svg>
@@ -146,7 +146,7 @@ const AppInterface: React.FC = () => {
               />
             ))}
             <div className="pt-2">
-              <button className="w-full p-2 text-sm text-gray-400 border border-gray-800 rounded-md hover:border-indigo-500 hover:text-indigo-400 transition-all flex items-center justify-center">
+              <button className="w-full p-2 text-sm text-muted-foreground border border-border rounded-md hover:border-indigo-500 hover:text-indigo-400 transition-all flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -158,7 +158,7 @@ const AppInterface: React.FC = () => {
 
         {/* Analysis Column - Desktop */}
         <div className="w-2/3 p-5 bg-gradient-to-b from-gray-900 to-indigo-900/10">
-          <h2 className="text-gray-300 font-medium mb-4 flex items-center">
+          <h2 className="text-muted-foreground font-medium mb-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
@@ -176,7 +176,7 @@ const AppInterface: React.FC = () => {
               />
             ))}
             <div className="pt-2 text-right">
-              <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md transition-colors shadow-md hover:shadow-indigo-500/50">
+              <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-foreground text-sm rounded-md transition-colors shadow-md hover:shadow-indigo-500/50">
                 Analyze More Songs
               </button>
             </div>
@@ -188,13 +188,13 @@ const AppInterface: React.FC = () => {
       <div className="flex flex-col lg:hidden">
         {/* Mobile App Header */}
         <div className="w-full bg-gradient-to-b from-gray-900 to-gray-900/90 px-6 py-5">
-          <h2 className="text-gray-100 font-medium text-2xl mb-2">SpotifySort</h2>
-          <p className="text-gray-400 text-base">Organize your music intelligently</p>
+          <h2 className="text-foreground font-medium text-2xl mb-2">SpotifySort</h2>
+          <p className="text-muted-foreground text-base">Organize your music intelligently</p>
         </div>
 
         {/* Playlists Column - Mobile */}
-        <div className="w-full border-b border-gray-800 px-6 py-6">
-          <h2 className="text-gray-200 font-medium text-xl mb-4 flex items-center">
+        <div className="w-full border-b border-border px-6 py-6">
+          <h2 className="text-foreground font-medium text-xl mb-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
               <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
             </svg>
@@ -204,17 +204,17 @@ const AppInterface: React.FC = () => {
             {mobilePlaylistIndexes.map((playlistIndex) => {
               const playlist = playlists[playlistIndex];
               return (
-                <div key={playlistIndex} className={`p-5 ${playlist.isActive ? 'bg-indigo-900/50 border-indigo-500' : 'bg-gray-800/70 border-gray-800'} rounded-lg transition-all border-2`}>
+                <div key={playlistIndex} className={`p-5 ${playlist.isActive ? 'bg-indigo-900/50 border-indigo-500' : 'bg-card/70 border-border'} rounded-lg transition-all border-2`}>
                   <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-7 w-7 mr-3 ${playlist.isActive ? 'text-indigo-400' : 'text-gray-500'}`} viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-7 w-7 mr-3 ${playlist.isActive ? 'text-indigo-400' : 'text-muted-foreground/70'}`} viewBox="0 0 20 20" fill="currentColor">
                       <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
                     </svg>
-                    <p className={`${playlist.isActive ? 'text-white' : 'text-gray-300'} font-medium text-lg`}>{playlist.name}</p>
+                    <p className={`${playlist.isActive ? 'text-foreground' : 'text-muted-foreground'} font-medium text-lg`}>{playlist.name}</p>
                   </div>
                 </div>
               );
             })}
-            <div className="flex items-center text-base text-gray-400 py-3">
+            <div className="flex items-center text-base text-muted-foreground py-3">
               <span className="mr-2">+4 more playlists</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -225,7 +225,7 @@ const AppInterface: React.FC = () => {
 
         {/* Analysis Column - Mobile */}
         <div className="w-full px-6 py-6 bg-gradient-to-b from-gray-900 to-indigo-900/10">
-          <h2 className="text-gray-200 font-medium text-xl mb-4 flex items-center">
+          <h2 className="text-foreground font-medium text-xl mb-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
@@ -235,41 +235,41 @@ const AppInterface: React.FC = () => {
             {mobileSongIndexes.map((songIndex) => {
               const song = matchedSongs[songIndex];
               return (
-                <div key={songIndex} className="p-5 bg-gray-800 bg-opacity-70 rounded-lg border-2 border-gray-800 hover:border-gray-700">
+                <div key={songIndex} className="p-5 bg-card bg-opacity-70 rounded-lg border-2 border-border hover:border-border">
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-gray-500 bg-opacity-30 rounded-lg overflow-hidden">
+                      <div className="w-16 h-16 bg-secondary bg-opacity-30 rounded-lg overflow-hidden">
                         <img src={song.imageUrl} alt="Icon" className="w-full h-full object-cover" />
                       </div>
                       <div>
-                        <p className="text-white font-medium text-lg">{song.title}</p>
-                        <p className="text-gray-400 text-base">{song.artist}</p>
+                        <p className="text-foreground font-medium text-lg">{song.title}</p>
+                        <p className="text-muted-foreground text-base">{song.artist}</p>
                       </div>
                     </div>
-                    <div className={`px-4 py-2 text-white text-sm font-medium ${song.matchPercentage > 90 ? 'bg-green-500' : 'bg-blue-500'} bg-opacity-90 rounded-full`}>
+                    <div className={`px-4 py-2 text-foreground text-sm font-medium ${song.matchPercentage > 90 ? 'bg-green-500' : 'bg-blue-500'} bg-opacity-90 rounded-full`}>
                       {song.matchPercentage}% match
                     </div>
                   </div>
                   <div className="flex justify-between items-center text-base mt-4">
-                    <p className="text-gray-400 flex items-center">
+                    <p className="text-muted-foreground flex items-center">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
                       </svg>
                       Matches: {song.matchedPlaylists.join(', ')}
                     </p>
-                    <button className="px-5 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-all text-base font-medium">Sort</button>
+                    <button className="px-5 py-2 text-foreground bg-indigo-600 hover:bg-indigo-700 rounded-md transition-all text-base font-medium">Sort</button>
                   </div>
                 </div>
               );
             })}
-            <div className="flex items-center text-base text-gray-400 py-3">
+            <div className="flex items-center text-base text-muted-foreground py-3">
               <span className="mr-2">+1 more song</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="pt-3">
-              <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-medium rounded-lg transition-colors shadow-md hover:shadow-indigo-500/50">
+              <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-foreground text-lg font-medium rounded-lg transition-colors shadow-md hover:shadow-indigo-500/50">
                 Analyze More Songs
               </button>
             </div>
@@ -282,14 +282,14 @@ const AppInterface: React.FC = () => {
 
 // Feature card component
 const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon, bgColorClass, iconColorClass }) => (
-  <div className="p-8 rounded-lg bg-gradient-to-br from-gray-900 to-indigo-950 border border-gray-800 hover:border-gray-700 transition-all">
+  <div className="p-8 rounded-lg bg-gradient-to-br from-gray-900 to-indigo-950 border border-border hover:border-border transition-all">
     <div className="flex items-center mb-5">
       <div className={`w-12 h-12 rounded-full ${bgColorClass} flex items-center justify-center mr-4`}>
         <div className={iconColorClass}>{icon}</div>
       </div>
       <h3 className="text-2xl font-medium">{title}</h3>
     </div>
-    <p className="text-gray-400 text-lg leading-relaxed">{description}</p>
+    <p className="text-muted-foreground text-lg leading-relaxed">{description}</p>
   </div>
 );
 
@@ -364,7 +364,7 @@ const MobileCarousel: React.FC<{ children: React.ReactNode }> = ({ children }) =
                 });
               }
             }}
-            className={`w-2 h-2 rounded-full transition-colors ${index === activeIndex ? 'bg-white' : 'bg-gray-600'
+            className={`w-2 h-2 rounded-full transition-colors ${index === activeIndex ? 'bg-white' : 'bg-secondary'
               }`}
             aria-label={`Go to slide ${index + 1}`}
           />
@@ -376,12 +376,12 @@ const MobileCarousel: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Step card component
 const StepCard: React.FC<StepCardProps> = ({ number, title, description, colorClass }) => (
-  <div className="flex flex-col items-center text-center p-8 rounded-lg bg-black/30 backdrop-blur-sm border border-gray-800 hover:border-gray-700 transition-all h-full">
+  <div className="flex flex-col items-center text-center p-8 rounded-lg bg-background/30 backdrop-blur-sm border border-border hover:border-border transition-all h-full">
     <div className={`w-20 h-20 rounded-full ${colorClass} flex items-center justify-center mb-5 flex-shrink-0`}>
       <div className={`text-${colorClass.replace('bg-', '').replace('/20', '')} text-3xl font-bold`}>{number}</div>
     </div>
     <h3 className="text-2xl font-medium mb-3 flex-shrink-0">{title}</h3>
-    <p className="text-gray-400 text-lg leading-relaxed flex-grow">{description}</p>
+    <p className="text-muted-foreground text-lg leading-relaxed flex-grow">{description}</p>
   </div>
 );
 
@@ -455,11 +455,11 @@ const LandingPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-indigo-950 to-black text-white">
+    <div className="min-h-screen bg-theme-gradient text-foreground">
       {/* Nav */}
-      <nav className="sticky top-0 z-10 flex justify-between items-center px-6 py-5 md:px-12 backdrop-blur-sm bg-black/50 border-b border-gray-800/50">
+      <nav className="sticky top-0 z-10 flex justify-between items-center px-6 py-5 md:px-12 backdrop-blur-sm bg-background/50 border-b border-border/50">
         <div className="flex items-center">
-          <div className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
+          <div className="text-2xl md:text-3xl font-bold bg-gradient-brand">
             Sorted.
           </div>
         </div>
@@ -468,7 +468,7 @@ const LandingPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoggingIn}
-              className="bg-green-500 hover:bg-green-400 transition-all text-white px-6 py-3 rounded-full font-medium inline-block text-center text-base relative"
+              className="bg-green-500 hover:bg-green-400 transition-all text-foreground px-6 py-3 rounded-full font-medium inline-block text-center text-base relative"
             >
               {isLoggingIn ? (
                 <>
@@ -493,7 +493,7 @@ const LandingPage: React.FC = () => {
             <h1 className="text-5xl md:text-6xl font-bold leading-tight">
               From <span className="text-green-400">Likes</span> to Perfect Playlists
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 leading-relaxed">
+            <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed">
               Automatically organize your Spotify liked songs into the perfect playlists. Let AI analyze lyrics, mood, and vibe to sort your music where it belongs.
             </p>
             <div className="pt-4 space-y-4">
@@ -501,7 +501,7 @@ const LandingPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="bg-green-500 hover:bg-green-400 transition-all text-white text-xl px-8 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto relative"
+                  className="bg-green-500 hover:bg-green-400 transition-all text-foreground text-xl px-8 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto relative"
                 >
                   {isLoggingIn ? (
                     <>
@@ -516,7 +516,7 @@ const LandingPage: React.FC = () => {
                   )}
                 </button>
               </Form>
-              <p className="text-gray-400 text-base md:text-lg">Free to use</p>
+              <p className="text-muted-foreground text-base md:text-lg">Free to use</p>
             </div>
           </div>
           <div className="lg:w-1/2 relative order-1 lg:order-2">
@@ -600,18 +600,18 @@ const LandingPage: React.FC = () => {
 
       {/* CTA */}
       <div className="container mx-auto px-6 md:px-12 py-24 text-center">
-        <div className="max-w-3xl mx-auto bg-black/30 backdrop-blur-sm rounded-2xl p-10 border border-gray-800">
+        <div className="max-w-3xl mx-auto bg-background/30 backdrop-blur-sm rounded-2xl p-10 border border-border">
           <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-8">
-            Ready to organize your <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">musical chaos?</span>
+            Ready to organize your <span className="bg-gradient-brand">musical chaos?</span>
           </h2>
-          <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto mb-10">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10">
             Stop scrolling endlessly through your liked songs. Let Sorted turn your musical mess into perfectly organized playlists.
           </p>
           <Form action="/auth/spotify" method="post">
             <button
               type="submit"
               disabled={isLoggingIn}
-              className="bg-green-500 hover:bg-green-400 transition-all text-white text-xl px-10 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto relative"
+              className="bg-green-500 hover:bg-green-400 transition-all text-foreground text-xl px-10 py-4 rounded-full font-medium inline-block text-center w-full md:w-auto relative"
             >
               {isLoggingIn ? (
                 <>
@@ -626,41 +626,41 @@ const LandingPage: React.FC = () => {
               )}
             </button>
           </Form>
-          <p className="text-gray-400 text-base md:text-lg mt-5">Works with your existing Spotify account</p>
+          <p className="text-muted-foreground text-base md:text-lg mt-5">Works with your existing Spotify account</p>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-black/50 backdrop-blur-md border-t border-gray-800 py-12">
+      <footer className="bg-background/50 backdrop-blur-md border-t border-border py-12">
         <div className="container mx-auto px-6 md:px-12">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-8 md:mb-0">
-              <div className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
+              <div className="text-2xl md:text-3xl font-bold bg-gradient-brand">
                 Sorted.
               </div>
-              <div className="text-gray-400 text-base mt-2">From likes to perfect playlists.</div>
+              <div className="text-muted-foreground text-base mt-2">From likes to perfect playlists.</div>
             </div>
             <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
-              <Link to="/privacy" className="text-gray-300 hover:text-white transition-colors text-base md:text-lg py-2">Privacy Policy</Link>
-              <Link to="/terms" className="text-gray-300 hover:text-white transition-colors text-base md:text-lg py-2">Terms of Service</Link>
-              <Link to="/contact" className="text-gray-300 hover:text-white transition-colors text-base md:text-lg py-2">Contact</Link>
+              <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors text-base md:text-lg py-2">Privacy Policy</Link>
+              <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors text-base md:text-lg py-2">Terms of Service</Link>
+              <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors text-base md:text-lg py-2">Contact</Link>
               <div className="flex space-x-6 items-center mt-4 md:mt-0">
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
                   </svg>
                 </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
                 </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"></path>
                   </svg>
                 </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fillRule="evenodd" d="M12 6.253v13.5a1.5 1.5 0 001.5 1.5l5-5.5a1.5 1.5 0 000-3l-5-5.5a1.5 1.5 0 00-1.5 1.5V6.253z" clipRule="evenodd"></path>
                   </svg>
@@ -668,7 +668,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="text-center text-gray-500 text-sm md:text-base mt-10">
+          <div className="text-center text-muted-foreground/70 text-sm md:text-base mt-10">
             2025 Sorted. Not affiliated with Spotify. All rights reserved.
           </div>
         </div>

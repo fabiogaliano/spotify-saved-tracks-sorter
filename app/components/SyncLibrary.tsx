@@ -13,7 +13,7 @@ export function SyncLibrary({ userId }: SyncLibraryProps) {
 					type="submit"
 					name="_action"
 					value="sync"
-					className="px-6 py-3 bg-[#1DB954] text-white font-semibold rounded-full hover:bg-[#1ed760] transition-colors"
+					className="px-6 py-3 bg-[#1DB954] text-foreground font-semibold rounded-full hover:bg-[#1ed760] transition-colors"
 				>
 					Sync Spotify Library
 				</button>

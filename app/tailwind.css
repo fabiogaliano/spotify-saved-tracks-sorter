@@ -11,6 +11,18 @@
 @theme {
 	--breakpoint-2xl: 1536px;
 	--breakpoint-3xl: 1920px;
+	
+	/* Gradient theme colors */
+	--color-gradient-from: var(--gradient-from);
+	--color-gradient-to: var(--gradient-to);
+	--color-gradient-text-from: var(--gradient-text-from);
+	--color-gradient-text-to: var(--gradient-text-to);
+	--color-gradient-card-primary-from: var(--gradient-card-primary-from);
+	--color-gradient-card-primary-to: var(--gradient-card-primary-to);
+	--color-gradient-card-secondary-from: var(--gradient-card-secondary-from);
+	--color-gradient-card-secondary-to: var(--gradient-card-secondary-to);
+	--color-gradient-card-accent-from: var(--gradient-card-accent-from);
+	--color-gradient-card-accent-to: var(--gradient-card-accent-to);
 
 	--animate-slide-in: slide-in 0.3s ease-out forwards;
 
@@ -24,15 +36,104 @@
 			opacity: 1;
 		}
 	}
+
+	/* Color Mappings for Tailwind Utilities */
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+
+	/* Chart Colors */
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+
+	/* Brand Colors */
+	--color-spotify: var(--spotify);
+	--color-spotify-hover: var(--spotify-hover);
+
+	/* Status Colors */
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-error: var(--error);
+	--color-info: var(--info);
+
+	/* Similarity Score Colors */
+	--color-similarity-excellent: var(--similarity-excellent);
+	--color-similarity-good: var(--similarity-good);
+	--color-similarity-fair: var(--similarity-fair);
+	--color-similarity-poor: var(--similarity-poor);
+
+	/* Sidebar Colors */
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+
+  /* Spacing */
+  --spacing-radius: var(--radius);
+}
+
+/* Custom gradient utilities that respect theme */
+@utility bg-theme-gradient {
+  background: linear-gradient(to bottom, var(--gradient-from), var(--gradient-to));
+}
+
+@utility bg-theme-gradient-r {
+  background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+}
+
+@utility bg-theme-gradient-t {
+  background: linear-gradient(to top, var(--gradient-from), var(--gradient-to));
+}
+
+@utility bg-theme-gradient-l {
+  background: linear-gradient(to left, var(--gradient-from), var(--gradient-to));
+}
+
+/* Text gradient utilities */
+@utility bg-gradient-brand {
+  background-image: linear-gradient(to right, var(--gradient-text-from), var(--gradient-text-to));
+  background-clip: text;
+  color: transparent;
+}
+
+/* Card gradient utilities */
+@utility bg-card-primary {
+  background-image: linear-gradient(to bottom right, var(--gradient-card-primary-from), var(--gradient-card-primary-to));
+}
+
+@utility bg-card-secondary {
+  background-image: linear-gradient(to bottom right, var(--gradient-card-secondary-from), var(--gradient-card-secondary-to));
+}
+
+@utility bg-card-accent {
+  background-image: linear-gradient(to bottom right, var(--gradient-card-accent-from), var(--gradient-card-accent-to));
 }
 
 /*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  Default border color compatibility for Tailwind CSS v4
 */
 @layer base {
 	*,
@@ -40,25 +141,10 @@
 	::before,
 	::backdrop,
 	::file-selector-button {
-		border-color: var(--color-gray-200, currentColor);
+		border-color: var(--color-border);
 	}
 }
-
-html,
-body {
-	@apply bg-white dark:bg-gray-950;
-
-	@media (prefers-color-scheme: dark) {
-		color-scheme: dark;
-	}
-}
-
-/*
-  ---break---
-*/
-
 /* Custom Scrollbar Styles */
-/* For Webkit browsers (Chrome, Safari, etc.) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -69,109 +155,205 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
+  background-color: var(--color-muted-foreground/20);
   border-radius: 20px;
   transition: background-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.5);
+  background-color: var(--color-muted-foreground/40);
 }
 
 /* For Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  scrollbar-color: var(--color-muted-foreground/20) transparent;
 }
 
 /* Custom class to show scrollbar only on hover */
 .hover-show-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.1);
+  background-color: var(--color-muted-foreground/10);
 }
 
 .hover-show-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
+  background-color: var(--color-muted-foreground/30);
 }
-
+/* Light Theme - High Contrast Design Tokens */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.141 0.005 285.823);
+	/* Core Colors */
+	--background: oklch(0.99 0 0);
+	--foreground: oklch(0.15 0.01 285);
+	
+	/* Gradients */
+	--gradient-from: oklch(0.9 0.05 240);
+	--gradient-to: oklch(0.95 0 0);
+	
+	/* Text Gradients */
+	--gradient-text-from: oklch(0.55 0.18 140); /* Spotify green */
+	--gradient-text-to: oklch(0.45 0.18 260); /* Info blue */
+	
+	/* Card Gradients */
+	--gradient-card-primary-from: oklch(0.85 0.05 140); /* Light green */
+	--gradient-card-primary-to: oklch(0.85 0.05 240); /* Light blue */
+	--gradient-card-secondary-from: oklch(0.85 0.05 240); /* Light blue */
+	--gradient-card-secondary-to: oklch(0.85 0.05 280); /* Light purple */
+	--gradient-card-accent-from: oklch(0.85 0.05 280); /* Light purple */
+	--gradient-card-accent-to: oklch(0.85 0.05 320); /* Light pink */
+	
+	/* Card & Popover */
 	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.141 0.005 285.823);
+	--card-foreground: oklch(0.15 0.01 285);
 	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.141 0.005 285.823);
-	--primary: oklch(0.21 0.006 285.885);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.967 0.001 286.375);
-	--secondary-foreground: oklch(0.21 0.006 285.885);
-	--muted: oklch(0.967 0.001 286.375);
-	--muted-foreground: oklch(0.552 0.016 285.938);
-	--accent: oklch(0.967 0.001 286.375);
-	--accent-foreground: oklch(0.21 0.006 285.885);
-	--destructive: oklch(0.577 0.245 27.325);
-	--destructive-foreground: oklch(0.577 0.245 27.325);
-	--border: oklch(0.92 0.004 286.32);
-	--input: oklch(0.92 0.004 286.32);
-	--ring: oklch(0.705 0.015 286.067);
-	--chart-1: oklch(0.646 0.222 41.116);
-	--chart-2: oklch(0.6 0.118 184.704);
-	--chart-3: oklch(0.398 0.07 227.392);
-	--chart-4: oklch(0.828 0.189 84.429);
-	--chart-5: oklch(0.769 0.188 70.08);
-	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.141 0.005 285.823);
-	--sidebar-primary: oklch(0.21 0.006 285.885);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.967 0.001 286.375);
-	--sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-	--sidebar-border: oklch(0.92 0.004 286.32);
-	--sidebar-ring: oklch(0.705 0.015 286.067);
+	--popover-foreground: oklch(0.15 0.01 285);
+	
+	/* Primary - High contrast blue */
+	--primary: oklch(0.35 0.18 260);
+	--primary-foreground: oklch(0.99 0 0);
+	
+	/* Secondary - Light gray */
+	--secondary: oklch(0.95 0.002 286);
+	--secondary-foreground: oklch(0.15 0.01 285);
+	
+	/* Muted - Medium gray */
+	--muted: oklch(0.92 0.002 286);
+	--muted-foreground: oklch(0.45 0.015 285);
+	
+	/* Accent */
+	--accent: oklch(0.95 0.002 286);
+	--accent-foreground: oklch(0.15 0.01 285);
+	
+	/* Destructive - High contrast red */
+	--destructive: oklch(0.5 0.2 27);
+	--destructive-foreground: oklch(0.99 0 0);
+	
+	/* Borders & Inputs */
+	--border: oklch(0.88 0.005 286);
+	--input: oklch(0.88 0.005 286);
+	--ring: oklch(0.35 0.18 260);
+	
+	/* Charts */
+	--chart-1: oklch(0.6 0.2 41);
+	--chart-2: oklch(0.55 0.15 185);
+	--chart-3: oklch(0.4 0.12 227);
+	--chart-4: oklch(0.8 0.18 84);
+	--chart-5: oklch(0.7 0.18 70);
+	
+	/* Brand Colors */
+	--spotify: oklch(0.55 0.18 140);
+	--spotify-hover: oklch(0.5 0.18 140);
+	
+	/* Status Colors */
+	--success: oklch(0.5 0.16 140);
+	--warning: oklch(0.55 0.16 85);
+	--error: oklch(0.5 0.2 27);
+	--info: oklch(0.45 0.18 260);
+	
+	/* Similarity Score Colors */
+	--similarity-excellent: oklch(0.5 0.16 140);
+	--similarity-good: oklch(0.55 0.14 140);
+	--similarity-fair: oklch(0.55 0.16 85);
+	--similarity-poor: oklch(0.5 0.18 27);
+	
+	/* Spacing */
+	--radius: 0.5rem;
+	
+	/* Sidebar */
+	--sidebar: oklch(0.98 0 0);
+	--sidebar-foreground: oklch(0.15 0.01 285);
+	--sidebar-primary: oklch(0.35 0.18 260);
+	--sidebar-primary-foreground: oklch(0.99 0 0);
+	--sidebar-accent: oklch(0.95 0.002 286);
+	--sidebar-accent-foreground: oklch(0.15 0.01 285);
+	--sidebar-border: oklch(0.88 0.005 286);
+	--sidebar-ring: oklch(0.35 0.18 260);
 }
-
-/*
-  ---break---
-*/
-
+/* Dark Theme - High Contrast Design Tokens */
 .dark {
-	--background: oklch(0.141 0.005 285.823);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.141 0.005 285.823);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.141 0.005 285.823);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.985 0 0);
-	--primary-foreground: oklch(0.21 0.006 285.885);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.274 0.006 286.033);
-	--muted-foreground: oklch(0.705 0.015 286.067);
-	--accent: oklch(0.274 0.006 286.033);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.396 0.141 25.723);
-	--destructive-foreground: oklch(0.637 0.237 25.331);
-	--border: oklch(0.274 0.006 286.033);
-	--input: oklch(0.274 0.006 286.033);
-	--ring: oklch(0.442 0.017 285.786);
-	--chart-1: oklch(0.488 0.243 264.376);
-	--chart-2: oklch(0.696 0.17 162.48);
-	--chart-3: oklch(0.769 0.188 70.08);
-	--chart-4: oklch(0.627 0.265 303.9);
-	--chart-5: oklch(0.645 0.246 16.439);
-	--sidebar: oklch(0.21 0.006 285.885);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.274 0.006 286.033);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(0.274 0.006 286.033);
-	--sidebar-ring: oklch(0.442 0.017 285.786);
+	/* Core Colors */
+	--background: oklch(0.13 0.01 285);
+	--foreground: oklch(0.95 0 0);
+	
+	/* Gradients */
+	--gradient-from: oklch(0.2 0.05 240);  /* Dark blue */
+	--gradient-to: oklch(0.05 0 0);        /* Near black */
+	
+	/* Text Gradients */
+	--gradient-text-from: oklch(0.65 0.18 140); /* Brighter green */
+	--gradient-text-to: oklch(0.65 0.18 260); /* Brighter blue */
+	
+	/* Card Gradients */
+	--gradient-card-primary-from: oklch(0.25 0.05 140); /* Dark green */
+	--gradient-card-primary-to: oklch(0.25 0.05 240); /* Dark blue */
+	--gradient-card-secondary-from: oklch(0.25 0.05 240); /* Dark blue */
+	--gradient-card-secondary-to: oklch(0.25 0.05 280); /* Dark purple */
+	--gradient-card-accent-from: oklch(0.25 0.05 280); /* Dark purple */
+	--gradient-card-accent-to: oklch(0.25 0.05 320); /* Dark pink */
+	
+	/* Card & Popover */
+	--card: oklch(0.16 0.01 285);
+	--card-foreground: oklch(0.95 0 0);
+	--popover: oklch(0.16 0.01 285);
+	--popover-foreground: oklch(0.95 0 0);
+	
+	/* Primary - High contrast blue */
+	--primary: oklch(0.65 0.18 260);
+	--primary-foreground: oklch(0.13 0.01 285);
+	
+	/* Secondary - Dark gray */
+	--secondary: oklch(0.25 0.01 286);
+	--secondary-foreground: oklch(0.95 0 0);
+	
+	/* Muted - Medium gray */
+	--muted: oklch(0.25 0.01 286);
+	--muted-foreground: oklch(0.65 0.015 286);
+	
+	/* Accent */
+	--accent: oklch(0.25 0.01 286);
+	--accent-foreground: oklch(0.95 0 0);
+	
+	/* Destructive - High contrast red */
+	--destructive: oklch(0.65 0.2 27);
+	--destructive-foreground: oklch(0.13 0.01 285);
+	
+	/* Borders & Inputs */
+	--border: oklch(0.3 0.01 286);
+	--input: oklch(0.3 0.01 286);
+	--ring: oklch(0.65 0.18 260);
+	
+	/* Charts */
+	--chart-1: oklch(0.5 0.2 264);
+	--chart-2: oklch(0.7 0.15 162);
+	--chart-3: oklch(0.75 0.18 70);
+	--chart-4: oklch(0.65 0.2 304);
+	--chart-5: oklch(0.65 0.2 16);
+	
+	/* Brand Colors */
+	--spotify: oklch(0.65 0.18 140);
+	--spotify-hover: oklch(0.7 0.18 140);
+	
+	/* Status Colors */
+	--success: oklch(0.65 0.16 140);
+	--warning: oklch(0.7 0.16 85);
+	--error: oklch(0.65 0.2 27);
+	--info: oklch(0.65 0.18 260);
+	
+	/* Similarity Score Colors */
+	--similarity-excellent: oklch(0.65 0.16 140);
+	--similarity-good: oklch(0.6 0.14 140);
+	--similarity-fair: oklch(0.7 0.16 85);
+	--similarity-poor: oklch(0.65 0.18 27);
+	
+	/* Sidebar */
+	--sidebar: oklch(0.18 0.01 285);
+	--sidebar-foreground: oklch(0.95 0 0);
+	--sidebar-primary: oklch(0.65 0.18 260);
+	--sidebar-primary-foreground: oklch(0.13 0.01 285);
+	--sidebar-accent: oklch(0.25 0.01 286);
+	--sidebar-accent-foreground: oklch(0.95 0 0);
+	--sidebar-border: oklch(0.3 0.01 286);
+	--sidebar-ring: oklch(0.65 0.18 260);
 }
-
-/*
-  ---break---
-*/
-
+/* Theme inline definitions for Tailwind utilities */
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
@@ -209,11 +391,17 @@ body {
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
+	--color-spotify: var(--spotify);
+	--color-spotify-hover: var(--spotify-hover);
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-error: var(--error);
+	--color-info: var(--info);
+	--color-similarity-excellent: var(--similarity-excellent);
+	--color-similarity-good: var(--similarity-good);
+	--color-similarity-fair: var(--similarity-fair);
+	--color-similarity-poor: var(--similarity-poor);
 }
-
-/*
-  ---break---
-*/
 
 @layer base {
 	* {
@@ -221,44 +409,7 @@ body {
 	}
 	body {
 		@apply bg-background text-foreground;
-	}
-
-	/* Custom scrollbar styling */
-	::-webkit-scrollbar {
-		width: 6px;
-		height: 6px;
-	}
-
-	::-webkit-scrollbar-track {
-		background: transparent;
-		margin: 4px;
-	}
-
-	::-webkit-scrollbar-thumb {
-		background: rgba(75, 85, 99, 0.5);
-		border-radius: 10px;
-	}
-
-	::-webkit-scrollbar-thumb:hover {
-		background: rgba(75, 85, 99, 0.7);
-	}
-
-	/* Hide scrollbar when not in use but keep functionality */
-	.hide-scrollbar::-webkit-scrollbar {
-		width: 0px;
-		background: transparent;
-	}
-
-	.hide-scrollbar {
-		scrollbar-width: none; /* Firefox */
-		-ms-overflow-style: none; /* IE and Edge */
-	}
-
-	.hover-show-scrollbar::-webkit-scrollbar-thumb {
-		background: transparent;
-	}
-
-	.hover-show-scrollbar:hover::-webkit-scrollbar-thumb {
-		background: rgba(75, 85, 99, 0.5);
+		/* Smooth transitions for theme changes */
+		transition: background-color 0.3s ease, color 0.3s ease;
 	}
 }

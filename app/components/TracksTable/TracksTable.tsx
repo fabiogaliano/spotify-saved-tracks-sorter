@@ -90,16 +90,16 @@ export function TracksTable({
 
 	return (
 		<>
-			<div className="w-full overflow-x-auto border border-gray-200 rounded-2xl">
-				<table className="w-full min-w-[800px] divide-y divide-gray-200">
-					<thead className="bg-gray-50">
+			<div className="w-full overflow-x-auto border border-border rounded-2xl">
+				<table className="w-full min-w-[800px] divide-y divide-border">
+					<thead className="bg-muted">
 						{table.getHeaderGroups().map(headerGroup => (
 							<tr key={headerGroup.id}>
 								{headerGroup.headers.map(header => (
 									<th
 										key={header.id}
 										scope="col"
-										className={`py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sm:pl-6 whitespace-nowrap
+										className={`py-3 pl-4 pr-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider sm:pl-6 whitespace-nowrap
                     ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
 										onClick={header.column.getToggleSortingHandler()}
 									>
@@ -121,13 +121,13 @@ export function TracksTable({
 							</tr>
 						))}
 					</thead>
-					<tbody className="bg-white divide-y divide-gray-200">
+					<tbody className="bg-background divide-y divide-border">
 						{rows.map(row => (
-							<tr key={row.id} className="hover:bg-gray-50">
+							<tr key={row.id} className="hover:bg-muted/50">
 								{row.getVisibleCells().map(cell => (
 									<td
 										key={cell.id}
-										className={`px-3 py-4 text-sm text-gray-500 ${
+										className={`px-3 py-4 text-sm text-muted-foreground ${
 											cell.column.id === 'id'
 												? 'w-[180px] text-right'
 												: cell.column.id === 'name'
@@ -153,11 +153,11 @@ export function TracksTable({
 			</div>
 			<div ref={containerRef} className="h-20 flex items-center justify-center">
 				{isLoading ? (
-					<div className="animate-pulse text-gray-500">Loading more tracks...</div>
+					<div className="animate-pulse text-muted-foreground">Loading more tracks...</div>
 				) : !allRowsLoaded ? (
-					<div className="text-gray-400">Scroll to load more</div>
+					<div className="text-muted-foreground">Scroll to load more</div>
 				) : (
-					<div className="text-gray-400">All tracks loaded</div>
+					<div className="text-muted-foreground">All tracks loaded</div>
 				)}
 			</div>
 		</>

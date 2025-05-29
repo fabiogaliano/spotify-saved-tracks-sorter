@@ -56,8 +56,8 @@ const TrackList: React.FC<TrackListProps> = ({
   };
 
   return (
-    <Card className="bg-gray-900/80 border-gray-800 h-full">
-      <CardHeader className="pb-2 border-b border-gray-800">
+    <Card className="bg-card border-border h-full">
+      <CardHeader className="pb-2 border-b border-border">
         <SectionTitle
           icon={<IconContainer icon={Music} color="green" />}
           title="Playlist Tracks"

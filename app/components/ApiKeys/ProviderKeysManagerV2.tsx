@@ -250,7 +250,7 @@ export function ProviderKeysManager({
     <div className={`space-y-6 ${className}`}>
       <div className="flex flex-col gap-4">
         <h3 className="text-sm font-medium">API Keys</h3>
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-muted-foreground/60">
           Add your own API keys for language models to use in the application.
         </p>
         {notification && (
@@ -273,7 +273,7 @@ export function ProviderKeysManager({
                   p-3 transition-all border
                   ${status.hasKey
                     ? 'bg-blue-50/50 border-blue-200'
-                    : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                    : 'bg-muted border-border hover:border-gray-300'
                   }
                   rounded-xl cursor-pointer
                 `}
@@ -370,7 +370,7 @@ export function ProviderKeysManager({
 
               {/* API Key Form - appears when no key is present */}
               {!status.hasKey && (
-                <div className="p-4 border border-gray-200 border-t-0 bg-white rounded-b-xl">
+                <div className="p-4 border border-border border-t-0 bg-white rounded-b-xl">
                   <ApiKeyManager
                     providers={[status.provider]}
                     initialProvider={status.provider}

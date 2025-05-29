@@ -15,9 +15,9 @@ interface TrackRowAnalysisIndicatorProps {
 const badgeStyle: Record<UIAnalysisStatus, string> = {
   analyzed: "bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30 cursor-pointer",
   pending: "bg-blue-500/20 border-blue-500 text-blue-400",
-  not_analyzed: "bg-gray-500/20 border-gray-600 text-gray-400 hover:bg-gray-500/30 cursor-pointer",
+  not_analyzed: "bg-secondary/20 border-border text-muted-foreground hover:bg-secondary/30 cursor-pointer",
   failed: "bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30 cursor-pointer",
-  unknown: "bg-gray-500/20 border-gray-600 text-gray-400"
+  unknown: "bg-secondary/20 border-border text-muted-foreground"
 };
 
 const statusText: Record<UIAnalysisStatus, string> = {

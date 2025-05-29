@@ -11,7 +11,7 @@ interface StylesType {
 
 // Common styles
 const styles: StylesType = {
-  card: "bg-gray-900/80 border-gray-800",
+  card: "bg-card border-border",
   iconContainer: "p-2 rounded-full"
 };
 
@@ -34,7 +34,7 @@ export const StatusCardWithJobStatus = ({
   value,
   icon,
   iconBg,
-  valueColor = 'text-white',
+  valueColor = 'text-foreground',
   currentJob,
   showJobStatus = false,
   tracksProcessed = 0,
@@ -161,7 +161,7 @@ export const StatusCardWithJobStatus = ({
   const cardContent = (
     <CardContent className="p-4 flex items-center justify-between relative">
       <div>
-        <p className="text-gray-400 text-sm">{title}</p>
+        <p className="text-muted-foreground text-sm">{title}</p>
         <p className={`${valueColor} text-2xl font-bold`}>{displayValue}</p>
       </div>
       <div className="flex items-center">
@@ -170,7 +170,7 @@ export const StatusCardWithJobStatus = ({
             <InfoIcon className="h-4 w-4 text-blue-400" />
           </div>
         )}
-        <div className={`${iconBg || 'bg-gray-800'} ${styles.iconContainer}`}>
+        <div className={`${iconBg || 'bg-card'} ${styles.iconContainer}`}>
           {icon}
         </div>
       </div>
@@ -209,7 +209,7 @@ export const StatusCardWithJobStatus = ({
                 {/* Close button */}
                 <button
                   onClick={handleManualClose}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-gray-800/80 hover:bg-gray-700/80 text-gray-400 hover:text-white transition-colors z-10"
+                  className="absolute top-2 right-2 p-1 rounded-full bg-card hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors z-10"
                   aria-label="Close progress indicator"
                 >
                   <X className="h-3 w-3" />

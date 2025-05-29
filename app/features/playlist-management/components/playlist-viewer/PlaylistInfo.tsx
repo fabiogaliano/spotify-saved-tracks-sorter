@@ -24,7 +24,7 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
   const [aiFlag, setAiFlag] = useState('');
 
   return (
-    <Card className="bg-gray-900/80 border-gray-800">
+    <Card className="bg-card border-border">
       <CardContent className="p-6">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Playlist Image */}
@@ -35,12 +35,12 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
           {/* Playlist Info */}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-2xl font-bold text-white">{currentPlaylist.name}</h2>
+              <h2 className="text-2xl font-bold text-foreground">{currentPlaylist.name}</h2>
               {currentPlaylist.aiEnabled && (
                 <IconContainer icon={Sparkles} color={currentPlaylist.imageColor} />
               )}
             </div>
-            <p className="text-gray-300">{currentPlaylist.songCount} songs</p>
+            <p className="text-muted-foreground">{currentPlaylist.songCount} songs</p>
 
             <div className="mt-4 flex flex-col gap-4">
               <div className="flex flex-col">
@@ -49,7 +49,7 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-6 px-2 py-0 text-xs text-gray-400 hover:text-white hover:bg-transparent"
+                      className="h-6 px-2 py-0 text-xs text-muted-foreground hover:text-foreground hover:bg-transparent"
                       onClick={() => {
                         setAiFlag(currentPlaylist.description.replace('AI: ', ''));
                         setEditDescriptionMode(true);
@@ -63,13 +63,13 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
                 {editDescriptionMode ? (
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <div className="bg-gray-800 text-green-400 font-medium px-2 py-1 text-sm rounded-md border border-gray-700">
+                      <div className="bg-card text-green-400 font-medium px-2 py-1 text-sm rounded-md border border-border">
                         AI:
                       </div>
                       <Textarea
                         value={aiFlag}
                         onChange={(e) => setAiFlag(e.target.value)}
-                        className="flex-1 bg-gray-800 border-gray-700 text-white min-h-[80px]"
+                        className="flex-1 bg-card border-border text-foreground min-h-[80px]"
                         placeholder="Describe the type of music you want in this playlist..."
                       />
                     </div>
@@ -77,14 +77,14 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-gray-400 border-gray-700 hover:bg-gray-800 hover:text-white"
+                        className="text-muted-foreground border-border hover:bg-card hover:text-foreground"
                         onClick={() => setEditDescriptionMode(false)}
                       >
                         Cancel
                       </Button>
                       <Button
                         size="sm"
-                        className="bg-white/10 hover:bg-white/20 text-white border-0"
+                        className="bg-white/10 hover:bg-white/20 text-foreground border-0"
                         onClick={() => {
                           onEditDescription();
                           setEditDescriptionMode(false);
@@ -95,14 +95,14 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-gray-800 rounded-md p-3 border border-gray-700">
+                  <div className="bg-card rounded-md p-3 border border-border">
                     {currentPlaylist.aiEnabled ? (
-                      <div className="text-gray-300">
+                      <div className="text-muted-foreground">
                         <span className="text-green-400 font-medium">AI: </span>
                         {currentPlaylist.description.replace('AI: ', '')}
                       </div>
                     ) : (
-                      <div className="text-gray-400">
+                      <div className="text-muted-foreground">
                         {currentPlaylist.description}
                         <div className="mt-2 text-xs">
                           <span className="text-yellow-400">⚠️ </span>
@@ -114,10 +114,10 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center justify-between border-t border-gray-800 pt-4">
+              <div className="flex items-center justify-between border-t border-border pt-4">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-300">AI Sorting</span>
+                    <span className="text-sm text-muted-foreground">AI Sorting</span>
                     <Switch
                       checked={currentPlaylist.aiEnabled}
                       onCheckedChange={onEnableAI}
@@ -131,7 +131,7 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
 
                 <Button
                   size="sm"
-                  className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 hover:border-gray-600 transition-colors gap-1"
+                  className="bg-card border-border text-foreground hover:bg-secondary hover:border-border transition-colors gap-1"
                   onClick={onRescanPlaylist}
                 >
                   <RefreshCw className="h-3.5 w-3.5" />

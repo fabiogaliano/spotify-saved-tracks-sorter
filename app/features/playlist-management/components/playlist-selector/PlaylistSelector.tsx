@@ -29,8 +29,8 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
 }) => {
   return (
     <div className="md:col-span-4 lg:col-span-3">
-      <Card className="bg-gray-900/80 border-gray-800 h-full">
-        <CardHeader className="pb-2 border-b border-gray-800">
+      <Card className="bg-card border-border h-full">
+        <CardHeader className="pb-2 border-b border-border">
           <div className="flex justify-between items-center">
             <SectionTitle
               icon={<IconContainer icon={ListMusic} color="purple" />}
@@ -40,15 +40,15 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
           </div>
         </CardHeader>
 
-        <div className="p-4 border-b border-gray-800">
+        <div className="p-4 border-b border-border">
           <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search playlists..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 bg-gray-900/50 border-gray-800"
+              className="pl-10 bg-card/50 border-border"
             />
           </div>
         </div>
@@ -56,9 +56,9 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
         <CardContent className="p-4 space-y-2">
           <ScrollArea className="h-[calc(100vh-350px)] pr-4">
             <Tabs value={selectedTab} onValueChange={(value) => onTabChange(value as PlaylistDetailViewTabs)}>
-              <TabsList className="bg-gray-900/50 border border-gray-800 w-full grid grid-cols-2">
-                <TabsTrigger value="is_flagged" className="data-[state=active]:bg-gray-800 text-gray-400 data-[state=active]:text-white">AI-Enabled</TabsTrigger>
-                <TabsTrigger value="others" className="data-[state=active]:bg-gray-800 text-gray-400 data-[state=active]:text-white">Others Playlists</TabsTrigger>
+              <TabsList className="bg-card/50 border border-border w-full grid grid-cols-2">
+                <TabsTrigger value="is_flagged" className="data-[state=active]:bg-card text-muted-foreground data-[state=active]:text-foreground">AI-Enabled</TabsTrigger>
+                <TabsTrigger value="others" className="data-[state=active]:bg-card text-muted-foreground data-[state=active]:text-foreground">Others Playlists</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -69,8 +69,8 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
                     key={playlist.id}
                     onClick={() => onSelectPlaylist(playlist.id)}
                     className={`w-full p-3 text-left rounded-md transition-colors ${selectedPlaylist === playlist.id
-                      ? 'bg-gradient-to-r from-green-900/40 to-blue-900/40 border border-green-800/80 text-white'
-                      : 'bg-gray-800/50 border border-gray-700 text-white hover:bg-gray-800 hover:border-gray-600'
+                      ? 'bg-card-primary border border-primary/30 text-foreground'
+                      : 'bg-card/50 border border-border text-foreground hover:bg-card hover:border-border'
                       }`}
                   >
                     <div className="flex items-center gap-3">

@@ -7,7 +7,7 @@ export function SpotifySignOut({ className, ...props }: SpotifySignOutProps) {
     <div className={`flex items-center justify-between ${className || ''}`} {...props}>
       <a
         href="/auth/logout"
-        className="px-4 py-2 rounded-full font-medium text-sm bg-gray-100 text-gray-700 flex items-center justify-center hover:bg-gray-200 hover:text-gray-500 transition-all duration-200 active:scale-95"
+        className="px-4 py-2 rounded-full font-medium text-sm bg-muted text-muted-foreground/50 flex items-center justify-center hover:bg-muted hover:text-muted-foreground/70 transition-all duration-200 active:scale-95"
       >
         Sign Out
       </a>

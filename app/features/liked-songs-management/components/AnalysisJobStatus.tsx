@@ -20,10 +20,10 @@ export const AnalysisJobStatus = ({
   const completionPercentage = (tracksProcessed / trackCount) * 100 || 0;
   
   return (
-    <Card className="bg-gray-900/80 border-gray-800">
+    <Card className="bg-card border-border">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-white font-medium">Analysis Job Status</h3>
+          <h3 className="text-foreground font-medium">Analysis Job Status</h3>
           <div className="flex items-center">
             {status === 'completed' && <CheckCircle className="h-4 w-4 text-green-500 mr-1" />}
             {status === 'in_progress' && <Clock className="h-4 w-4 text-blue-500 mr-1 animate-spin" />}
@@ -36,7 +36,7 @@ export const AnalysisJobStatus = ({
         </div>
 
         {/* Progress bar */}
-        <div className="w-full bg-gray-800 h-2 rounded-full mb-2">
+        <div className="w-full bg-card h-2 rounded-full mb-2">
           <div 
             className={`h-full rounded-full ${
               status === 'completed' ? 'bg-green-500' : 
@@ -45,18 +45,18 @@ export const AnalysisJobStatus = ({
           />
         </div>
         
-        <div className="flex justify-between text-xs text-gray-400">
+        <div className="flex justify-between text-xs text-muted-foreground">
           <span>{tracksProcessed} of {trackCount} tracks processed</span>
           <span>{completionPercentage.toFixed(0)}%</span>
         </div>
         
         <div className="grid grid-cols-2 gap-2 mt-2">
-          <div className="bg-gray-800/50 p-2 rounded">
-            <span className="text-xs text-gray-400">Succeeded</span>
+          <div className="bg-card/50 p-2 rounded">
+            <span className="text-xs text-muted-foreground">Succeeded</span>
             <p className="text-green-400 font-medium">{tracksSucceeded}</p>
           </div>
-          <div className="bg-gray-800/50 p-2 rounded">
-            <span className="text-xs text-gray-400">Failed</span>
+          <div className="bg-card/50 p-2 rounded">
+            <span className="text-xs text-muted-foreground">Failed</span>
             <p className="text-red-400 font-medium">{tracksFailed}</p>
           </div>
         </div>

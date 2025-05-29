@@ -8,11 +8,11 @@ import { TableElements } from './TableElements';
 
 export const LoadingTracksState: React.FC<{ currentPlaylist: PlaylistUIFormat }> = ({ currentPlaylist }) => (
   <div className="flex flex-col items-center justify-center p-12 h-[calc(100vh-500px)]">
-    <div className="bg-gray-800 rounded-full p-5 mb-4">
-      <RefreshCcw className="h-10 w-10 text-gray-600 animate-spin" />
+    <div className="bg-card rounded-full p-5 mb-4">
+      <RefreshCcw className="h-10 w-10 text-muted-foreground/60 animate-spin" />
     </div>
-    <h3 className="text-xl font-medium text-white mb-2">Loading Tracks</h3>
-    <p className="text-gray-400 max-w-md text-center mb-6">
+    <h3 className="text-xl font-medium text-foreground mb-2">Loading Tracks</h3>
+    <p className="text-muted-foreground max-w-md text-center mb-6">
       Fetching tracks for this playlist...
     </p>
     {currentPlaylist?.songCount === 0 && (
@@ -30,11 +30,11 @@ export const NotStartedSyncState: React.FC<{
   playlistIsEmpty?: boolean;
 }> = ({ syncPlaylistTracks, currentPlaylistId, isSyncing, playlistIsEmpty = false }) => (
   <div className="flex flex-col items-center justify-center p-12 h-[calc(100vh-500px)]">
-    <div className="bg-gray-800 rounded-full p-5 mb-4">
-      <RefreshCcw className="h-10 w-10 text-gray-600" />
+    <div className="bg-card rounded-full p-5 mb-4">
+      <RefreshCcw className="h-10 w-10 text-muted-foreground/60" />
     </div>
-    <h3 className="text-xl font-medium text-white mb-2">Tracks Not Synced</h3>
-    <p className="text-gray-400 max-w-md text-center mb-6">
+    <h3 className="text-xl font-medium text-foreground mb-2">Tracks Not Synced</h3>
+    <p className="text-muted-foreground max-w-md text-center mb-6">
       {playlistIsEmpty
         ? "This playlist appears to be empty. No tracks to sync."
         : "This playlist's tracks haven't been synced yet. Sync now to view and manage tracks in this playlist."}
@@ -43,7 +43,7 @@ export const NotStartedSyncState: React.FC<{
       <Button
         onClick={() => syncPlaylistTracks(currentPlaylistId)}
         disabled={isSyncing}
-        className="bg-green-600 hover:bg-green-700 text-white border-0 transition-colors gap-2"
+        className="bg-green-600 hover:bg-green-700 text-foreground border-0 transition-colors gap-2"
       >
         <RefreshCcw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
         {isSyncing ? 'Syncing...' : 'Sync Playlist Tracks'}
@@ -61,14 +61,14 @@ export const FailedSyncEmptyState: React.FC<{
     <div className="bg-red-900/30 rounded-full p-5 mb-4">
       <AlertTriangle className="h-10 w-10 text-red-500" />
     </div>
-    <h3 className="text-xl font-medium text-white mb-2">Sync Failed</h3>
-    <p className="text-gray-400 max-w-md text-center mb-6">
+    <h3 className="text-xl font-medium text-foreground mb-2">Sync Failed</h3>
+    <p className="text-muted-foreground max-w-md text-center mb-6">
       There was an error syncing tracks for this playlist. Please try again.
     </p>
     <Button
       onClick={() => syncPlaylistTracks(currentPlaylistId)}
       disabled={isSyncing}
-      className="bg-red-700 hover:bg-red-800 text-white border-0 transition-colors gap-2"
+      className="bg-red-700 hover:bg-red-800 text-foreground border-0 transition-colors gap-2"
     >
       <RefreshCcw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
       Retry Sync
@@ -84,17 +84,17 @@ export const FailedSyncWithTracksState: React.FC<{
 }> = ({ syncPlaylistTracks, currentPlaylistId, isSyncing, playlistTracks }) => (
   <>
     {/* Blurred overlay with error message */}
-    <div className="absolute inset-0 backdrop-blur-sm bg-black/40 z-10 flex flex-col items-center justify-center p-6">
+    <div className="absolute inset-0 backdrop-blur-sm bg-background/40 z-10 flex flex-col items-center justify-center p-6">
       <div className="bg-red-900/80 rounded-lg p-6 max-w-md text-center border border-red-700">
         <AlertTriangle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-        <h3 className="text-xl font-medium text-white mb-2">Sync Failed</h3>
-        <p className="text-gray-200 mb-4">
+        <h3 className="text-xl font-medium text-foreground mb-2">Sync Failed</h3>
+        <p className="text-foreground mb-4">
           There was an error syncing tracks for this playlist. Please try again.
         </p>
         <Button
           onClick={() => syncPlaylistTracks(currentPlaylistId)}
           disabled={isSyncing}
-          className="bg-red-700 hover:bg-red-800 text-white border-0 transition-colors gap-2"
+          className="bg-red-700 hover:bg-red-800 text-foreground border-0 transition-colors gap-2"
         >
           <RefreshCcw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
           Retry Sync

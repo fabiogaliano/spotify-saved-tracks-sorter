@@ -24,10 +24,10 @@ export function HelpButton() {
           rounded-full
           font-medium
           text-sm
-          bg-gray-100 
-          text-gray-700 
+          bg-muted 
+          text-muted-foreground/50 
           flex items-center justify-center 
-          hover:bg-gray-200 hover:text-gray-500 
+          hover:bg-muted hover:text-muted-foreground/70 
           transition-all duration-200 
           active:scale-95"
 			>
@@ -38,7 +38,7 @@ export function HelpButton() {
 				<>
 					{/* Backdrop */}
 					<div
-						className="fixed inset-0 bg-black/50 z-40"
+						className="fixed inset-0 bg-background/50 z-40"
 						onClick={() => setShowInstructions(false)}
 					/>
 
@@ -55,7 +55,7 @@ export function HelpButton() {
 					>
 						<div
 							className={`
-              bg-white rounded-2xl shadow-lg border border-gray-200 
+              bg-white rounded-2xl shadow-lg border border-border 
               ${isMobile ? 'h-full' : ''}
               overflow-y-auto
             `}
@@ -63,7 +63,7 @@ export function HelpButton() {
 							<div className="sticky top-0 right-0 p-2 flex justify-end bg-white border-b">
 								<button
 									onClick={() => setShowInstructions(false)}
-									className="p-2 text-gray-400 hover:text-gray-600"
+									className="p-2 text-muted-foreground hover:text-muted-foreground/60"
 								>
 									✕
 								</button>

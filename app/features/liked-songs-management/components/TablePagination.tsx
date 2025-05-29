@@ -9,7 +9,7 @@ interface StylesType {
 
 const styles: StylesType = {
   button: {
-    outline: "border-gray-700 text-white hover:bg-gray-800 bg-gray-800/50"
+    outline: "border-border text-foreground hover:bg-card bg-card/50"
   }
 };
 
@@ -30,7 +30,7 @@ export const TablePagination = ({ table }: TablePaginationProps) => {
       >
         Previous
       </Button>
-      <span className="text-white">
+      <span className="text-foreground">
         Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
       </span>
       <Button

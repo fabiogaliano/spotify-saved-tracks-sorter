@@ -28,7 +28,7 @@ export const AnalysisControls = ({
           <Button
             id="column-visibility-button"
             variant="outline"
-            className="border-gray-700 text-white hover:bg-gray-800 bg-gray-800/50 flex gap-1"
+            className="border-border text-foreground hover:bg-card bg-card/50 flex gap-1"
             type="button"
             onClick={() => {
               // Directly toggle a visible state for the dropdown
@@ -46,16 +46,16 @@ export const AnalysisControls = ({
           {/* Custom dropdown implementation */}
           <div
             id="column-visibility-menu"
-            className="absolute right-0 top-full mt-1 bg-gray-800/95 border border-gray-700 text-white w-52 p-2 rounded-md shadow-lg z-50"
+            className="absolute right-0 top-full mt-1 bg-card/95 border border-border text-foreground w-52 p-2 rounded-md shadow-lg z-50"
             style={{ display: 'none' }}
           >
-            <div className="text-gray-300 font-semibold px-2 mb-2">Toggle columns</div>
-            <div className="h-px bg-gray-700 mb-2" />
+            <div className="text-muted-foreground font-semibold px-2 mb-2">Toggle columns</div>
+            <div className="h-px bg-secondary mb-2" />
 
             {columns.map((column) => (
               <div
                 key={column.id}
-                className="flex items-center gap-2 px-2 py-2 hover:bg-gray-700/70 rounded cursor-pointer"
+                className="flex items-center gap-2 px-2 py-2 hover:bg-secondary/70 rounded cursor-pointer"
                 onClick={() => {
                   if (column.toggleVisibility) {
                     // Toggle visibility directly if it's a table column
@@ -72,7 +72,7 @@ export const AnalysisControls = ({
               >
                 <Checkbox
                   checked={column.getIsVisible ? column.getIsVisible() : columnVisibility[column.id]}
-                  className="data-[state=checked]:bg-blue-500 border-gray-600"
+                  className="data-[state=checked]:bg-blue-500 border-border"
                 />
                 <span className="capitalize">
                   {column.id.replace(/([A-Z])/g, ' $1').trim()}

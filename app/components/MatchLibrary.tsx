@@ -83,7 +83,7 @@ export function MatchLibrary({ savedTracks, playlists }: MatchLibraryProps) {
 	}
 
 	return (
-		<div className="p-4 bg-gray-800 rounded-lg">
+		<div className="p-4 bg-card rounded-lg">
 			<h2 className="text-xl font-bold mb-4">Match Library</h2>
 
 			<button
@@ -104,7 +104,7 @@ export function MatchLibrary({ savedTracks, playlists }: MatchLibraryProps) {
 						{matchResults.map(result => (
 							<div
 								key={result.song.track.id}
-								className="border border-gray-700 rounded-lg p-3"
+								className="border border-border rounded-lg p-3"
 							>
 								<h4 className="font-medium">
 									{result.song.track.artist} - {result.song.track.title}
@@ -112,22 +112,22 @@ export function MatchLibrary({ savedTracks, playlists }: MatchLibraryProps) {
 
 								{result.matches.length > 0 ? (
 									<div className="mt-2 space-y-2">
-										<p className="text-sm text-gray-400">Top matches:</p>
+										<p className="text-sm text-muted-foreground">Top matches:</p>
 										{result.matches.map(({ playlist, matchResult }) => (
 											<div
 												key={playlist.id}
-												className="flex items-center justify-between text-sm p-2 bg-gray-900 rounded-sm"
+												className="flex items-center justify-between text-sm p-2 bg-secondary rounded-sm"
 											>
 												<span>{playlist.name || `Playlist ${playlist.id}`}</span>
 												<span
-													className={`px-2 py-1 rounded ${
+													className={`px-2 py-1 rounded text-foreground ${
 														matchResult.similarity > 0.8
-															? 'bg-green-600'
+															? 'bg-similarity-excellent'
 															: matchResult.similarity > 0.6
-															? 'bg-green-800'
+															? 'bg-similarity-good'
 															: matchResult.similarity > 0.4
-															? 'bg-yellow-600'
-															: 'bg-red-600'
+															? 'bg-similarity-fair'
+															: 'bg-similarity-poor'
 													}`}
 												>
 													{(matchResult.similarity * 100).toFixed(1)}%
@@ -136,7 +136,7 @@ export function MatchLibrary({ savedTracks, playlists }: MatchLibraryProps) {
 										))}
 									</div>
 								) : (
-									<p className="text-sm text-gray-400 mt-2">No matches found</p>
+									<p className="text-sm text-muted-foreground mt-2">No matches found</p>
 								)}
 							</div>
 						))}
@@ -153,7 +153,7 @@ export function MatchLibrary({ savedTracks, playlists }: MatchLibraryProps) {
 								key={playlist.id}
 								onClick={() => matchPlaylist(playlist)}
 								disabled={isMatching}
-								className="p-2 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 disabled:opacity-50 truncate"
+								className="p-2 bg-secondary rounded-lg text-sm hover:bg-secondary disabled:opacity-50 truncate"
 							>
 								{playlist.name || `Playlist ${playlist.id}`}
 							</button>

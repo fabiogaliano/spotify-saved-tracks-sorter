@@ -1,6 +1,6 @@
 export function Help() {
   return (
-    <div className="bg-gray-50 rounded-2xl p-6 mb-8">
+    <div className="bg-muted rounded-2xl p-6 mb-8">
       <h2 className="text-lg font-semibold mb-4">How it works</h2>
       
       <h3 className="font-medium mb-2">Setting up playlists</h3>
@@ -11,7 +11,7 @@ export function Help() {
       </ol>
       
       <div className="mt-4 p-4 bg-white rounded-xl mb-6">
-        <p className="text-sm text-gray-600">Example description:</p>
+        <p className="text-sm text-muted-foreground/60">Example description:</p>
         <p className="font-medium">AI: falling in love and taking life slowly</p>
       </div>
 
@@ -30,9 +30,9 @@ export function Help() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full bg-white border border-border flex items-center justify-center">
             {/* Skip/Pause icon */}
-            <svg className="w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-3 h-3 text-muted-foreground" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14m8-14v14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
@@ -54,7 +54,7 @@ export function Help() {
         </div>
       </div>
 
-      <p className="text-sm text-gray-600 mt-4">
+      <p className="text-sm text-muted-foreground/60 mt-4">
         Tip: You can click or drag the control button to change a track's status
       </p>
     </div>
