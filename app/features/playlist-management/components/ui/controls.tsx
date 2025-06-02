@@ -25,7 +25,7 @@ export const IconContainer = ({ icon: Icon, color, size = 'md' }: { icon: React.
 
 export const SectionTitle = ({ icon, title, count }: { icon: React.ReactNode, title: string, count?: number }) => {
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center gap-4">
       <CardTitle className="text-lg flex items-center gap-2 text-foreground">
         {icon}
         <span className="font-bold">{title}</span>

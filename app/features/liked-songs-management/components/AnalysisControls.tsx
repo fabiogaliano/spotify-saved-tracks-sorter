@@ -21,7 +21,7 @@ export const AnalysisControls = ({
 }: AnalysisControlsProps) => {
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-4">
       <div className="flex items-center space-x-2">
         {/* Column visibility dropdown */}
         <div className="relative">

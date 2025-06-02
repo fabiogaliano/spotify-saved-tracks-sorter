@@ -250,17 +250,6 @@ export const LikedSongsTable = () => {
 
   return (
     <div className="h-full flex flex-col space-y-6">
-      {/* Track Analysis Modal */}
-      {selectedTrack && (
-        <TrackAnalysisModal
-          trackName={selectedTrack.track.name}
-          artistName={selectedTrack.track.artist}
-          analysis={selectedTrack.analysis?.analysis}
-          isOpen={isAnalysisModalOpen}
-          onOpenChange={setIsAnalysisModalOpen}
-        />
-      )}
-
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground mb-1">Liked Songs Analysis</h1>

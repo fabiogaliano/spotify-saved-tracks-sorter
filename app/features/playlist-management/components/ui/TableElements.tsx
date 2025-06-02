@@ -4,10 +4,10 @@ export const TableElements = {
   Header: () => (
     <thead className="border-b border-border">
       <tr>
-        <th className="text-left text-xs font-medium text-muted-foreground p-2">#</th>
-        <th className="text-left text-xs font-medium text-muted-foreground p-2">Title</th>
-        <th className="text-left text-xs font-medium text-muted-foreground p-2">Album</th>
-        <th className="text-left text-xs font-medium text-muted-foreground p-2">Date Added</th>
+        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">#</th>
+        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Title</th>
+        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Album</th>
+        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Date Added</th>
       </tr>
     </thead>
   ),
@@ -18,15 +18,15 @@ export const TableElements = {
 
     return (
       <tr className="border-b border-border hover:bg-card/50 transition-colors">
-        <td className="text-muted-foreground p-2 w-10 text-right">{index + 1}</td>
-        <td className="text-foreground p-2">
+        <td className="text-muted-foreground px-4 py-3 w-10 text-right">{index + 1}</td>
+        <td className="text-foreground px-4 py-3">
           <div className="flex flex-col">
             <span className="font-medium">{track.title}</span>
             <span className="text-muted-foreground text-sm">{track.artist}</span>
           </div>
         </td>
-        <td className="text-muted-foreground p-2">{track.album}</td>
-        <td className="text-muted-foreground text-sm p-2">
+        <td className="text-muted-foreground px-4 py-3">{track.album}</td>
+        <td className="text-muted-foreground text-sm px-4 py-3">
           <span title={fullDate}>
             {relativeDate}
           </span>

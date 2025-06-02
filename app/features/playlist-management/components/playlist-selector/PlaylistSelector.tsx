@@ -29,7 +29,7 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
 }) => {
   return (
     <div className="md:col-span-4 lg:col-span-3">
-      <Card className="bg-card border-border h-full">
+      <Card className="bg-card border-border h-full flex flex-col">
         <CardHeader className="pb-2 border-b border-border">
           <div className="flex justify-between items-center">
             <SectionTitle
@@ -40,7 +40,7 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
           </div>
         </CardHeader>
 
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border flex-shrink-0">
           <div className="relative">
             <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -53,8 +53,8 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
           </div>
         </div>
 
-        <CardContent className="p-4 space-y-2">
-          <ScrollArea className="h-[calc(100vh-350px)] pr-4">
+        <CardContent className="p-4 space-y-2 flex-1 min-h-0">
+          <ScrollArea className="h-[calc(100vh-320px)] pr-4">
             <Tabs value={selectedTab} onValueChange={(value) => onTabChange(value as PlaylistDetailViewTabs)}>
               <TabsList className="bg-card/50 border border-border w-full grid grid-cols-2">
                 <TabsTrigger value="is_flagged" className="data-[state=active]:bg-card text-muted-foreground data-[state=active]:text-foreground">AI-Enabled</TabsTrigger>
@@ -68,9 +68,9 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
                   <button
                     key={playlist.id}
                     onClick={() => onSelectPlaylist(playlist.id)}
-                    className={`w-full p-3 text-left rounded-md transition-colors ${selectedPlaylist === playlist.id
+                    className={`w-full p-3 min-h-[44px] text-left rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background ${selectedPlaylist === playlist.id
                       ? 'bg-card-primary border border-primary/30 text-foreground'
-                      : 'bg-card/50 border border-border text-foreground hover:bg-card hover:border-border'
+                      : 'bg-card/50 border border-border text-foreground hover:bg-card hover:border-border active:bg-card'
                       }`}
                   >
                     <div className="flex items-center gap-3">

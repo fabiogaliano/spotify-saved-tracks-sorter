@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export const Header = ({ userName, image }: HeaderProps) => {
   return (
-    <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 md:gap-6">
       {/* Nav */}
       <div className="text-2xl md:text-3xl font-bold bg-gradient-brand">
         Sorted.
@@ -22,8 +22,8 @@ export const Header = ({ userName, image }: HeaderProps) => {
         <p className="text-muted-foreground">Organize your Spotify library intelligently</p>
       </div>
 
-      <div className="flex items-center gap-2">
-        {userName}
+      <div className="flex items-center gap-3 md:gap-4 flex-wrap">
+        <span className="text-sm md:text-base">{userName}</span>
         <Avatar>
           <AvatarImage src={image} />
           <AvatarFallback className="text-muted-foreground/50">{userName[0] + userName[1]}</AvatarFallback>

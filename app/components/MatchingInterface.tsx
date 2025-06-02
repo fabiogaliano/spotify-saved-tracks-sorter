@@ -290,7 +290,7 @@ const MatchingInterface = () => {
         <div className="md:col-span-4 lg:col-span-3">
           <Card className="bg-card/80 border-border h-full">
             <CardHeader className="pb-2 border-b border-border">
-              <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+              <CardTitle className="text-lg flex items-center gap-3 text-foreground">
                 <div className="bg-green-500/20 p-1.5 rounded-md">
                   <ListMusic className="h-5 w-5 text-green-400" />
                 </div>
