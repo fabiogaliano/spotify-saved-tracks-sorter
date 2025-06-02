@@ -85,7 +85,7 @@ export const AnalysisControls = ({
 
       {/* Analyze selected tracks button */}
       <Button
-        className="bg-white text-gray-900 hover:bg-white/90 border-0 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-md"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 border-0 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-md"
         disabled={Object.keys(rowSelection).length === 0}
         onClick={onAnalyzeSelected}
       >

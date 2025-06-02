@@ -34,7 +34,7 @@ export function StatusFilter({ showStatus, onStatusChange, showExtraStatus = fal
 
   return (
     <div className="inline-flex p-1.5 rounded-full bg-muted/80 shadow-xs">
-      <div className="relative inline-flex bg-white/95 rounded-full">
+      <div className="relative inline-flex bg-card rounded-full">
         <div
           className="absolute transition-all duration-200 ease-out"
           style={{
@@ -43,7 +43,7 @@ export function StatusFilter({ showStatus, onStatusChange, showExtraStatus = fal
             height: 'calc(100% - 4px)',
             transform: 'translateY(-50%)',
             top: '50%',
-            background: 'linear-gradient(135deg, rgb(75, 85, 99) 0%, rgb(55, 65, 81) 100%)',
+            background: 'var(--primary)',
             borderRadius: '999px',
             boxShadow: `
               0px 2px 4px rgba(0, 0, 0, 0.1),
@@ -60,8 +60,8 @@ export function StatusFilter({ showStatus, onStatusChange, showExtraStatus = fal
             className={`relative px-6 py-1.5 text-sm font-medium transition-colors duration-200
               rounded-full z-10 min-w-[100px] select-none
               ${showStatus === status 
-                ? 'text-foreground' 
-                : 'text-muted-foreground/60 hover:text-gray-900'
+                ? 'text-primary-foreground' 
+                : 'text-muted-foreground/60 hover:text-foreground'
               }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}

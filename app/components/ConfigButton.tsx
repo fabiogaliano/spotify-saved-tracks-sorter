@@ -88,8 +88,8 @@ export function ConfigButton() {
 					{/* Modal content */}
 					<div className="fixed inset-0 overflow-y-auto z-50">
 						<div className="flex min-h-full items-center justify-center p-4 text-center">
-							<div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-								<h3 className="text-lg font-medium leading-6 text-gray-900">
+							<div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card p-6 text-left align-middle shadow-xl transition-all">
+								<h3 className="text-lg font-medium leading-6 text-foreground">
 									Configuration!
 								</h3>
 
@@ -118,7 +118,7 @@ export function ConfigButton() {
 								<div className="mt-6 flex justify-end">
 									<button
 										type="button"
-										className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+										className="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 										onClick={closeModal}
 									>
 										Close

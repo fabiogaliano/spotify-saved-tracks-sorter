@@ -20,9 +20,9 @@ export function LibraryStatus({ likedSongs, playlists }: { likedSongs: TrackWith
           </div>
           <div className="flex gap-2">
             <Button
-              variant="default"
+              variant="secondary"
               size="sm"
-              className="bg-card border-border text-foreground hover:bg-secondary hover:border-border transition-colors gap-2"
+              className="transition-colors gap-2"
             >
               <RefreshCw className="h-4 w-4" /> Sync Library
             </Button>

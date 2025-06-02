@@ -22,7 +22,7 @@ export function ColumnToggle({
           onClick={() => onShowAlbumChange(!showAlbum)}
           className={`text-sm transition-colors ${
             showAlbum 
-              ? 'text-gray-900 font-medium' 
+              ? 'text-foreground font-medium' 
               : 'text-muted-foreground hover:text-muted-foreground/60'
           }`}
         >
@@ -32,7 +32,7 @@ export function ColumnToggle({
           onClick={() => onShowAddedDateChange(!showAddedDate)}
           className={`text-sm transition-colors ${
             showAddedDate 
-              ? 'text-gray-900 font-medium' 
+              ? 'text-foreground font-medium' 
               : 'text-muted-foreground hover:text-muted-foreground/60'
           }`}
         >

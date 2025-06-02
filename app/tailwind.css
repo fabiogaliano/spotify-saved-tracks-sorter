@@ -270,54 +270,54 @@
 /* Dark Theme - High Contrast Design Tokens */
 .dark {
 	/* Core Colors */
-	--background: oklch(0.13 0.01 285);
-	--foreground: oklch(0.95 0 0);
+	--background: oklch(0.15 0.01 285);
+	--foreground: oklch(0.98 0 0);
 	
 	/* Gradients */
-	--gradient-from: oklch(0.2 0.05 240);  /* Dark blue */
-	--gradient-to: oklch(0.05 0 0);        /* Near black */
+	--gradient-from: oklch(0.25 0.05 240);  /* Dark blue */
+	--gradient-to: oklch(0.15 0 0);        /* Dark gray */
 	
 	/* Text Gradients */
 	--gradient-text-from: oklch(0.65 0.18 140); /* Brighter green */
 	--gradient-text-to: oklch(0.65 0.18 260); /* Brighter blue */
 	
 	/* Card Gradients */
-	--gradient-card-primary-from: oklch(0.25 0.05 140); /* Dark green */
-	--gradient-card-primary-to: oklch(0.25 0.05 240); /* Dark blue */
-	--gradient-card-secondary-from: oklch(0.25 0.05 240); /* Dark blue */
-	--gradient-card-secondary-to: oklch(0.25 0.05 280); /* Dark purple */
-	--gradient-card-accent-from: oklch(0.25 0.05 280); /* Dark purple */
-	--gradient-card-accent-to: oklch(0.25 0.05 320); /* Dark pink */
+	--gradient-card-primary-from: oklch(0.3 0.05 140); /* Dark green */
+	--gradient-card-primary-to: oklch(0.3 0.05 240); /* Dark blue */
+	--gradient-card-secondary-from: oklch(0.3 0.05 240); /* Dark blue */
+	--gradient-card-secondary-to: oklch(0.3 0.05 280); /* Dark purple */
+	--gradient-card-accent-from: oklch(0.3 0.05 280); /* Dark purple */
+	--gradient-card-accent-to: oklch(0.3 0.05 320); /* Dark pink */
 	
 	/* Card & Popover */
-	--card: oklch(0.16 0.01 285);
-	--card-foreground: oklch(0.95 0 0);
-	--popover: oklch(0.16 0.01 285);
-	--popover-foreground: oklch(0.95 0 0);
+	--card: oklch(0.22 0.01 285);
+	--card-foreground: oklch(0.98 0 0);
+	--popover: oklch(0.22 0.01 285);
+	--popover-foreground: oklch(0.98 0 0);
 	
 	/* Primary - High contrast blue */
 	--primary: oklch(0.65 0.18 260);
 	--primary-foreground: oklch(0.13 0.01 285);
 	
 	/* Secondary - Dark gray */
-	--secondary: oklch(0.25 0.01 286);
-	--secondary-foreground: oklch(0.95 0 0);
+	--secondary: oklch(0.28 0.01 286);
+	--secondary-foreground: oklch(0.98 0 0);
 	
 	/* Muted - Medium gray */
-	--muted: oklch(0.25 0.01 286);
-	--muted-foreground: oklch(0.65 0.015 286);
+	--muted: oklch(0.28 0.01 286);
+	--muted-foreground: oklch(0.75 0.015 286);
 	
 	/* Accent */
-	--accent: oklch(0.25 0.01 286);
-	--accent-foreground: oklch(0.95 0 0);
+	--accent: oklch(0.28 0.01 286);
+	--accent-foreground: oklch(0.98 0 0);
 	
 	/* Destructive - High contrast red */
 	--destructive: oklch(0.65 0.2 27);
 	--destructive-foreground: oklch(0.13 0.01 285);
 	
 	/* Borders & Inputs */
-	--border: oklch(0.3 0.01 286);
-	--input: oklch(0.3 0.01 286);
+	--border: oklch(0.35 0.01 286);
+	--input: oklch(0.35 0.01 286);
 	--ring: oklch(0.65 0.18 260);
 	
 	/* Charts */
@@ -344,13 +344,13 @@
 	--similarity-poor: oklch(0.65 0.18 27);
 	
 	/* Sidebar */
-	--sidebar: oklch(0.18 0.01 285);
-	--sidebar-foreground: oklch(0.95 0 0);
+	--sidebar: oklch(0.2 0.01 285);
+	--sidebar-foreground: oklch(0.98 0 0);
 	--sidebar-primary: oklch(0.65 0.18 260);
-	--sidebar-primary-foreground: oklch(0.13 0.01 285);
-	--sidebar-accent: oklch(0.25 0.01 286);
-	--sidebar-accent-foreground: oklch(0.95 0 0);
-	--sidebar-border: oklch(0.3 0.01 286);
+	--sidebar-primary-foreground: oklch(0.15 0.01 285);
+	--sidebar-accent: oklch(0.28 0.01 286);
+	--sidebar-accent-foreground: oklch(0.98 0 0);
+	--sidebar-border: oklch(0.35 0.01 286);
 	--sidebar-ring: oklch(0.65 0.18 260);
 }
 /* Theme inline definitions for Tailwind utilities */

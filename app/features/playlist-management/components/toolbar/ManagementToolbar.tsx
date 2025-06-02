@@ -19,7 +19,7 @@ const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing }) => {
 
       <div className="flex flex-wrap gap-2">
         <Button
-          className="bg-card border-border text-foreground hover:bg-secondary hover:border-border transition-colors gap-2"
+          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground border-0 transition-colors gap-2"
           onClick={triggerSync}
           disabled={isSyncing}
         >
@@ -28,7 +28,7 @@ const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing }) => {
         </Button>
 
         <Button
-          className="bg-card border-border text-foreground hover:bg-secondary hover:border-border transition-colors gap-2"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 transition-colors gap-2"
         >
           <Plus className="h-4 w-4" /> Create AI Playlist
         </Button>

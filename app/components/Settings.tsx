@@ -143,8 +143,8 @@ const SettingsTab = () => {
                     <Button
                       onClick={() => setSyncMode('manual')}
                       className={syncMode === 'manual'
-                        ? 'bg-card text-foreground border-none rounded-md text-center font-normal'
-                        : 'bg-transparent border border-border text-foreground rounded-md text-center font-normal hover:bg-card'
+                        ? 'bg-primary text-primary-foreground border-none rounded-md text-center font-normal'
+                        : 'bg-secondary text-secondary-foreground border border-border rounded-md text-center font-normal hover:bg-primary hover:text-primary-foreground'
                       }
                     >
                       Manual
@@ -152,8 +152,8 @@ const SettingsTab = () => {
                     <Button
                       onClick={() => setSyncMode('automatic')}
                       className={syncMode === 'automatic'
-                        ? 'bg-white text-gray-900 border-none rounded-md text-center font-normal'
-                        : 'bg-transparent border border-border text-foreground rounded-md text-center font-normal hover:bg-white hover:text-gray-900'
+                        ? 'bg-primary text-primary-foreground border-none rounded-md text-center font-normal'
+                        : 'bg-secondary text-secondary-foreground border border-border rounded-md text-center font-normal hover:bg-primary hover:text-primary-foreground'
                       }
                     >
                       Automatic
@@ -173,7 +173,7 @@ const SettingsTab = () => {
                   <Switch
                     checked={darkMode}
                     onCheckedChange={setDarkMode}
-                    className="data-[state=checked]:bg-white data-[state=checked]:text-gray-900"
+                    className="data-[state=checked]:bg-primary"
                   />
                 </div>
 
@@ -186,14 +186,14 @@ const SettingsTab = () => {
                   <Switch
                     checked={emailNotifications}
                     onCheckedChange={setEmailNotifications}
-                    className="data-[state=checked]:bg-white data-[state=checked]:text-gray-900"
+                    className="data-[state=checked]:bg-primary"
                   />
                 </div>
               </CardContent>
 
               <CardFooter className="border-t border-border px-6 py-4">
                 <Button
-                  className="bg-white hover:bg-white/90 text-gray-900 border-0 ml-auto"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 ml-auto"
                   onClick={handleSaveSettings}
                 >
                   Save Settings
@@ -218,7 +218,7 @@ const SettingsTab = () => {
                     <p className="text-foreground">Clear local song analysis data and resync with Spotify</p>
                   </div>
                   <Button
-                    className="bg-white hover:bg-white/90 text-gray-900 border-0"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground border-0"
                   >
                     Clear & Refresh
                   </Button>
@@ -322,13 +322,13 @@ const SettingsTab = () => {
                       </p>
                       <div className="flex justify-end gap-3 pt-2">
                         <Button
-                          className="bg-transparent border border-border text-foreground hover:bg-card"
+                          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground border-0"
                           onClick={() => setShowDeleteConfirm(false)}
                         >
                           Cancel
                         </Button>
                         <Button
-                          className="bg-red-600 hover:bg-red-700 text-foreground border-0"
+                          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground border-0"
                           onClick={handleDeleteAccount}
                         >
                           Confirm Delete
@@ -337,7 +337,7 @@ const SettingsTab = () => {
                     </div>
                   ) : (
                     <Button
-                      className="border border-red-800 text-red-400 hover:bg-red-900/30 hover:text-red-400 w-full justify-between bg-transparent"
+                      className="border border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive w-full justify-between bg-transparent"
                       onClick={() => setShowDeleteConfirm(true)}
                     >
                       <span className="flex items-center gap-2">

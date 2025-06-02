@@ -39,26 +39,12 @@ export type UIAnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed
 // uiAnalysisStatus: UIAnalysisStatus;
 
 // Styles for the component
-interface StylesType {
-  card: string;
-  iconContainer: string;
-  tableHeader: string;
-  tableCell: string;
-  tableRow: string;
-  button: {
-    outline: string;
-  };
-}
-
-const styles: StylesType = {
+const styles = {
   card: "bg-card border-border",
   iconContainer: "p-2 rounded-full",
   tableHeader: "text-left px-4 py-3 text-sm font-medium text-muted-foreground",
   tableCell: "px-4 py-3 text-foreground",
-  tableRow: "border-b border-border/50 hover:bg-card/30",
-  button: {
-    outline: "border-border text-foreground hover:bg-card bg-card/50"
-  }
+  tableRow: "border-b border-border/50 hover:bg-card/30"
 };
 
 // Helper function getAnalysisStatus is less relevant now as we rely on track.uiAnalysisStatus

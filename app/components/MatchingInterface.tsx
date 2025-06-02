@@ -254,7 +254,8 @@ const MatchingInterface = () => {
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={handleBatchAnalysis}
-            className="bg-card border-border text-foreground hover:bg-secondary hover:border-border transition-all duration-200 gap-2 hover:scale-105 active:scale-95 hover:shadow-sm"
+            variant="secondary"
+            className="transition-all duration-200 gap-2 hover:scale-105 active:scale-95 hover:shadow-sm"
           >
             <RefreshCw className="h-4 w-4" /> Analyze More Songs
           </Button>
@@ -470,7 +471,8 @@ const MatchingInterface = () => {
                             ) : (
                               <Button
                                 size="sm"
-                                className="bg-white/10 hover:bg-white/20 text-foreground border-0 transition-all duration-200 hover:scale-105 active:scale-95"
+                                variant="ghost"
+                                className="transition-all duration-200 hover:scale-105 active:scale-95"
                                 onClick={() => handleAnalyzeSong(song.id)}
                               >
                                 Analyze
@@ -491,7 +493,8 @@ const MatchingInterface = () => {
 
                               <Button
                                 size="sm"
-                                className="text-sm text-foreground bg-white/10 hover:bg-white/20 border-0 gap-1 mt-2 sm:mt-0 transition-all duration-200 hover:scale-105 active:scale-95"
+                                variant="ghost"
+                                className="text-sm gap-1 mt-2 sm:mt-0 transition-all duration-200 hover:scale-105 active:scale-95"
                                 onClick={() => handleSortSong(song.id, song.matchingPlaylists)}
                               >
                                 <ArrowRight className="h-3.5 w-3.5" />
@@ -517,7 +520,8 @@ const MatchingInterface = () => {
                     </p>
                     <Button
                       size="sm"
-                      className="mt-2 bg-white/10 hover:bg-white/20 text-foreground border-0"
+                      className="mt-2"
+                      variant="ghost"
                       onClick={handleBatchAnalysis}
                     >
                       Analyze All Unanalyzed
