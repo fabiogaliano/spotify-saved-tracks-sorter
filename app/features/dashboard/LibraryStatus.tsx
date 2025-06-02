@@ -3,11 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/shared/components/ui
 import { Progress } from "~/shared/components/ui/progress";
 import { Music, RefreshCw } from "lucide-react";
 import { TrackWithAnalysis } from "~/lib/models/Track";
-import { Await } from "react-router";
-import { Suspense } from "react";
+import { Await, useFetcher } from "react-router";
+import { Suspense, useEffect } from "react";
 import { Playlist } from "~/lib/models/Playlist";
+import { toast } from "sonner";
 
 export function LibraryStatus({ likedSongs, playlists }: { likedSongs: TrackWithAnalysis[], playlists?: Promise<Playlist[]> }) {
+  const syncFetcher = useFetcher();
+  const isSyncing = syncFetcher.state === "submitting" || syncFetcher.state === "loading";
+
+  useEffect(() => {
+    if (syncFetcher.data && syncFetcher.state === "idle") {
+      if (syncFetcher.data.error) {
+        toast.error(`Sync failed: ${syncFetcher.data.error}`);
+      } else if (syncFetcher.data.success) {
+        const { savedTracks, playlists, playlistTracks } = syncFetcher.data;
+        toast.success(
+          `Library synced! Updated ${savedTracks.newItems} tracks, ${playlists.newItems} playlists, and ${playlistTracks.newItems} playlist tracks.`
+        );
+      }
+    }
+  }, [syncFetcher.data, syncFetcher.state]);
+
   return (
     <Card className="bg-card border-border overflow-hidden">
       <CardHeader className="pb-2 border-b border-border">
@@ -19,13 +36,18 @@ export function LibraryStatus({ likedSongs, playlists }: { likedSongs: TrackWith
             <span className="font-bold">Library Status</span>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="transition-colors gap-2"
-            >
-              <RefreshCw className="h-4 w-4" /> Sync Library
-            </Button>
+            <syncFetcher.Form method="post" action="/actions/sync-library">
+              <Button
+                type="submit"
+                variant="secondary"
+                size="sm"
+                className="transition-colors gap-2"
+                disabled={isSyncing}
+              >
+                <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} /> 
+                {isSyncing ? 'Syncing...' : 'Sync Library'}
+              </Button>
+            </syncFetcher.Form>
           </div>
         </CardTitle>
       </CardHeader>
