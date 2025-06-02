@@ -24,8 +24,11 @@
 	--color-gradient-card-accent-from: var(--gradient-card-accent-from);
 	--color-gradient-card-accent-to: var(--gradient-card-accent-to);
 
+	/* Animation Variables */
 	--animate-slide-in: slide-in 0.3s ease-out forwards;
+	--animate-flow: flowAnimation 3s ease-in-out infinite;
 
+	/* Animation Keyframes */
 	@keyframes slide-in {
 		0% {
 			transform: translateX(100%);
@@ -34,6 +37,16 @@
 		100% {
 			transform: translateX(0);
 			opacity: 1;
+		}
+	}
+
+	/* Flow animation for SVG paths - used in step connectors */
+	@keyframes flowAnimation {
+		0% {
+			stroke-dashoffset: 0;
+		}
+		100% {
+			stroke-dashoffset: -24; /* Matches stroke-dasharray for smooth loop */
 		}
 	}
 

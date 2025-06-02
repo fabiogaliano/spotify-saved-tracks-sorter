@@ -82,6 +82,7 @@ const MatchedSong: React.FC<MatchedSongProps> = ({
 
 // App mockup component
 const AppInterface: React.FC = () => {
+
   // Sample data - in a real app this would come from state
   const playlists = [
     { name: "Chill Vibes", isActive: true },
@@ -120,8 +121,8 @@ const AppInterface: React.FC = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto overflow-hidden rounded-xl bg-card border border-border shadow-2xl transform transition-all duration-300 hover:shadow-indigo-500/20 hover:border-border">
-      {/* Window Controls - Only visible on desktop */}
-      <div className="hidden lg:flex items-center px-4 py-2 space-x-2 border-b border-border bg-muted/50">
+        {/* Window Controls - Only visible on desktop */}
+        <div className="hidden lg:flex items-center px-4 py-2 space-x-2 border-b border-border bg-muted/50">
         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -309,7 +310,8 @@ const MobileCarousel: React.FC<{ children: React.ReactNode }> = ({ children }) =
       if (!scrollContainer) return;
 
       const scrollPosition = scrollContainer.scrollLeft;
-      const itemWidth = scrollContainer.clientWidth * 0.75; // 75% of container width
+      const containerWidth = scrollContainer.clientWidth;
+      const itemWidth = containerWidth * 0.75 + 16; // 75% width + 16px padding-right
       const newIndex = Math.round(scrollPosition / itemWidth);
 
       if (newIndex !== activeIndex && newIndex >= 0 && newIndex < childrenArray.length) {
@@ -359,10 +361,13 @@ const MobileCarousel: React.FC<{ children: React.ReactNode }> = ({ children }) =
             onClick={() => {
               const scrollContainer = scrollContainerRef.current;
               if (scrollContainer) {
+                const containerWidth = scrollContainer.clientWidth;
+                const itemWidth = containerWidth * 0.75 + 16; // 75% width + 16px padding-right
                 scrollContainer.scrollTo({
-                  left: index * scrollContainer.clientWidth * 0.75,
+                  left: index * itemWidth,
                   behavior: 'smooth'
                 });
+                setActiveIndex(index);
               }
             }}
             className={`w-2 h-2 rounded-full transition-colors ${index === activeIndex ? 'bg-white' : 'bg-secondary'
@@ -375,16 +380,73 @@ const MobileCarousel: React.FC<{ children: React.ReactNode }> = ({ children }) =
   );
 };
 
-// Step card component
-const StepCard: React.FC<StepCardProps> = ({ number, title, description, colorClass }) => (
-  <div className="flex flex-col items-center text-center p-8 rounded-lg bg-background/30 backdrop-blur-sm border border-border hover:border-border transition-all h-full">
-    <div className={`w-20 h-20 rounded-full ${colorClass} flex items-center justify-center mb-5 flex-shrink-0`}>
-      <div className={`text-${colorClass.replace('bg-', '').replace('/20', '')} text-3xl font-bold`}>{number}</div>
+// Enhanced step card component with animations
+const StepCard: React.FC<StepCardProps & { isActive?: boolean; delay?: number }> = ({ 
+  number, 
+  title, 
+  description, 
+  colorClass,
+  isActive = false,
+  delay = 0
+}) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isVisible, setIsVisible] = React.useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  // Intersection observer for scroll animations
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setIsVisible(true), delay);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [delay]);
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`relative flex flex-col items-center text-center p-8 rounded-lg bg-background/30 backdrop-blur-sm border border-border transition-all duration-500 h-full transform
+        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+        ${isHovered ? 'scale-105 shadow-xl border-primary/50' : 'scale-100'}
+        ${isActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}
+      `}
+    >
+      {/* Animated background gradient */}
+      <div className={`absolute inset-0 rounded-lg ${colorClass} opacity-10 transition-opacity duration-300 ${isHovered ? 'opacity-20' : ''}`} />
+      
+      {/* Number circle with pulse animation */}
+      <div className="relative mb-5 flex-shrink-0">
+        <div className={`w-20 h-20 rounded-full ${colorClass} flex items-center justify-center relative z-10 transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}>
+          <div className={`text-${colorClass.replace('bg-', '').replace('/20', '')} text-3xl font-bold`}>{number}</div>
+        </div>
+        {/* Pulse effect */}
+        <div className={`absolute inset-0 w-20 h-20 rounded-full ${colorClass} animate-ping opacity-30`} />
+      </div>
+
+      {/* Title with underline animation */}
+      <h3 className="text-2xl font-medium mb-3 flex-shrink-0 relative">
+        {title}
+        <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent transform transition-transform duration-300 ${isHovered ? 'scale-x-100' : 'scale-x-0'}`} />
+      </h3>
+
+      {/* Description with fade effect */}
+      <p className={`text-muted-foreground text-lg leading-relaxed flex-grow transition-all duration-300 ${isHovered ? 'text-foreground' : ''}`}>
+        {description}
+      </p>
     </div>
-    <h3 className="text-2xl font-medium mb-3 flex-shrink-0">{title}</h3>
-    <p className="text-muted-foreground text-lg leading-relaxed flex-grow">{description}</p>
-  </div>
-);
+  );
+};
 
 // Main landing page component
 const LandingPage: React.FC = () => {
@@ -522,11 +584,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
           <div className="lg:w-1/2 relative order-1 lg:order-2">
-            {/* Glow effects - reduced intensity and better positioning */}
-            <div className="absolute -top-20 -left-10 w-64 h-64 bg-purple-500 rounded-full filter blur-3xl opacity-10"></div>
-            <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-blue-500 rounded-full filter blur-3xl opacity-10"></div>
-
-            {/* App mockup with proper positioning */}
+            {/* App mockup with enhanced glow */}
             <div className="relative z-10">
               <AppInterface />
             </div>
@@ -539,21 +597,49 @@ const LandingPage: React.FC = () => {
         <div className="container mx-auto px-6 md:px-12">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">How Sorted Works</h2>
 
-          {/* Desktop view */}
-          <div className="hidden xs:grid xs:grid-cols-3 gap-8">
-            {steps.map((step, index) => (
-              <StepCard
-                key={index}
-                number={step.number}
-                title={step.title}
-                description={step.description}
-                colorClass={step.colorClass}
-              />
-            ))}
+          {/* Desktop view with flow animation */}
+          <div className="hidden md:block relative">
+            <div className="grid grid-cols-3 gap-8 relative">
+              {/* Connecting flow lines */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
+                <defs>
+                  <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.3" />
+                    <stop offset="50%" stopColor="rgb(139, 92, 246)" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="rgb(168, 85, 247)" stopOpacity="0.3" />
+                  </linearGradient>
+                </defs>
+                {/* Animated flow path */}
+                <path
+                  d="M 16.66% 50% Q 33.33% 30%, 50% 50% T 83.33% 50%"
+                  fill="none"
+                  stroke="url(#flowGradient)"
+                  strokeWidth="3"
+                  strokeDasharray="8 4"
+                  className="animate-pulse"
+                  style={{
+                    animation: 'var(--animate-flow)'
+                  }}
+                />
+              </svg>
+
+              {steps.map((step, index) => (
+                <div key={index} className="relative z-10">
+                  <StepCard
+                    number={step.number}
+                    title={step.title}
+                    description={step.description}
+                    colorClass={step.colorClass}
+                    delay={index * 200}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Mobile carousel */}
-          <MobileCarousel>
+          {/* Mobile and Tablet carousel */}
+          <div className="block md:hidden">
+            <MobileCarousel>
             {steps.map((step, index) => (
               <StepCard
                 key={index}
@@ -561,9 +647,12 @@ const LandingPage: React.FC = () => {
                 title={step.title}
                 description={step.description}
                 colorClass={step.colorClass}
+                delay={0}
+                isActive={false}
               />
             ))}
           </MobileCarousel>
+          </div>
         </div>
       </div>
 
