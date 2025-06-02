@@ -57,23 +57,15 @@ export function useSyncPlaylists() {
 
             if (newAiPlaylists > 0) {
               if (newAiPlaylists === stats.newPlaylists) {
-                message = `Synced ${newAiPlaylists} new AI playlists`;
+                message = `Added ${newAiPlaylists} new AI playlists`;
               } else {
-                message = `Synced ${stats.newPlaylists} new playlists (${newAiPlaylists} AI playlists)`;
+                message = `Added ${stats.newPlaylists} new playlists`;
               }
             } else {
-              message = `Synced ${stats.newPlaylists} new playlists`;
-
-              if (stats.aiPlaylistsChecked > 0) {
-                message += ` and verified existing AI playlists`;
-              }
+              message = `Added ${stats.newPlaylists} new playlists`;
             }
           } else {
-            if (stats.aiPlaylistsChecked > 0) {
-              message = `Verified ${stats.aiPlaylistsChecked} AI playlists`;
-            } else {
-              message = 'All playlists are up to date';
-            }
+            message = 'All playlists are up to date';
           }
 
           notify.success(message)
