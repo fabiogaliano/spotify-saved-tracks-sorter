@@ -13,6 +13,7 @@ interface PlaylistSelectorProps {
   searchQuery: string;
   selectedTab: PlaylistDetailViewTabs;
   selectedPlaylist: string | null;
+  isLoading?: boolean;
   onSearchChange: (query: string) => void;
   onTabChange: (value: PlaylistDetailViewTabs) => void;
   onSelectPlaylist: (id: string) => void;
@@ -23,13 +24,31 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
   selectedPlaylist,
   selectedTab,
   searchQuery,
+  isLoading = false,
   onSearchChange,
   onTabChange,
-  onSelectPlaylist
+  onSelectPlaylist,
 }) => {
+  // Skeleton loading component
+  const PlaylistSkeleton = () => (
+    <div className="space-y-2">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="w-full p-3 min-h-[44px] rounded-md bg-card/30 border border-border animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-muted/50 rounded-md"></div>
+            <div className="flex-1">
+              <div className="h-4 bg-muted/50 rounded w-3/4 mb-1"></div>
+              <div className="h-3 bg-muted/30 rounded w-1/2"></div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="md:col-span-4 lg:col-span-3">
-      <Card className="bg-card border-border h-full flex flex-col">
+      <Card className="bg-card border-border h-full flex flex-col shadow-sm">
         <CardHeader className="pb-2 border-b border-border">
           <div className="flex justify-between items-center">
             <SectionTitle
@@ -62,8 +81,24 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
               </TabsList>
             </Tabs>
 
-            <div className="space-y-2">
-              {filteredPlaylists.map((playlist) => {
+            {isLoading ? (
+              <PlaylistSkeleton />
+            ) : filteredPlaylists.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 px-4">
+                <div className="bg-muted/20 rounded-full p-4 mb-4">
+                  <ListMusic className="h-8 w-8 text-muted-foreground/60" />
+                </div>
+                <h3 className="text-base font-medium text-foreground mb-2">No playlists found</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-sm">
+                  {searchQuery 
+                    ? `No playlists match "${searchQuery}". Try adjusting your search terms.`
+                    : 'No playlists available in this category. Create some playlists to get started.'
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredPlaylists.map((playlist) => {
                 return (
                   <button
                     key={playlist.id}
@@ -86,8 +121,9 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
                     </div>
                   </button>
                 );
-              })}
-            </div>
+                })}
+              </div>
+            )}
           </ScrollArea>
         </CardContent>
       </Card>

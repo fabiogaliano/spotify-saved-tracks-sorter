@@ -4,10 +4,10 @@ export const TableElements = {
   Header: () => (
     <thead className="border-b border-border">
       <tr>
-        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">#</th>
-        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Title</th>
-        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Album</th>
-        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Date Added</th>
+        <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">#</th>
+        <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Title</th>
+        <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Album</th>
+        <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Date Added</th>
       </tr>
     </thead>
   ),
@@ -17,16 +17,16 @@ export const TableElements = {
     const fullDate = track.rawAddedAt || '';
 
     return (
-      <tr className="border-b border-border hover:bg-card/50 transition-colors">
-        <td className="text-muted-foreground px-4 py-3 w-10 text-right">{index + 1}</td>
-        <td className="text-foreground px-4 py-3">
+      <tr className="border-b border-border/50 hover:bg-card/30 transition-colors">
+        <td className="px-4 py-3 text-muted-foreground w-10 text-right">{index + 1}</td>
+        <td className="px-4 py-3 text-foreground">
           <div className="flex flex-col">
             <span className="font-medium">{track.title}</span>
             <span className="text-muted-foreground text-sm">{track.artist}</span>
           </div>
         </td>
-        <td className="text-muted-foreground px-4 py-3">{track.album}</td>
-        <td className="text-muted-foreground text-sm px-4 py-3">
+        <td className="px-4 py-3 text-muted-foreground">{track.album}</td>
+        <td className="px-4 py-3 text-muted-foreground text-sm">
           <span title={fullDate}>
             {relativeDate}
           </span>

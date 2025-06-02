@@ -28,7 +28,7 @@ export const AnalysisControls = ({
           <Button
             id="column-visibility-button"
             variant="outline"
-            className="border-border text-foreground hover:bg-card bg-card/50 flex gap-1"
+            className="border-border text-foreground hover:bg-card bg-card/50 flex gap-1 transition-all duration-200 hover:scale-105 active:scale-95"
             type="button"
             onClick={() => {
               // Directly toggle a visible state for the dropdown
@@ -85,7 +85,7 @@ export const AnalysisControls = ({
 
       {/* Analyze selected tracks button */}
       <Button
-        className="bg-white text-gray-900 hover:bg-white/90 border-0"
+        className="bg-white text-gray-900 hover:bg-white/90 border-0 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-md"
         disabled={Object.keys(rowSelection).length === 0}
         onClick={onAnalyzeSelected}
       >

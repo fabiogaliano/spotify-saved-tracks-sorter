@@ -91,21 +91,21 @@ const Dashboard = () => {
 
             {/* Overview Tab Content */}
             <TabsContent value="overview" className="mt-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                <div className="md:col-span-4">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-4">
                   <Suspense fallback={<LoadingFallback />}>
                     <Await resolve={likedSongs}>
                       {(resolvedLikedSongs) => <LibraryStatus likedSongs={resolvedLikedSongs} playlists={playlists} />}
                     </Await>
                   </Suspense>
                 </div>
-                <div className="md:col-span-8">
+                <div className="lg:col-span-8">
                   <QuickActions />
                 </div>
-                <div className="md:col-span-8">
+                <div className="lg:col-span-8 lg:order-3">
                   <RecentActivity />
                 </div>
-                <div className="md:col-span-4">
+                <div className="lg:col-span-4 lg:order-4">
                   <AnalysisStats />
                 </div>
               </div>

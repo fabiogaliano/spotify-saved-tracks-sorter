@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 import { ScrollArea } from '~/shared/components/ui/scroll-area';
+import { NotificationMessage } from '~/features/playlist-management/components/ui/controls';
 
 const MatchingInterface = () => {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
@@ -246,14 +247,14 @@ const MatchingInterface = () => {
       {/* Header with actions */}
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">Match Songs to Playlists</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">Match Songs to Playlists</h1>
           <p className="text-muted-foreground">Find the perfect playlists for your liked songs</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={handleBatchAnalysis}
-            className="bg-card border-border text-foreground hover:bg-secondary hover:border-border transition-colors gap-2"
+            className="bg-card border-border text-foreground hover:bg-secondary hover:border-border transition-all duration-200 gap-2 hover:scale-105 active:scale-95 hover:shadow-sm"
           >
             <RefreshCw className="h-4 w-4" /> Analyze More Songs
           </Button>
@@ -270,25 +271,13 @@ const MatchingInterface = () => {
 
       {/* Notification */}
       {notification && (
-        <div className={`p-4 rounded-md border ${notification.type === 'success'
-          ? 'bg-green-900/20 border-green-800 text-green-400'
-          : 'bg-blue-900/20 border-blue-800 text-blue-400'
-          }`}>
-          <div className="flex items-center gap-2">
-            {notification.type === 'success' ? (
-              <CheckCircle2 className="h-4 w-4" />
-            ) : (
-              <Info className="h-4 w-4" />
-            )}
-            {notification.message}
-          </div>
-        </div>
+        <NotificationMessage type={notification.type} message={notification.message} />
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
         {/* Playlists Column */}
         <div className="md:col-span-4 lg:col-span-3">
-          <Card className="bg-card/80 border-border h-full">
+          <Card className="bg-card border-border h-full shadow-sm">
             <CardHeader className="pb-2 border-b border-border">
               <CardTitle className="text-lg flex items-center gap-3 text-foreground">
                 <div className="bg-green-500/20 p-1.5 rounded-md">
@@ -365,7 +354,7 @@ const MatchingInterface = () => {
         {/* Songs Column */}
         <div className="md:col-span-8 lg:col-span-9 flex flex-col space-y-6">
           {/* Analysis Status Card */}
-          <Card className="bg-card/80 border-border">
+          <Card className="bg-card border-border shadow-sm">
             <CardContent className="p-4 flex flex-col md:flex-row gap-6">
               <div className="md:w-1/2 space-y-2">
                 <div className="flex justify-between text-sm">
@@ -409,7 +398,7 @@ const MatchingInterface = () => {
           </Card>
 
           {/* Song List */}
-          <Card className="bg-card/80 border-border h-full">
+          <Card className="bg-card border-border h-full shadow-sm">
             <CardHeader className="pb-2 border-b border-border flex-row flex justify-between items-center">
               <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                 <div className="bg-blue-500/20 p-1.5 rounded-md">
@@ -481,7 +470,7 @@ const MatchingInterface = () => {
                             ) : (
                               <Button
                                 size="sm"
-                                className="bg-white/10 hover:bg-white/20 text-foreground border-0"
+                                className="bg-white/10 hover:bg-white/20 text-foreground border-0 transition-all duration-200 hover:scale-105 active:scale-95"
                                 onClick={() => handleAnalyzeSong(song.id)}
                               >
                                 Analyze
@@ -502,7 +491,7 @@ const MatchingInterface = () => {
 
                               <Button
                                 size="sm"
-                                className="text-sm text-foreground bg-white/10 hover:bg-white/20 border-0 gap-1 mt-2 sm:mt-0"
+                                className="text-sm text-foreground bg-white/10 hover:bg-white/20 border-0 gap-1 mt-2 sm:mt-0 transition-all duration-200 hover:scale-105 active:scale-95"
                                 onClick={() => handleSortSong(song.id, song.matchingPlaylists)}
                               >
                                 <ArrowRight className="h-3.5 w-3.5" />

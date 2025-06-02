@@ -2,6 +2,7 @@ import type { MetaFunction } from 'react-router';
 import { Form, Link, useNavigation } from 'react-router';
 import React from 'react';
 import { LoadingSpinner } from '~/shared/components/ui/LoadingSpinner';
+import { ThemeToggleButton } from '~/components/theme-toggle-button';
 
 // Type definitions for improved type safety
 type PlaylistItemProps = {
@@ -120,7 +121,7 @@ const AppInterface: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto overflow-hidden rounded-xl bg-card border border-border shadow-2xl transform transition-all duration-300 hover:shadow-indigo-500/20 hover:border-border">
       {/* Window Controls - Only visible on desktop */}
-      <div className="hidden lg:flex items-center px-4 py-2 space-x-2 border-b border-border bg-gradient-to-r from-gray-900 to-gray-800">
+      <div className="hidden lg:flex items-center px-4 py-2 space-x-2 border-b border-border bg-muted/50">
         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -130,7 +131,7 @@ const AppInterface: React.FC = () => {
       {/* App Content - Desktop Version */}
       <div className="hidden lg:flex lg:flex-row">
         {/* Playlists Column - Desktop */}
-        <div className="w-1/3 border-r border-border p-5 bg-gradient-to-b from-gray-900 to-gray-900/90">
+        <div className="w-1/3 border-r border-border p-5 bg-muted/30">
           <h2 className="text-muted-foreground font-medium mb-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
               <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
@@ -157,7 +158,7 @@ const AppInterface: React.FC = () => {
         </div>
 
         {/* Analysis Column - Desktop */}
-        <div className="w-2/3 p-5 bg-gradient-to-b from-gray-900 to-indigo-900/10">
+        <div className="w-2/3 p-5 bg-muted/20">
           <h2 className="text-muted-foreground font-medium mb-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -187,7 +188,7 @@ const AppInterface: React.FC = () => {
       {/* App Content - Mobile Version */}
       <div className="flex flex-col lg:hidden">
         {/* Mobile App Header */}
-        <div className="w-full bg-gradient-to-b from-gray-900 to-gray-900/90 px-6 py-5">
+        <div className="w-full bg-muted/40 px-6 py-5">
           <h2 className="text-foreground font-medium text-2xl mb-2">SpotifySort</h2>
           <p className="text-muted-foreground text-base">Organize your music intelligently</p>
         </div>
@@ -224,7 +225,7 @@ const AppInterface: React.FC = () => {
         </div>
 
         {/* Analysis Column - Mobile */}
-        <div className="w-full px-6 py-6 bg-gradient-to-b from-gray-900 to-indigo-900/10">
+        <div className="w-full px-6 py-6 bg-muted/20">
           <h2 className="text-foreground font-medium text-xl mb-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -282,12 +283,12 @@ const AppInterface: React.FC = () => {
 
 // Feature card component
 const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon, bgColorClass, iconColorClass }) => (
-  <div className="p-8 rounded-lg bg-gradient-to-br from-gray-900 to-indigo-950 border border-border hover:border-border transition-all">
+  <div className="p-8 rounded-lg bg-card border border-border hover:border-border transition-all shadow-sm">
     <div className="flex items-center mb-5">
       <div className={`w-12 h-12 rounded-full ${bgColorClass} flex items-center justify-center mr-4`}>
         <div className={iconColorClass}>{icon}</div>
       </div>
-      <h3 className="text-2xl font-medium">{title}</h3>
+      <h3 className="text-2xl font-medium text-foreground">{title}</h3>
     </div>
     <p className="text-muted-foreground text-lg leading-relaxed">{description}</p>
   </div>
@@ -463,7 +464,8 @@ const LandingPage: React.FC = () => {
             Sorted.
           </div>
         </div>
-        <div>
+        <div className="flex items-center gap-4">
+          <ThemeToggleButton />
           <Form action="/auth/spotify" method="post">
             <button
               type="submit"

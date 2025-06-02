@@ -25,14 +25,16 @@ export const IconContainer = ({ icon: Icon, color, size = 'md' }: { icon: React.
 
 export const SectionTitle = ({ icon, title, count }: { icon: React.ReactNode, title: string, count?: number }) => {
   return (
-    <div className="flex justify-between items-center gap-4">
-      <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+    <div className="flex justify-between items-center gap-4 min-w-0">
+      <CardTitle className="text-base md:text-lg flex items-center gap-2 text-foreground min-w-0">
         {icon}
-        <span className="font-bold">{title}</span>
+        <span className="font-bold truncate">{title}</span>
       </CardTitle>
       {count !== undefined && (
-        <div className="text-xs bg-blue-500/20 px-2 py-1 rounded-md text-blue-400 font-medium">
-          {count} total
+        <div className="flex-shrink-0">
+          <Badge color="blue">
+            {count} total
+          </Badge>
         </div>
       )}
     </div>
@@ -75,8 +77,8 @@ export const ColoredBox = ({ color, size = 'md' }: { color: string, size?: 'sm' 
   const colors = getColorClasses(color);
 
   return (
-    <div className={`${outer} ${colors.bg} rounded-md flex items-center justify-center`}>
-      <div className={`${inner} ${colors.inner} rounded-sm`}></div>
+    <div className={`${outer} ${colors.bg} rounded-md flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-sm`}>
+      <div className={`${inner} ${colors.inner} rounded-sm transition-all duration-200`}></div>
     </div>
   );
 };

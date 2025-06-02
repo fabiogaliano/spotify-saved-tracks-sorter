@@ -252,7 +252,7 @@ export const LikedSongsTable = () => {
     <div className="h-full flex flex-col space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground mb-1">Liked Songs Analysis</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">Liked Songs Analysis</h1>
         <p className="text-foreground">Manage and analyze your liked songs from Spotify</p>
       </div>
 
@@ -331,8 +331,8 @@ export const LikedSongsTable = () => {
         </CardHeader>
 
         <CardContent className="p-0">
-          <div className="relative overflow-auto">
-            <table className="w-full">
+          <div className="relative overflow-x-auto hover-show-scrollbar">
+            <table className="w-full min-w-[640px]">
               <thead className="border-b border-border">
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>

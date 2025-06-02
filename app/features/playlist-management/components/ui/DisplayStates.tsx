@@ -103,18 +103,22 @@ export const FailedSyncWithTracksState: React.FC<{
     </div>
 
     {/* Blurred table in background */}
-    <ScrollArea className="h-[calc(100vh-500px)]">
-      <div className="p-4">
-        <TableElements.PlaylistTable playlistTracks={playlistTracks} />
+    <ScrollArea className="h-[calc(100vh-500px)] hover-show-scrollbar">
+      <div className="p-4 overflow-x-auto">
+        <div className="min-w-[480px]">
+          <TableElements.PlaylistTable playlistTracks={playlistTracks} />
+        </div>
       </div>
     </ScrollArea>
   </>
 );
 
 export const TracksTableState: React.FC<{ playlistTracks: PlaylistTrackUI[] }> = ({ playlistTracks }) => (
-  <ScrollArea className="h-[calc(100vh-500px)]">
-    <div className="p-4">
-      <TableElements.PlaylistTable playlistTracks={playlistTracks} />
+  <ScrollArea className="h-[calc(100vh-500px)] hover-show-scrollbar">
+    <div className="p-4 overflow-x-auto">
+      <div className="min-w-[480px]">
+        <TableElements.PlaylistTable playlistTracks={playlistTracks} />
+      </div>
     </div>
   </ScrollArea>
 );
