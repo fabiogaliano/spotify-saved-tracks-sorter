@@ -82,15 +82,29 @@ class SupabaseTrackRepository implements TrackRepository {
     if (error) throw error
   }
 
-  async saveSavedTracks(savedTracks: SavedTrackInsert[]): Promise<void> {
-    const { error } = await getSupabase()
+  async saveSavedTracks(savedTracks: SavedTrackInsert[]): Promise<SavedTrackRow[]> {
+    if (savedTracks.length === 0) return []
+    
+    // Trust Spotify API filtering - just insert all tracks and return them
+    const { data: insertedTracks, error } = await getSupabase()
       .from('saved_tracks')
-      .upsert(savedTracks, {
-        onConflict: 'track_id,user_id',
-        ignoreDuplicates: true
-      })
+      .insert(savedTracks)
+      .select(`
+        liked_at,
+        sorting_status,
+        track:tracks!inner(
+          id,
+          spotify_track_id,
+          name,
+          artist,
+          album
+        )
+      `)
+      .order('liked_at', { ascending: false })
 
     if (error) throw error
+    
+    return insertedTracks || []
   }
 
   async updateTrackStatus(

@@ -4,6 +4,7 @@ import { logger } from '~/lib/logging/Logger'
 import { SYNC_STATUS } from '~/lib/repositories/TrackRepository'
 import { PlaylistService } from './PlaylistService'
 import type { Playlist, SpotifyPlaylistDTO } from '~/lib/models/Playlist'
+import type { TrackWithAnalysis } from '~/lib/models/Track'
 
 // Base interface for all sync operations
 export interface SyncResult {
@@ -13,6 +14,7 @@ export interface SyncResult {
   success: boolean
   message?: string
   details?: SyncDetails
+  newTracks?: TrackWithAnalysis[] // The newly added tracks with analysis data
 }
 
 export type SyncDetails = {
@@ -70,21 +72,23 @@ export class SyncService {
           totalProcessed: 0,
           newItems: 0,
           success: true,
-          message: 'No new tracks to sync'
+          message: 'No new tracks to sync',
+          newTracks: []
         }
       }
 
-      const { totalProcessed, processedTracks } = await this.trackService.processSpotifyTracks(spotifyTracks)
-      await this.trackService.saveSavedTracksForUser(userId, spotifyTracks, processedTracks)
+      const { totalProcessed, newTracks, processedTracks } = await this.trackService.processSpotifyTracks(spotifyTracks)
+      const newSavedTracks = await this.trackService.saveSavedTracksForUser(userId, spotifyTracks, processedTracks)
 
       await this.trackService.updateSyncStatus(userId, SYNC_STATUS.COMPLETED)
 
       return {
         type: 'tracks',
         totalProcessed,
-        newItems: processedTracks.length,
+        newItems: newSavedTracks.length,
         success: true,
-        message: `Successfully synced ${processedTracks.length} new tracks`
+        message: `Successfully synced ${newSavedTracks.length} new liked song${newSavedTracks.length === 1 ? '' : 's'}`,
+        newTracks: newSavedTracks
       }
     } catch (error) {
       await this.trackService.updateSyncStatus(userId, SYNC_STATUS.FAILED)

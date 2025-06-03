@@ -101,7 +101,7 @@ export interface TrackRepository {
 
   // Saved track operations
   getSavedTracks(userId: number): Promise<SavedTrackRow[]>
-  saveSavedTracks(savedTracks: SavedTrackInsert[]): Promise<void>
+  saveSavedTracks(savedTracks: SavedTrackInsert[]): Promise<SavedTrackRow[]>
   updateTrackStatus(trackId: number, status: Enums<'sorting_status_enum'>): Promise<void>
   updateSyncStatus(userId: number, status: SyncStatus): Promise<void>
   getLastSyncTime(userId: number): Promise<string | null>
