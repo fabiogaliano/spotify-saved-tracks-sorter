@@ -8,9 +8,10 @@ import { toast } from 'sonner';
 
 interface ManagementToolbarProps {
   isSyncing: boolean;
+  onPlaylistCreated?: (playlistSpotifyId: string) => void;
 }
 
-const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing }) => {
+const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing, onPlaylistCreated }) => {
   const { triggerSync } = useSyncPlaylists();
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
@@ -30,10 +31,14 @@ const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing }) => {
     if (fetcher.state === 'idle' && fetcher.data?.success) {
       toast.success(`Playlist "${fetcher.data.playlist.name}" created successfully!`);
       revalidator.revalidate();
+      // Auto-select the newly created playlist
+      if (onPlaylistCreated) {
+        onPlaylistCreated(fetcher.data.playlist.id);
+      }
     } else if (fetcher.state === 'idle' && fetcher.data?.error) {
       toast.error(fetcher.data.error || 'Failed to create playlist');
     }
-  }, [fetcher.state, fetcher.data, revalidator]);
+  }, [fetcher.state, fetcher.data, revalidator, onPlaylistCreated]);
 
   return (
     <div className="flex flex-col md:flex-row justify-between gap-4">
