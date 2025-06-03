@@ -27,6 +27,16 @@ const PlaylistManagement = ({ playlists }: PlaylistManagementProps) => {
     setSearchQuery
   } = usePlaylistManagement({ playlists });
 
+  const handlePlaylistCreated = (playlistSpotifyId: string) => {
+    // Find the playlist in our list by Spotify ID and select it
+    const newPlaylist = playlists.find(p => p.spotify_playlist_id === playlistSpotifyId);
+    if (newPlaylist) {
+      updateSelectedPlaylist(newPlaylist.id.toString());
+      // Switch to AI-Enabled tab since new playlists are AI playlists
+      updateSelectedTab('is_flagged');
+    }
+  };
+
   const { notification, showSuccess, showInfo } = useNotifications();
   const { isSyncing } = useSyncPlaylists();
   const { getTracksForPlaylist, getLoadingStateForPlaylist, loadPlaylistTracks, markPlaylistAsEmpty, formatTrackData } = usePlaylistTracks();
@@ -69,7 +79,7 @@ const PlaylistManagement = ({ playlists }: PlaylistManagementProps) => {
 
   return (
     <div className="h-full flex flex-col space-y-6">
-      <ManagementToolbar isSyncing={isSyncing} />
+      <ManagementToolbar isSyncing={isSyncing} onPlaylistCreated={handlePlaylistCreated} />
 
       {notification && (
         <NotificationMessage type={notification.type} message={notification.message} />

@@ -28,8 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
       success: true,
       playlist: {
         id: savedPlaylist.spotify_playlist_id,
-        name: savedPlaylist.name,
-        dbId: savedPlaylist.id
+        name: savedPlaylist.name
       }
     })
 

@@ -8,7 +8,7 @@ import { SYNC_STATUS } from '~/lib/repositories/TrackRepository';
 import type { Enums } from '~/types/database.types';
 import { getSupabase } from '~/lib/services/DatabaseService';
 import * as v from 'valibot'
-import { CreateAIPlaylistSchema } from '~/lib/validation/playlist.validation'
+import { CreateAIPlaylistInputSchema, CreateAIPlaylistSchema } from '~/lib/validation/playlist.validation'
 
 import { logger } from '~/lib/logging/Logger';
 
@@ -34,8 +34,17 @@ export class PlaylistService {
   }
 
   async createAIPlaylist(name: string, description: string, userId: number): Promise<Playlist> {
-    // Validate inputs using Valibot
-    const validatedInput = v.parse(CreateAIPlaylistSchema, { name, description })
+    // First validate the user input (without "AI:" prefix requirement)
+    const userInput = v.parse(CreateAIPlaylistInputSchema, { name, description })
+    
+    // Add "AI:" prefix to description if it's user input without prefix
+    const finalDescription = description.startsWith('AI:') ? description : `AI: ${userInput.description}`
+    
+    // Validate the final description with full schema
+    const validatedInput = v.parse(CreateAIPlaylistSchema, { 
+      name: userInput.name, 
+      description: finalDescription 
+    })
 
     // Create playlist in Spotify
     const spotifyPlaylist = await this.spotifyService.createPlaylist(validatedInput.name, validatedInput.description)
