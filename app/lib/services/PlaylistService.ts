@@ -7,6 +7,8 @@ import { SpotifyService } from '~/lib/services/SpotifyService';
 import { SYNC_STATUS } from '~/lib/repositories/TrackRepository';
 import type { Enums } from '~/types/database.types';
 import { getSupabase } from '~/lib/services/DatabaseService';
+import * as v from 'valibot'
+import { CreateAIPlaylistSchema } from '~/lib/validation/playlist.validation'
 
 import { logger } from '~/lib/logging/Logger';
 
@@ -31,16 +33,19 @@ export class PlaylistService {
     return playlistRepository.getPlaylistsByIds(playlistIds)
   }
 
-  async createAndSavePlaylist(name: string, description: string, userId: number): Promise<Playlist> {
+  async createAIPlaylist(name: string, description: string, userId: number): Promise<Playlist> {
+    // Validate inputs using Valibot
+    const validatedInput = v.parse(CreateAIPlaylistSchema, { name, description })
+
     // Create playlist in Spotify
-    const spotifyPlaylist = await this.spotifyService.createPlaylist(name, description)
+    const spotifyPlaylist = await this.spotifyService.createPlaylist(validatedInput.name, validatedInput.description)
 
     // Create DTO for database save
     const spotifyPlaylistDTO: SpotifyPlaylistDTO = {
       id: spotifyPlaylist.id,
       name: spotifyPlaylist.name,
-      description: description,
-      is_flagged: description.startsWith('AI:'),
+      description: validatedInput.description,
+      is_flagged: validatedInput.description.startsWith('AI:'),
       owner: { id: '' }, // Will be filled by the repository
       track_count: 0
     }

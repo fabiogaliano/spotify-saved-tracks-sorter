@@ -3,6 +3,7 @@ import { requireUserSession } from '~/features/auth/auth.utils'
 import { SpotifyService } from '~/lib/services/SpotifyService'
 import { PlaylistService } from '~/lib/services/PlaylistService'
 import { logger } from '~/lib/logging/Logger'
+import * as v from 'valibot'
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
@@ -14,23 +15,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const name = formData.get('name') as string
     const description = formData.get('description') as string
 
-    if (!name || !description) {
-      return Response.json({ error: 'Name and description are required' }, { status: 400 })
-    }
-
-    if (name.length > 100) {
-      return Response.json({ error: 'Playlist name cannot exceed 100 characters' }, { status: 400 })
-    }
-
-    if (description.length > 300) {
-      return Response.json({ error: 'Playlist description cannot exceed 300 characters' }, { status: 400 })
-    }
-
-    if (!description.startsWith('AI:')) {
-      return Response.json({ error: 'Description must start with "AI:"' }, { status: 400 })
-    }
-
-    const savedPlaylist = await playlistService.createAndSavePlaylist(name, description, session.userId)
+    const savedPlaylist = await playlistService.createAIPlaylist(name, description, session.userId)
 
     logger.info('AI playlist created and saved successfully', {
       spotifyPlaylistId: savedPlaylist.spotify_playlist_id,
@@ -50,6 +35,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   } catch (error) {
     logger.error('Failed to create AI playlist', { error })
+
+    // Handle Valibot validation errors
+    if (v.isValiError(error)) {
+      const firstIssue = error.issues[0]
+      return Response.json({ error: firstIssue.message }, { status: 400 })
+    }
 
     if (error instanceof logger.AppError) {
       // Handle Spotify API specific errors
