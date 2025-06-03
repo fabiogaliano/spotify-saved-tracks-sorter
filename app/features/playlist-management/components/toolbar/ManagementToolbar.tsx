@@ -2,6 +2,9 @@ import React from 'react';
 import { Button } from '~/shared/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useSyncPlaylists } from '../../hooks/useSyncPlaylists';
+import { useFetcher, useRevalidator } from 'react-router';
+import CreateAIPlaylistModal from '../CreateAIPlaylistModal';
+import { toast } from 'sonner';
 
 interface ManagementToolbarProps {
   isSyncing: boolean;
@@ -9,6 +12,28 @@ interface ManagementToolbarProps {
 
 const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing }) => {
   const { triggerSync } = useSyncPlaylists();
+  const fetcher = useFetcher();
+  const revalidator = useRevalidator();
+
+  const handleCreatePlaylist = (name: string, description: string) => {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('description', description);
+
+    fetcher.submit(formData, {
+      method: 'POST',
+      action: '/actions/create-ai-playlist'
+    });
+  };
+
+  React.useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.success) {
+      toast.success(`Playlist "${fetcher.data.playlist.name}" created successfully!`);
+      revalidator.revalidate();
+    } else if (fetcher.state === 'idle' && fetcher.data?.error) {
+      toast.error(fetcher.data.error || 'Failed to create playlist');
+    }
+  }, [fetcher.state, fetcher.data, revalidator]);
 
   return (
     <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -27,11 +52,10 @@ const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing }) => {
           {isSyncing ? 'Syncing...' : 'Sync Playlists'}
         </Button>
 
-        <Button
-          className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 transition-colors gap-2"
-        >
-          <Plus className="h-4 w-4" /> Create AI Playlist
-        </Button>
+        <CreateAIPlaylistModal
+          onCreatePlaylist={handleCreatePlaylist}
+          isCreating={fetcher.state !== 'idle'}
+        />
       </div>
     </div>
   );

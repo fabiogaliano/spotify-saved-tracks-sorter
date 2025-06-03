@@ -31,6 +31,32 @@ export class PlaylistService {
     return playlistRepository.getPlaylistsByIds(playlistIds)
   }
 
+  async createAndSavePlaylist(name: string, description: string, userId: number): Promise<Playlist> {
+    // Create playlist in Spotify
+    const spotifyPlaylist = await this.spotifyService.createPlaylist(name, description)
+
+    // Create DTO for database save
+    const spotifyPlaylistDTO: SpotifyPlaylistDTO = {
+      id: spotifyPlaylist.id,
+      name: spotifyPlaylist.name,
+      description: description,
+      is_flagged: description.startsWith('AI:'),
+      owner: { id: '' }, // Will be filled by the repository
+      track_count: 0
+    }
+
+    // Save to database
+    const playlistInsert = mapSpotifyPlaylistToPlaylistInsert(spotifyPlaylistDTO, userId)
+    const savedPlaylists = await playlistRepository.savePlaylists([playlistInsert])
+    const savedPlaylist = savedPlaylists[0]
+
+    if (!savedPlaylist) {
+      throw new Error('Failed to save playlist to database')
+    }
+
+    return savedPlaylist
+  }
+
   async getAIEnabledPlaylistsWithTracks(userId: number): Promise<PlaylistWithTracks[]> {
     try {
       const aiEnabledPlaylists = await playlistRepository.getFlaggedPlaylists(userId);
