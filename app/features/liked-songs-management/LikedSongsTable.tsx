@@ -8,7 +8,7 @@ import {
   useReactTable,
   VisibilityState
 } from '@tanstack/react-table';
-import { AlertCircle, CheckCircle, Clock, Columns, Music, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Columns, Music, RefreshCw, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { TrackWithAnalysis } from '~/lib/models/Track';
 import {
@@ -30,7 +30,10 @@ import { AnalysisControls } from './components/AnalysisControls';
 
 import TrackAnalysisModal from '~/components/TrackAnalysisModal';
 import { Badge } from '~/shared/components/ui/badge';
+import { Button } from '~/shared/components/ui/button';
 import { useLikedSongs } from './context';
+import { useFetcher } from 'react-router';
+import { toast } from 'sonner';
 
 // Define UIAnalysisStatus (can be moved to a shared types file later)
 export type UIAnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed' | 'unknown';
@@ -58,6 +61,7 @@ export const LikedSongsTable = () => {
   // Get data from context
   const {
     likedSongs,
+    setLikedSongs,
     rowSelection,
     setRowSelection,
     currentJob,
@@ -89,6 +93,9 @@ export const LikedSongsTable = () => {
   // State for track analysis modal
   const [selectedTrack, setSelectedTrack] = useState<TrackWithAnalysis | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+
+  // Sync fetcher
+  const syncFetcher = useFetcher();
 
   // Create column helper for TypeScript support
   const columnHelper = createColumnHelper<TrackWithAnalysis>();
@@ -165,7 +172,7 @@ export const LikedSongsTable = () => {
         <div className="flex justify-center">
           <Checkbox
             checked={row.getIsSelected()}
-            disabled={row.original.uiAnalysisStatus === 'pending' || row.original.uiAnalysisStatus === 'analyzed'} // Disable for both pending and analyzed tracks
+            disabled={row.original.uiAnalysisStatus === 'pending' || row.original.uiAnalysisStatus === 'analyzed' || row.original.uiAnalysisStatus === 'failed'} // Disable for pending, analyzed, and failed tracks
             onCheckedChange={value => row.toggleSelected(!!value)}
             aria-label="Select row"
             className="data-[state=checked]:bg-blue-500 border-border"
@@ -196,6 +203,45 @@ export const LikedSongsTable = () => {
   const analyzeAllTracks = () => {
     analyzeTracks({ useAll: true });
   };
+
+  // Handle sync liked songs
+  const handleSyncLikedSongs = () => {
+    syncFetcher.submit({}, { method: 'post', action: '/actions/sync-liked-songs' });
+    toast.loading('Syncing liked songs from Spotify...', { id: 'sync-liked-songs' });
+  };
+
+  // Handle sync response
+  useEffect(() => {
+    const fetchUpdatedSongs = async () => {
+      if (syncFetcher.state === 'idle' && syncFetcher.data) {
+        const data = syncFetcher.data as any;
+        
+        if (data.success) {
+          const { newItems } = data.result;
+          const message = newItems === 0 
+            ? 'Sync completed! Your liked songs are up to date.'
+            : `Sync completed! Added ${newItems} new liked song${newItems === 1 ? '' : 's'}.`;
+          
+          toast.success(message, { id: 'sync-liked-songs' });
+          
+          // Add new tracks to the beginning of the list
+          if (data.result.newTracks && data.result.newTracks.length > 0) {
+            setLikedSongs(prevSongs => [
+              ...data.result.newTracks, // Add new tracks at the beginning
+              ...prevSongs
+            ]);
+          }
+          
+          // Clear row selection after sync
+          setRowSelection({});
+        } else {
+          toast.error(data.error || 'Failed to sync liked songs', { id: 'sync-liked-songs' });
+        }
+      }
+    };
+
+    fetchUpdatedSongs();
+  }, [syncFetcher.state, syncFetcher.data, setLikedSongs, setRowSelection]);
 
   // Use a stable key for the table data to prevent full remounts
   const tableData = useMemo(() => likedSongs, [likedSongs]);
@@ -237,9 +283,21 @@ export const LikedSongsTable = () => {
   return (
     <div className="h-full flex flex-col space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">Liked Songs Analysis</h1>
-        <p className="text-foreground">Manage and analyze your liked songs from Spotify</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">Liked Songs Analysis</h1>
+          <p className="text-foreground">Manage and analyze your liked songs from Spotify</p>
+        </div>
+        
+        {/* Sync button */}
+        <Button
+          onClick={handleSyncLikedSongs}
+          disabled={syncFetcher.state === 'submitting'}
+          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground border-0 transition-colors gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${syncFetcher.state === 'submitting' ? 'animate-spin' : ''}`} />
+          {syncFetcher.state === 'submitting' ? 'Syncing...' : 'Sync Liked Songs'}
+        </Button>
       </div>
 
       {/* Status Cards */}
@@ -282,18 +340,33 @@ export const LikedSongsTable = () => {
       <Card className={`${styles.card} flex-1`}>
         <CardHeader className="pb-2 border-b border-border">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <CardTitle className="text-lg flex items-center gap-2 text-foreground">
-              <div className="bg-blue-500/20 p-1.5 rounded-md">
-                <Music className="h-5 w-5 text-blue-400" />
-              </div>
-              <span className="font-bold">Liked Songs</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+                <div className="bg-blue-500/20 p-1.5 rounded-md">
+                  <Music className="h-5 w-5 text-blue-400" />
+                </div>
+                <span className="font-bold">Liked Songs</span>
 
-              {Object.keys(rowSelection).length > 0 && (
-                <Badge className="ml-2 bg-blue-500/20 text-blue-400 border border-blue-500">
-                  {Object.keys(rowSelection).length} selected
-                </Badge>
+                {Object.keys(rowSelection).length > 0 && (
+                  <Badge className="ml-2 bg-blue-500/20 text-blue-400 border border-blue-500">
+                    {Object.keys(rowSelection).length} selected
+                  </Badge>
+                )}
+              </CardTitle>
+
+              {/* Analyze All button positioned next to title */}
+              {stats.notAnalyzed > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground hover:bg-card/50 transition-all duration-200"
+                  onClick={() => analyzeAllTracks()}
+                >
+                  <Sparkles className="h-4 w-4 mr-1.5" />
+                  Analyze All ({stats.notAnalyzed})
+                </Button>
               )}
-            </CardTitle>
+            </div>
 
             <div className="space-y-4">
               {/* Analysis controls with integrated column visibility */}

@@ -89,7 +89,7 @@ export class TrackService {
     }
   }
 
-  async saveSavedTracksForUser(userId: number, spotifyTracks: SpotifyTrackDTO[], tracks: Track[]): Promise<void> {
+  async saveSavedTracksForUser(userId: number, spotifyTracks: SpotifyTrackDTO[], tracks: Track[]): Promise<TrackWithAnalysis[]> {
     const tracksMap = new Map(tracks.map(t => [t.spotify_track_id, t]))
 
     const savedTracks = spotifyTracks.map(spotifyTrack => {
@@ -104,7 +104,14 @@ export class TrackService {
       )
     })
 
-    await trackRepository.saveSavedTracks(savedTracks)
+    const newSavedTracks = await trackRepository.saveSavedTracks(savedTracks)
+    
+    // Convert SavedTrackRow to TrackWithAnalysis (new tracks won't have analysis)
+    return newSavedTracks.map(savedTrack => ({
+      ...savedTrack,
+      analysis: null,
+      uiAnalysisStatus: 'not_analyzed' as UIAnalysisStatus
+    }))
   }
 }
 
