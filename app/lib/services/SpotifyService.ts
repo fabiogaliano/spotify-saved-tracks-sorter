@@ -168,6 +168,31 @@ export class SpotifyService {
     throw new Error(`Maximum retry attempts (${maxRetries}) reached`);
   }
 
+  async createPlaylist(name: string, description: string): Promise<{ id: string; name: string }> {
+    try {
+      const currentUser = await this.fetchWithRetry(() => this.spotifyApi.currentUser.profile());
+      const playlist = await this.fetchWithRetry(() => 
+        this.spotifyApi.playlists.createPlaylist(currentUser.id, {
+          name,
+          description,
+          public: false
+        })
+      );
+
+      return {
+        id: playlist.id,
+        name: playlist.name
+      };
+    } catch (error) {
+      throw new logger.AppError(
+        'Failed to create playlist',
+        'SPOTIFY_API_ERROR',
+        500,
+        { operation: 'createPlaylist', name, description, error }
+      );
+    }
+  }
+
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
