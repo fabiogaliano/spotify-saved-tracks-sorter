@@ -5,6 +5,7 @@ import { StrictMode } from 'react'
 import { getUserSession } from '~/features/auth/auth.utils'
 import { Toaster } from '~/shared/components/ui/sonner'
 import { ThemeProvider } from '~/lib/providers/theme-provider';
+import { QueryProvider } from '~/lib/providers/query-provider';
 
 import './tailwind.css'
 
@@ -75,15 +76,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<Links />
 			</head>
 			<body className="min-h-screen">
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="system"
-					enableSystem
-					disableTransitionOnChange={false}
-				>
-					<main>{children}</main>
-					<Toaster richColors position="bottom-right" duration={5000} closeButton={true} />
-				</ThemeProvider>
+				<QueryProvider>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="system"
+						enableSystem
+						disableTransitionOnChange={false}
+					>
+						<main>{children}</main>
+						<Toaster richColors position="bottom-right" duration={5000} closeButton={true} />
+					</ThemeProvider>
+				</QueryProvider>
 				<ScrollRestoration />
 				<Scripts />
 			</body>

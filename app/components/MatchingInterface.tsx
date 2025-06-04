@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 import { ScrollArea } from '~/shared/components/ui/scroll-area';
-import { NotificationMessage } from '~/features/playlist-management/components/ui/controls';
+import { NotificationBanner } from '~/features/playlist-management/components/ui';
 
 const MatchingInterface = () => {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
@@ -272,7 +272,7 @@ const MatchingInterface = () => {
 
       {/* Notification */}
       {notification && (
-        <NotificationMessage type={notification.type} message={notification.message} />
+        <NotificationBanner type={notification.type} message={notification.message} />
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Pencil, RefreshCw, Save, Sparkles } from 'lucide-react';
-import { Badge, ColoredBox, IconContainer } from '../ui/controls';
+import { StatusBadge, PlaylistCard, IconContainer } from '../ui';
 import { Card, CardContent } from '~/shared/components/ui/Card';
 import { Button } from '~/shared/components/ui/button';
 import { Switch } from '~/shared/components/ui/switch';
 import { Textarea } from '~/shared/components/ui/textarea';
-import { PlaylistUIFormat } from './types';
+import { PlaylistUIFormat } from '../../types';
 
 interface PlaylistInfoProps {
   currentPlaylist: PlaylistUIFormat;
@@ -29,7 +29,7 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
         <div className="flex flex-col md:flex-row gap-6">
           {/* Playlist Image */}
           <div className="shrink-0 mx-auto md:mx-0">
-            <ColoredBox color={currentPlaylist.imageColor} size="lg" />
+            <PlaylistCard color={currentPlaylist.imageColor} size="lg" />
           </div>
 
           {/* Playlist Info */}
@@ -124,9 +124,9 @@ const PlaylistInfo: React.FC<PlaylistInfoProps> = ({
                     />
                   </div>
 
-                  <Badge color="gray">
+                  <StatusBadge color="gray">
                     {currentPlaylist.aiEnabled ? 'Enabled' : 'Disabled'}
-                  </Badge>
+                  </StatusBadge>
                 </div>
 
                 <Button

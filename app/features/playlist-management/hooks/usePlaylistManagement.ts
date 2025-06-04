@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Playlist } from '~/lib/models/Playlist';
 import { mapPlaylistToUIFormat } from '../utils';
-import { PlaylistTrackUI } from '../components/playlist-viewer/types';
+import { usePlaylistUIContext } from '../store/playlist-ui-store';
+import { usePlaylists } from '../queries/playlist-queries';
 
 interface UsePlaylistManagementProps {
   playlists: Playlist[];
@@ -9,34 +10,21 @@ interface UsePlaylistManagementProps {
 
 export type PlaylistDetailViewTabs = 'is_flagged' | 'others';
 
-export function usePlaylistManagement({
-  playlists
-}: UsePlaylistManagementProps) {
-  const [selectedTab, setSelectedTab] = useState<PlaylistDetailViewTabs>(() => {
-    if (typeof window === 'undefined') return 'is_flagged';
-    return (localStorage.getItem('selectedTab') as PlaylistDetailViewTabs) || 'is_flagged';
-  });
-  const updateSelectedTab = useCallback((tab: PlaylistDetailViewTabs) => {
-    setSelectedTab(tab);
-    localStorage.setItem('selectedTab', tab);
-  }, []);
+export function usePlaylistManagement({ playlists: initialPlaylists }: UsePlaylistManagementProps) {
+  const {
+    selectedPlaylist,
+    selectedTab,
+    searchQuery,
+    updateSelectedPlaylist,
+    updateSelectedTab,
+    setSearchQuery,
+  } = usePlaylistUIContext();
 
-
-  const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
-  const updateSelectedPlaylist = useCallback((playlistId: string | null) => {
-    if (playlistId) {
-      setSelectedPlaylist(playlistId);
-      localStorage.setItem(`selectedPlaylistId_${selectedTab}`, playlistId);
-    }
-  }, [selectedTab]);
-
-
-  const [searchQuery, setSearchQuery] = useState('');
+  // Use React Query to get playlists (with initialData from loader)
+  const { data: playlists } = usePlaylists(initialPlaylists);
 
   const mappedPlaylists = useMemo(() => {
-    return playlists.map(playlist =>
-      mapPlaylistToUIFormat(playlist)
-    );
+    return (playlists || []).map(playlist => mapPlaylistToUIFormat(playlist));
   }, [playlists]);
 
   const filteredTabPlaylists = useMemo(() => {
@@ -45,6 +33,7 @@ export function usePlaylistManagement({
     );
   }, [mappedPlaylists, selectedTab]);
 
+  // Auto-select first playlist when tab changes or playlists update
   useEffect(() => {
     if (filteredTabPlaylists.length === 0) return;
 
@@ -53,7 +42,7 @@ export function usePlaylistManagement({
       const playlistExists = filteredTabPlaylists.some(p => p.id.toString() === selectedPlaylistId);
 
       if (playlistExists) {
-        setSelectedPlaylist(selectedPlaylistId);
+        updateSelectedPlaylist(selectedPlaylistId);
       } else {
         const firstPlaylistId = filteredTabPlaylists[0].id.toString();
         updateSelectedPlaylist(firstPlaylistId);
@@ -63,7 +52,6 @@ export function usePlaylistManagement({
       updateSelectedPlaylist(firstPlaylistId);
     }
   }, [selectedTab, filteredTabPlaylists, updateSelectedPlaylist]);
-
 
   const filteredPlaylists = useMemo(() => {
     return mappedPlaylists
@@ -78,9 +66,6 @@ export function usePlaylistManagement({
       });
   }, [mappedPlaylists, selectedTab, searchQuery]);
 
-  const currentPlaylistWithTracks = null;
-  const playlistTracks: PlaylistTrackUI[] = [];
-
   const currentPlaylist = useMemo(() => {
     if (!selectedPlaylist) return null;
     return mappedPlaylists.find(p => p.id === selectedPlaylist) || null;
@@ -92,9 +77,6 @@ export function usePlaylistManagement({
     searchQuery,
     filteredPlaylists,
     currentPlaylist,
-    currentPlaylistWithTracks,
-    playlistTracks,
-
     updateSelectedPlaylist,
     updateSelectedTab,
     setSearchQuery,

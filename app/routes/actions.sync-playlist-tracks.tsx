@@ -1,3 +1,3 @@
-import { action } from '~/features/playlist-management/actions/sync-tracks.action.server';
+import { action } from '~/features/playlist-management/api/sync-tracks.action.server';
 
 export { action };

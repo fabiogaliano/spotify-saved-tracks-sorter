@@ -10,7 +10,7 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
       .from('playlists')
       .select('*')
       .eq('user_id', userId)
-      .order('name')
+      .order('updated_at', { ascending: false })
 
     if (error) throw error
     return data || []
@@ -22,7 +22,7 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
       .select('*')
       .eq('user_id', userId)
       .eq('is_flagged', true)
-      .order('name')
+      .order('updated_at', { ascending: false })
 
     if (error) throw error
     return data || []
@@ -34,7 +34,7 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
       .select('*')
       .eq('user_id', userId)
       .eq('is_flagged', false)
-      .order('name')
+      .order('updated_at', { ascending: false })
 
     if (error) throw error
     return data || []

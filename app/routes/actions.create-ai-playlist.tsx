@@ -26,10 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     return Response.json({
       success: true,
-      playlist: {
-        id: savedPlaylist.spotify_playlist_id,
-        name: savedPlaylist.name
-      }
+      playlist: savedPlaylist
     })
 
   } catch (error) {

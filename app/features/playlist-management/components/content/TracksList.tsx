@@ -1,9 +1,9 @@
 import React from 'react';
 import { Music } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '~/shared/components/ui/Card';
-import { PlaylistUIFormat, PlaylistTrackUI } from './types';
-import { IconContainer, SectionTitle } from '../ui/controls';
-import { FailedSyncEmptyState, FailedSyncWithTracksState, LoadingTracksState, NotStartedSyncState, TracksTableState } from '../ui/DisplayStates';
+import { PlaylistUIFormat, PlaylistTrackUI } from '../../types';
+import { IconContainer, SectionTitle } from '../ui';
+import { FailedSyncEmptyState, FailedSyncWithTracksState, LoadingTracksState, NotStartedSyncState, TracksTableState } from '../ui/LoadingStates';
 import { useSyncPlaylistTracks } from '../../hooks/useSyncPlaylistTracks';
 
 interface TrackListProps {
