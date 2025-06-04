@@ -19,6 +19,7 @@ instance/
 **/*.db
 
 CLAUDE.md
+.claude/
 .DS_Store
 .cursorrules
 

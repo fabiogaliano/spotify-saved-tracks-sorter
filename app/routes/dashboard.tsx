@@ -7,7 +7,6 @@ import SettingsTab from '~/components/Settings';
 import { AnalysisStats, LibraryStatus, QuickActions, RecentActivity } from '~/features/dashboard';
 import { DashboardLoaderData, loader } from '~/features/dashboard/dashboard.loader.server';
 import PlaylistManagement from '~/features/playlist-management/components/PlaylistManagement';
-import { PlaylistTracksProvider } from '~/features/playlist-management/context/PlaylistTracksContext';
 import { Header } from '~/shared/components/Header';
 import { Card, CardContent } from '~/shared/components/ui/Card';
 import { LoadingSpinner } from '~/shared/components/ui/LoadingSpinner';
@@ -171,11 +170,7 @@ const Dashboard = () => {
 };
 
 const DashboardWithProviders = () => {
-  return (
-    <PlaylistTracksProvider>
-      <Dashboard />
-    </PlaylistTracksProvider>
-  );
+  return <Dashboard />;
 };
 
 export default DashboardWithProviders;

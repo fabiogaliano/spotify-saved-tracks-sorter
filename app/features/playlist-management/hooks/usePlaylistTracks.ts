@@ -1,13 +1,11 @@
 import { useCallback } from 'react';
 import { formatDate, mapTrackToUIFormat } from '../utils';
-import { usePlaylistTracksContext } from '../context/PlaylistTracksContext';
-import { PlaylistTrackUI } from '../components/playlist-viewer/types';
+import { PlaylistTrackUI } from '../types';
 import { TrackWithAddedAt } from '~/lib/models/Playlist';
+import { usePlaylistTracks as usePlaylistTracksQuery } from '../queries/playlist-queries';
 
-
-
-export function usePlaylistTracks() {
-  const context = usePlaylistTracksContext();
+export function usePlaylistTracks(playlistId?: string | null) {
+  const query = usePlaylistTracksQuery(playlistId || null);
 
   const formatTrackData = useCallback((track: any): PlaylistTrackUI => {
     // handle different track data formats (API vs UI)
@@ -39,13 +37,9 @@ export function usePlaylistTracks() {
   }, []);
 
   return {
-    tracks: context.tracks,
-    isLoading: context.isLoading,
-    hasLoaded: context.hasLoaded,
-    getTracksForPlaylist: context.getTracksForPlaylist,
-    getLoadingStateForPlaylist: context.getLoadingStateForPlaylist,
-    loadPlaylistTracks: context.loadPlaylistTracks,
-    markPlaylistAsEmpty: context.markPlaylistAsEmpty,
+    tracks: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
     formatTrackData
   };
 }
