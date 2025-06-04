@@ -2,8 +2,7 @@ import React from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Button } from '~/shared/components/ui/button';
 import { ScrollArea } from '~/shared/components/ui/scroll-area';
-import { PlaylistUIFormat } from '../playlist-viewer/types';
-import { PlaylistTrackUI } from '../playlist-viewer/types';
+import { PlaylistUIFormat, PlaylistTrackUI } from '../../types';
 import { TableElements } from './TableElements';
 
 export const LoadingTracksState: React.FC<{ currentPlaylist: PlaylistUIFormat }> = ({ currentPlaylist }) => (

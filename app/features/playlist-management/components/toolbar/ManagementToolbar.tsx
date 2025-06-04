@@ -1,10 +1,8 @@
 import React from 'react';
 import { Button } from '~/shared/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
-import { useSyncPlaylists } from '../../hooks/useSyncPlaylists';
-import { useFetcher, useRevalidator } from 'react-router';
-import CreateAIPlaylistModal from '../CreateAIPlaylistModal';
-import { toast } from 'sonner';
+import { useSyncPlaylists, useCreatePlaylist } from '../../queries/playlist-queries';
+import CreateAIPlaylistModal from '../modals/CreateAIPlaylistModal';
 
 interface ManagementToolbarProps {
   isSyncing: boolean;
@@ -12,33 +10,25 @@ interface ManagementToolbarProps {
 }
 
 const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing, onPlaylistCreated }) => {
-  const { triggerSync } = useSyncPlaylists();
-  const fetcher = useFetcher();
-  const revalidator = useRevalidator();
+  const syncPlaylistsMutation = useSyncPlaylists();
+  const createPlaylistMutation = useCreatePlaylist();
 
-  const handleCreatePlaylist = (name: string, description: string) => {
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('description', description);
-
-    fetcher.submit(formData, {
-      method: 'POST',
-      action: '/actions/create-ai-playlist'
-    });
+  const handleCreatePlaylist = async (name: string, description: string) => {
+    try {
+      const result = await createPlaylistMutation.mutateAsync({ name, description });
+      // Use the mutation result directly
+      if (onPlaylistCreated && result?.spotify_playlist_id) {
+        // Call immediately - the cache is already updated
+        onPlaylistCreated(result.spotify_playlist_id);
+      }
+    } catch (error) {
+      // Error handling is done in the mutation
+    }
   };
 
-  React.useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.success) {
-      toast.success(`Playlist "${fetcher.data.playlist.name}" created successfully!`);
-      revalidator.revalidate();
-      // Auto-select the newly created playlist
-      if (onPlaylistCreated) {
-        onPlaylistCreated(fetcher.data.playlist.id);
-      }
-    } else if (fetcher.state === 'idle' && fetcher.data?.error) {
-      toast.error(fetcher.data.error || 'Failed to create playlist');
-    }
-  }, [fetcher.state, fetcher.data, revalidator, onPlaylistCreated]);
+  const handleSyncPlaylists = () => {
+    syncPlaylistsMutation.mutate();
+  };
 
   return (
     <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -50,16 +40,16 @@ const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing, onPlay
       <div className="flex flex-wrap gap-2">
         <Button
           className="bg-secondary hover:bg-secondary/80 text-secondary-foreground border-0 transition-colors gap-2"
-          onClick={triggerSync}
-          disabled={isSyncing}
+          onClick={handleSyncPlaylists}
+          disabled={syncPlaylistsMutation.isPending}
         >
-          <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Syncing...' : 'Sync Playlists'}
+          <RefreshCw className={`h-4 w-4 ${syncPlaylistsMutation.isPending ? 'animate-spin' : ''}`} />
+          {syncPlaylistsMutation.isPending ? 'Syncing...' : 'Sync Playlists'}
         </Button>
 
         <CreateAIPlaylistModal
           onCreatePlaylist={handleCreatePlaylist}
-          isCreating={fetcher.state !== 'idle'}
+          isCreating={createPlaylistMutation.isPending}
         />
       </div>
     </div>
