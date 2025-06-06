@@ -161,8 +161,8 @@ export function useSyncLikedSongs() {
         loading: 'Syncing liked songs...',
         success: (data: SyncLikedSongsResult) => {
           const stats = data.result;
-          if (stats.added > 0 || stats.removed > 0) {
-            return `Sync complete: ${stats.added} added, ${stats.removed} removed`;
+          if (stats.added > 0) {
+            return `Successfully synced ${stats.added} new liked song${stats.added === 1 ? '' : 's'}`;
           } else {
             return 'Your liked songs are up to date';
           }

@@ -23,10 +23,18 @@ export const action: ActionFunction = async ({ request }) => {
 
     // Sync saved tracks only
     const savedTracksResult = await syncService.syncSavedTracks(userId)
+    console.log(JSON.stringify(savedTracksResult, null, 2))
 
+    // Transform the result to match the expected format
+    // TODO: Later figure out a solution to clean up liked songs that are removed from Spotify
+    // Currently we only track additions, not removals
     return Response.json({
       success: true,
-      result: savedTracksResult
+      result: {
+        added: savedTracksResult.newItems || 0,
+        removed: 0, // Not implemented yet - see TODO above
+        total: savedTracksResult.totalProcessed || 0
+      }
     })
   } catch (error) {
     console.error('Liked songs sync error:', error)
