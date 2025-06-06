@@ -49,9 +49,9 @@ interface LikedSongsContentProps {
 const styles = {
   card: "bg-card border-border",
   iconContainer: "p-2 rounded-full",
-  tableHeader: "text-left px-4 py-3 text-sm font-medium text-muted-foreground",
-  tableCell: "px-4 py-3 text-foreground",
-  tableRow: "border-b border-border/50 hover:bg-card/30"
+  tableHeader: "text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider",
+  tableCell: "px-4 py-4 text-foreground",
+  tableRow: "border-b border-border/50 hover:bg-muted/30 transition-colors duration-150"
 };
 
 const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, userId }) => {
@@ -111,18 +111,18 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
     const currentJob = analysisStatus?.currentJob;
     const hasActiveJob = analysisStatus?.hasActiveJob;
     const previousJob = previousJobRef.current;
-    
+
     // Update ref
     previousJobRef.current = currentJob;
-    
+
     // Job just completed (had job before, no job now)
     if (previousJob && !hasActiveJob) {
       const realCompletionStats = analysisStatus?.lastCompletionStats;
-      
+
       // Keep the last job data available for completion UI with REAL completion stats from WebSocket
       setCompletionDelayJob({
-        job: { 
-          ...previousJob, 
+        job: {
+          ...previousJob,
           status: 'completed',
           // Use the REAL completion stats from WebSocket message
           dbStats: realCompletionStats ? {
@@ -138,7 +138,7 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
         },
         isActive: false
       });
-      
+
       // Clear after 6 seconds (1 second longer than child popup)
       if (completionTimeoutRef.current) {
         clearTimeout(completionTimeoutRef.current);
@@ -147,7 +147,7 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
         setCompletionDelayJob(null);
       }, 6000);
     }
-    
+
     // New job started - clear completion delay
     if (hasActiveJob && completionDelayJob) {
       if (completionTimeoutRef.current) {
@@ -182,23 +182,37 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
       id: 'title',
       header: 'Title',
       cell: ({ row }) => (
-        <div className="font-medium text-foreground">{row.original.track.name}</div>
+        <div className="font-semibold text-foreground text-sm">{row.original.track.name}</div>
       ),
     }),
     columnHelper.accessor('track.artist', {
       id: 'artist',
       header: 'Artist',
-      cell: ({ getValue }) => getValue(),
+      cell: ({ getValue }) => (
+        <div className="text-foreground/80 text-sm">{getValue()}</div>
+      ),
     }),
     columnHelper.accessor('track.album', {
       id: 'album',
       header: 'Album',
-      cell: ({ getValue }) => getValue() || 'N/A',
+      cell: ({ getValue }) => (
+        <div className="text-muted-foreground text-xs truncate max-w-[200px]" title={getValue() || 'N/A'}>
+          {getValue() || 'N/A'}
+        </div>
+      ),
     }),
     columnHelper.accessor('liked_at', {
       id: 'addedAt',
       header: 'Date Added',
-      cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
+      cell: ({ getValue }) => (
+        <div className="text-muted-foreground text-xs tabular-nums">
+          {new Date(getValue()).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          })}
+        </div>
+      ),
     }),
     columnHelper.accessor('uiAnalysisStatus', {
       id: 'analysisStatus',
@@ -206,7 +220,7 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
       cell: ({ row }) => {
         const track = row.original;
         return (
-          <div className="flex justify-start">
+          <div className="flex justify-center">
             <TrackRowAnalysisIndicator
               trackId={track.track.id}
               initialStatus={track.uiAnalysisStatus}
@@ -358,19 +372,6 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
                   </Badge>
                 )}
               </CardTitle>
-
-              {/* Analyze All button positioned next to title */}
-              {stats.notAnalyzed > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-foreground hover:bg-card/50 transition-all duration-200"
-                  onClick={() => analyzeTracks({ useAll: true })}
-                >
-                  <Sparkles className="h-4 w-4 mr-1.5" />
-                  Analyze All ({stats.notAnalyzed})
-                </Button>
-              )}
             </div>
 
             <div className="space-y-4">
@@ -379,10 +380,13 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
                 selectedCount={selectedTracks().length}
                 totalCount={stats.total}
                 analyzedCount={stats.analyzed}
+                unanalyzedCount={stats.notAnalyzed}
                 onAnalyzeSelected={analyzeSelectedTracks}
                 onAnalyzeAll={() => analyzeTracks({ useAll: true })}
                 isAnalyzing={isAnalyzing}
                 disabled={isAnalyzing}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
               />
             </div>
           </div>
