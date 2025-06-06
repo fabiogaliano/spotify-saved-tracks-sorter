@@ -157,7 +157,7 @@ export const StatusCardWithJobStatus = ({
     value;
 
   return (
-    <Card className="border-muted relative">
+    <Card className="bg-card border-border relative">
       <CardContent className="p-4 flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-sm">{title}</p>
@@ -228,7 +228,7 @@ export const StatusCardWithJobStatus = ({
 
 // Regular Status Card for backwards compatibility
 export const StatusCard = ({ title, value, subtitle, icon, iconBg, valueColor }: StatusCardProps) => (
-  <Card className="border-muted">
+  <Card className="bg-card border-border">
     <CardContent className="p-4 flex items-center justify-between">
       <div>
         <p className="text-muted-foreground text-sm">{title}</p>
