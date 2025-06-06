@@ -7,7 +7,7 @@ exceptiongroup==1.2.2
 fastapi==0.115.8
 filelock==3.17.0
 fsspec==2025.2.0
-h11==0.14.0
+h11==0.16.0
 huggingface-hub==0.29.1
 idna==3.10
 Jinja2==3.1.5
