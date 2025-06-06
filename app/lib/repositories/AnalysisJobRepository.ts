@@ -61,7 +61,7 @@ export class AnalysisJobRepository {
       .from('analysis_jobs')
       .select('*')
       .eq('user_id', userId)
-      .in('status', ['pending', 'in_progress'])
+      .in('status', ['pending', 'in_progress', 'completed', 'failed'])
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -114,17 +114,41 @@ export class AnalysisJobRepository {
   }
 
   async markJobAsCompleted(batchId: string): Promise<AnalysisJob> {
-    return this.updateJob(batchId, {
-      status: 'completed',
-      updated_at: new Date().toISOString()
-    });
+    const { data, error } = await getSupabase()
+      .from('analysis_jobs')
+      .update({
+        status: 'completed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('batch_id', batchId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error marking job as completed:', error);
+      throw error;
+    }
+
+    return data;
   }
 
   async markJobAsFailed(batchId: string): Promise<AnalysisJob> {
-    return this.updateJob(batchId, {
-      status: 'failed',
-      updated_at: new Date().toISOString()
-    });
+    const { data, error } = await getSupabase()
+      .from('analysis_jobs')
+      .update({
+        status: 'failed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('batch_id', batchId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error marking job as failed:', error);
+      throw error;
+    }
+
+    return data;
   }
 
   async deleteJob(id: string): Promise<void> {
@@ -138,6 +162,7 @@ export class AnalysisJobRepository {
       throw error;
     }
   }
+
 
   async getUserJobs(userId: number, limit = 10): Promise<AnalysisJob[]> {
     const { data, error } = await getSupabase()

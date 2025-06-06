@@ -12,12 +12,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const activeJob = await jobPersistenceService.getActiveJobForUser(userSession.userId);
     
     if (activeJob) {
-      console.log('Active job trackStates before serialization:', activeJob.trackStates);
-      console.log('Active job trackStates entries:', Array.from(activeJob.trackStates.entries()));
-      
       // Convert trackStates Map to a plain object for JSON serialization
       const trackStatesObj = Object.fromEntries(activeJob.trackStates.entries());
-      console.log('Serialized trackStates object:', trackStatesObj);
       
       const jobForSerialization = {
         ...activeJob,

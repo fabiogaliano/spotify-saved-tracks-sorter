@@ -22,17 +22,24 @@ const server = Bun.serve({
       return req.json().then(body => {
         console.log("Received notification:", body);
 
-        // Broadcast to general status channel
-        const message = JSON.stringify({
-          type: "job_status",
-          data: body
-        });
+        // Handle job completion messages differently from track updates
+        if (body.type === 'job_completed') {
+          // Send job completion messages directly (not wrapped)
+          const message = JSON.stringify(body);
+          server.publish("status_updates", message);
+        } else {
+          // Wrap other messages in job_status format
+          const message = JSON.stringify({
+            type: "job_status",
+            data: body
+          });
 
-        server.publish("status_updates", message);
+          server.publish("status_updates", message);
 
-        // Also publish to track-specific channel if trackId is present
-        if (body.trackId) {
-          server.publish(`track_${body.trackId}`, message);
+          // Also publish to track-specific channel if trackId is present
+          if (body.trackId) {
+            server.publish(`track_${body.trackId}`, message);
+          }
         }
 
         return new Response("Status update broadcast", {
