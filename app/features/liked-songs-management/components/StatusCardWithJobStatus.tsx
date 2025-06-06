@@ -175,20 +175,28 @@ export const StatusCardWithJobStatus = ({
             {icon}
           </div>
           
-          {/* Multiple pulsating wave rings */}
+          {/* Clean pulsation effect for active analysis */}
           {shouldShowTooltip && (
-            <>
-              {/* Wave 1 - Inner */}
-              <div className="absolute inset-0 rounded-full border border-blue-400/60 animate-ping"></div>
-              {/* Wave 2 - Middle */}
-              <div className="absolute -inset-1 rounded-full border border-blue-400/40 animate-ping" style={{ animationDelay: '0.5s' }}></div>
-              {/* Wave 3 - Outer */}
-              <div className="absolute -inset-2 rounded-full border border-blue-400/20 animate-ping" style={{ animationDelay: '1s' }}></div>
-              
-              {/* Background glow */}
-              <div className="absolute inset-0 rounded-full bg-blue-400/10 animate-pulse"></div>
-            </>
+            <div 
+              className="absolute inset-0 rounded-full bg-blue-400/25"
+              style={{
+                animation: 'pulse-circle 1.1s ease-in-out infinite'
+              }}
+            ></div>
           )}
+
+          <style jsx>{`
+            @keyframes pulse-circle {
+              0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+              }
+              50% {
+                transform: scale(1.2);
+                opacity: 0.3;
+              }
+            }
+          `}</style>
         </div>
 
         {/* Job Status Dropdown - positioned like macOS menu */}
