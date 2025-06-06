@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(bun test)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

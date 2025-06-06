@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-
-type WebSocketMessage = {
-  type: string;
-  data: any;
-};
+import { WebSocketMessage } from '~/lib/types/websocket.types';
 
 type WebSocketHookOptions = {
   autoConnect: boolean;

@@ -18,16 +18,20 @@ interface StatusCardProps {
   icon: ReactNode;
   iconBg?: string;
   valueColor?: string;
+  description?: string;
 }
 
 // Status Card component
-export const StatusCard = ({ title, value, icon, iconBg, valueColor = 'text-foreground' }: StatusCardProps) => {
+export const StatusCard = ({ title, value, icon, iconBg, valueColor = 'text-foreground', description }: StatusCardProps) => {
   return (
     <Card className={styles.card}>
       <CardContent className="p-4 flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-sm">{title}</p>
           <p className={`${valueColor} text-2xl font-bold`}>{value}</p>
+          {description && (
+            <p className="text-muted-foreground text-xs mt-1">{description}</p>
+          )}
         </div>
         <div className={`${iconBg || 'bg-card'} ${styles.iconContainer}`}>
           {icon}

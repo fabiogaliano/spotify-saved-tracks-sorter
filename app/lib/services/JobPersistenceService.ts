@@ -25,6 +25,13 @@ export class JobPersistenceService {
     if (!dbJob) return null;
 
     console.log('Raw dbJob from database:', dbJob);
+    
+    // Only return active jobs to client - filter out old completed jobs
+    // This prevents old completed jobs from showing up after reload
+    if (dbJob.status === 'completed' || dbJob.status === 'failed') {
+      console.log(`Job ${dbJob.batch_id} is completed/failed, not returning to client`);
+      return null;
+    }
 
     // Get the original track IDs from the job
     const trackIds = (dbJob.track_ids as number[]) || [];
@@ -115,17 +122,32 @@ export class JobPersistenceService {
     const jobAge = dbJob.created_at ? Date.now() - new Date(dbJob.created_at).getTime() : 0;
     const jobAgeMinutes = jobAge / (1000 * 60);
     
-    if (finalStatus === 'in_progress') {
-      if (totalProcessed >= expectedTotal) {
+    // Check completion based on trackStates as well as DB counters
+    const completedTracksFromStates = Array.from(trackStates.values()).filter(s => s === 'completed' || s === 'failed').length;
+    const isCompleteByStates = completedTracksFromStates >= expectedTotal;
+    const isCompleteByDB = totalProcessed >= expectedTotal;
+    
+    console.log('Job completion analysis:', {
+      finalStatus,
+      totalProcessed,
+      expectedTotal,
+      completedTracksFromStates,
+      isCompleteByStates,
+      isCompleteByDB,
+      jobAgeMinutes: jobAgeMinutes.toFixed(1)
+    });
+    
+    if (finalStatus === 'in_progress' || finalStatus === 'pending') {
+      if (isCompleteByDB || isCompleteByStates) {
         // All tracks processed, mark as complete
-        console.log(`Job ${dbJob.batch_id} is complete (${totalProcessed}/${expectedTotal}), updating status`);
+        console.log(`Job ${dbJob.batch_id} is complete (DB: ${totalProcessed}/${expectedTotal}, States: ${completedTracksFromStates}/${expectedTotal}), updating status`);
         finalStatus = 'completed';
         this.markJobCompleted(dbJob.batch_id).catch(error => {
           console.error('Failed to mark job as completed:', error);
         });
       } else if (jobAgeMinutes > 30) {
         // Job is over 30 minutes old and still in progress - likely stale
-        console.log(`Job ${dbJob.batch_id} appears stale (${totalProcessed}/${expectedTotal}, ${jobAgeMinutes.toFixed(1)}min old), marking as failed`);
+        console.log(`Job ${dbJob.batch_id} appears stale (DB: ${totalProcessed}/${expectedTotal}, States: ${completedTracksFromStates}/${expectedTotal}, ${jobAgeMinutes.toFixed(1)}min old), marking as failed`);
         finalStatus = 'failed';
         this.markJobFailed(dbJob.batch_id).catch(error => {
           console.error('Failed to mark stale job as failed:', error);
@@ -155,24 +177,11 @@ export class JobPersistenceService {
   }
 
   async markJobCompleted(batchId: string): Promise<void> {
-    // Find job by batch_id first, then mark as completed
-    const job = await analysisJobRepository.getJobByBatchId(batchId);
-    if (job) {
-      await analysisJobRepository.updateJob(job.id, {
-        status: 'completed',
-        updated_at: new Date().toISOString()
-      });
-    }
+    await analysisJobRepository.markJobAsCompleted(batchId);
   }
 
   async markJobFailed(batchId: string): Promise<void> {
-    const job = await analysisJobRepository.getJobByBatchId(batchId);
-    if (job) {
-      await analysisJobRepository.updateJob(job.id, {
-        status: 'failed',
-        updated_at: new Date().toISOString()
-      });
-    }
+    await analysisJobRepository.markJobAsFailed(batchId);
   }
 
   async getJobCounts(batchId: string): Promise<{ processed: number; succeeded: number; failed: number }> {
