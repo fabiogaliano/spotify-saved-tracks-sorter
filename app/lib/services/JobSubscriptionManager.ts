@@ -1,4 +1,8 @@
-import { AnalysisJob } from '~/features/liked-songs-management/context';
+import { 
+  WebSocketMessage, 
+  isJobStatusMessage, 
+  isDirectJobNotification 
+} from '~/lib/types/websocket.types';
 
 export type JobStatusUpdate = {
   trackId: number;
@@ -47,30 +51,53 @@ export class JobSubscriptionManager {
    * Process a WebSocket message with job-scoped filtering
    * Only processes messages if they belong to the current active job
    */
-  processMessage(message: any): boolean {
+  processMessage(message: WebSocketMessage | any): boolean {
     // Only process if manager is active
     if (!this.isActive || !this.currentJobId) {
       return false;
     }
 
-    // Validate message structure
-    if (!message || message.type !== 'job_status') {
-      return false;
+    // Handle direct job notification (from worker)
+    if (isDirectJobNotification(message)) {
+      // Check if this message belongs to the current job
+      if (message.jobId !== this.currentJobId) {
+        return false;
+      }
+
+      const update: JobStatusUpdate = {
+        trackId: message.trackId,
+        status: message.status
+      };
+
+      this.notifySubscribers(update);
+      return true;
     }
 
-    const statusUpdate = message.data;
-    if (!statusUpdate || typeof statusUpdate.trackId !== 'number' || !statusUpdate.status) {
-      console.warn('JobSubscriptionManager: Invalid status update format', statusUpdate);
-      return false;
+    // Handle nested job status message (legacy format)
+    if (isJobStatusMessage(message)) {
+      const { jobId, trackId, status } = message.data;
+      
+      // Check if this message belongs to the current job
+      if (jobId !== this.currentJobId) {
+        return false;
+      }
+
+      const update: JobStatusUpdate = {
+        trackId,
+        status
+      };
+
+      this.notifySubscribers(update);
+      return true;
     }
 
-    // Create the update object
-    const update: JobStatusUpdate = {
-      trackId: statusUpdate.trackId,
-      status: statusUpdate.status
-    };
+    return false;
+  }
 
-    // Notify all subscribers
+  /**
+   * Notify all subscribers with an update
+   */
+  private notifySubscribers(update: JobStatusUpdate): void {
     this.callbacks.forEach(callback => {
       try {
         callback(update);
@@ -78,8 +105,6 @@ export class JobSubscriptionManager {
         console.error('JobSubscriptionManager: Error in callback', error);
       }
     });
-
-    return true;
   }
 
   /**

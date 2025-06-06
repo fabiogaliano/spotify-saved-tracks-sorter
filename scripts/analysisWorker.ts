@@ -11,6 +11,7 @@ import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisReposit
 import { TrackAnalysisAttemptsRepository } from '~/lib/repositories/TrackAnalysisAttemptsRepository';
 import { providerKeysRepository } from '~/lib/repositories/ProviderKeysRepository';
 import { analysisJobRepository } from '~/lib/repositories/AnalysisJobRepository';
+import { jobPersistenceService } from '~/lib/services/JobPersistenceService';
 import { DefaultSongAnalysisService } from '~/lib/services/analysis/SongAnalysisService';
 import { DefaultLyricsService } from '~/lib/services/lyrics/LyricsService';
 import { LlmProviderManager, LlmProviderName } from '~/lib/services/llm/LlmProviderManager';
@@ -288,12 +289,60 @@ const main = async () => {
           try {
             const job = await analysisJobRepository.getJobByBatchId(batchId);
             if (job) {
-              await analysisJobRepository.updateJobProgress(
+              const newProcessedCount = job.tracks_processed + 1;
+              const newSucceededCount = job.tracks_succeeded + 1;
+
+              logger.info(`Updating job progress: ${batchId}, processed: ${job.tracks_processed} → ${newProcessedCount}, succeeded: ${job.tracks_succeeded} → ${newSucceededCount}`);
+
+              const updatedJob = await analysisJobRepository.updateJobProgress(
                 batchId,
-                job.tracks_processed + 1,
-                job.tracks_succeeded + 1,
+                newProcessedCount,
+                newSucceededCount,
                 job.tracks_failed
               );
+
+              logger.info(`Job progress updated successfully. New state: processed=${updatedJob.tracks_processed}, succeeded=${updatedJob.tracks_succeeded}, failed=${updatedJob.tracks_failed}`);
+
+              // Check if job is complete
+              if (newProcessedCount >= job.track_count) {
+                logger.info(`Job ${batchId} is complete: ${newProcessedCount}/${job.track_count} tracks processed`);
+                await jobPersistenceService.markJobCompleted(batchId);
+                logger.info(`Job marked as completed successfully`);
+                
+                // Send job completion notification
+                try {
+                  const completionNotification = {
+                    type: 'job_completed',
+                    jobId: batchId,
+                    status: 'completed' as const,
+                    stats: {
+                      totalTracks: job.track_count,
+                      tracksProcessed: newProcessedCount,
+                      tracksSucceeded: newSucceededCount,
+                      tracksFailed: updatedJob.tracks_failed
+                    },
+                    timestamp: new Date().toISOString()
+                  };
+                  
+                  logger.info(`Sending job completion notification: ${JSON.stringify(completionNotification)}`);
+                  
+                  const response = await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(completionNotification)
+                  });
+                  
+                  if (!response.ok) {
+                    logger.warn(`Failed to send job completion notification: ${response.status} ${response.statusText}`);
+                  } else {
+                    logger.info('Successfully sent job completion notification');
+                  }
+                } catch (error) {
+                  logger.error(`Error sending job completion notification: ${error}`);
+                }
+              }
+            } else {
+              logger.error(`Could not find job with batchId: ${batchId}`);
             }
           } catch (error) {
             logger.error(`Failed to update job progress for successful track ${trackId}:`, error);
@@ -342,12 +391,60 @@ const main = async () => {
           try {
             const job = await analysisJobRepository.getJobByBatchId(batchId);
             if (job) {
-              await analysisJobRepository.updateJobProgress(
+              const newProcessedCount = job.tracks_processed + 1;
+              const newFailedCount = job.tracks_failed + 1;
+
+              logger.info(`Updating job progress (FAILED): ${batchId}, processed: ${job.tracks_processed} → ${newProcessedCount}, failed: ${job.tracks_failed} → ${newFailedCount}`);
+
+              const updatedJob = await analysisJobRepository.updateJobProgress(
                 batchId,
-                job.tracks_processed + 1,
+                newProcessedCount,
                 job.tracks_succeeded,
-                job.tracks_failed + 1
+                newFailedCount
               );
+
+              logger.info(`Job progress updated successfully (FAILED). New state: processed=${updatedJob.tracks_processed}, succeeded=${updatedJob.tracks_succeeded}, failed=${updatedJob.tracks_failed}`);
+
+              // Check if job is complete
+              if (newProcessedCount >= job.track_count) {
+                logger.info(`Job ${batchId} is complete: ${newProcessedCount}/${job.track_count} tracks processed`);
+                await jobPersistenceService.markJobCompleted(batchId);
+                logger.info(`Job marked as completed successfully`);
+                
+                // Send job completion notification
+                try {
+                  const completionNotification = {
+                    type: 'job_completed',
+                    jobId: batchId,
+                    status: 'completed' as const,
+                    stats: {
+                      totalTracks: job.track_count,
+                      tracksProcessed: newProcessedCount,
+                      tracksSucceeded: job.tracks_succeeded,
+                      tracksFailed: newFailedCount
+                    },
+                    timestamp: new Date().toISOString()
+                  };
+                  
+                  logger.info(`Sending job completion notification: ${JSON.stringify(completionNotification)}`);
+                  
+                  const response = await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(completionNotification)
+                  });
+                  
+                  if (!response.ok) {
+                    logger.warn(`Failed to send job completion notification: ${response.status} ${response.statusText}`);
+                  } else {
+                    logger.info('Successfully sent job completion notification');
+                  }
+                } catch (error) {
+                  logger.error(`Error sending job completion notification: ${error}`);
+                }
+              }
+            } else {
+              logger.error(`Could not find job with batchId: ${batchId}`);
             }
           } catch (error) {
             logger.error(`Failed to update job progress for failed track ${trackId}:`, error);

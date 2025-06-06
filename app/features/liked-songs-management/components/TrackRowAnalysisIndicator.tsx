@@ -1,8 +1,6 @@
 import { Badge } from '~/shared/components/ui/badge';
-import { useLikedSongs } from '../context/';
 import type { UIAnalysisStatus } from '~/lib/models/Track';
 import { AlertCircle, CheckCircle, Clock, Eye, Music, RefreshCw } from 'lucide-react';
-import { jobSubscriptionManager } from '~/lib/services/JobSubscriptionManager';
 import { useEffect, useState } from 'react';
 
 interface TrackRowAnalysisIndicatorProps {
@@ -35,61 +33,18 @@ export const TrackRowAnalysisIndicator: React.FC<TrackRowAnalysisIndicatorProps>
   onAnalyze
 }) => {
   const [status, setStatus] = useState<UIAnalysisStatus>(initialStatus);
-  const { updateSongAnalysisDetails } = useLikedSongs();
 
   // Update local status when initialStatus changes from parent
   useEffect(() => {
     setStatus(initialStatus);
   }, [initialStatus]);
 
-  // Subscribe to job status updates for this track
-  useEffect(() => {
-    if (status !== 'pending') {
-      return;
-    }
-
-    console.log(`TrackRowAnalysisIndicator: Subscribing to job updates for track ${trackId}`);
-    
-    const unsubscribe = jobSubscriptionManager.subscribe((update) => {
-      // Only process updates for this specific track
-      if (update.trackId === trackId) {
-        console.log(`TrackRowAnalysisIndicator: Received update for track ${trackId}:`, update);
-        
-        let newStatus: UIAnalysisStatus;
-        switch (update.status) {
-          case 'COMPLETED':
-            newStatus = 'analyzed';
-            break;
-          case 'FAILED':
-            newStatus = 'failed';
-            break;
-          case 'IN_PROGRESS':
-          case 'QUEUED':
-            newStatus = 'pending';
-            break;
-          default:
-            newStatus = 'pending';
-        }
-        
-        setStatus(newStatus);
-        
-        // Update the context with the new status
-        if (newStatus === 'analyzed' || newStatus === 'failed') {
-          updateSongAnalysisDetails(trackId, null, newStatus);
-        }
-      }
-    });
-
-    return unsubscribe;
-  }, [trackId, status, updateSongAnalysisDetails]);
-
   const handleClick = () => {
     if (status === 'analyzed') {
-      // Simply call the view handler - data fetching will happen in LikedSongsTable
       if (onView) onView();
     } else if ((status === 'not_analyzed' || status === 'failed') && onAnalyze) {
       onAnalyze();
-      setStatus('pending');
+      // Don't set to pending here - let the mutation handle it optimistically
     }
   };
 

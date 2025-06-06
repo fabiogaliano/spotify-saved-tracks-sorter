@@ -1,7 +1,6 @@
 import { ComponentProps, Suspense, useState } from 'react';
 import { Await, useLoaderData, useNavigation } from 'react-router';
-import { LikedSongsTable } from '~/features/liked-songs-management/LikedSongsTable'
-import { LikedSongsProvider } from '~/features/liked-songs-management/context';
+import { LikedSongsTable } from '~/features/liked-songs-management/LikedSongsTable';
 import MatchingInterface from '~/components/MatchingInterface';
 import SettingsTab from '~/components/Settings';
 import { AnalysisStats, LibraryStatus, QuickActions, RecentActivity } from '~/features/dashboard';
@@ -118,9 +117,7 @@ const Dashboard = () => {
                     <Suspense fallback={<LoadingFallback />}>
                       <Await resolve={likedSongs}>
                         {(resolvedLikedSongs) => (
-                          <LikedSongsProvider initialSongs={resolvedLikedSongs} userId={user.id}>
-                            <LikedSongsTable />
-                          </LikedSongsProvider>
+                          <LikedSongsTable initialSongs={resolvedLikedSongs} userId={user.id} />
                         )}
                       </Await>
                     </Suspense>
