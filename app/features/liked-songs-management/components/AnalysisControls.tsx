@@ -108,13 +108,13 @@ export const AnalysisControls = ({
 
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
+          variant={selectedCount > 0 ? "default" : "outline"}
           disabled={selectedCount === 0 || disabled}
           onClick={onAnalyzeSelected}
-          className="flex items-center gap-2"
+          className={`flex items-center gap-2 ${selectedCount > 0 ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}
         >
           <Sparkles className={`h-4 w-4 ${isAnalyzing ? 'animate-pulse' : ''}`} />
-          Analyze Selected ({selectedCount})
+          {selectedCount > 0 ? `Analyze ${selectedCount} Selected` : 'Analyze Selected'}
         </Button>
 
         <Button

@@ -365,12 +365,6 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
                   <Music className="h-5 w-5 text-blue-400" />
                 </div>
                 <span className="font-bold">Liked Songs</span>
-
-                {selectedTracks().length > 0 && (
-                  <Badge className="ml-2 bg-blue-500/20 text-blue-400 border border-blue-500">
-                    {selectedTracks().length} selected
-                  </Badge>
-                )}
               </CardTitle>
             </div>
 
