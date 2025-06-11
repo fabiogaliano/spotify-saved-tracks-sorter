@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '~/shared/components/ui/Card';
 import { Button } from '~/shared/components/ui/button';
 import { Label } from '~/shared/components/ui/label';
@@ -16,37 +16,194 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 import { ApiKeyManager } from '~/components/ApiKeys/ApiKeyManager';
-import { LibrarySyncMode } from '~/lib/models/User';
+import { LibrarySyncMode, UserPreferences } from '~/lib/models/User';
+import { useLoaderData, useFetcher } from 'react-router';
+import { DashboardLoaderData } from '~/features/dashboard/dashboard.loader.server';
+import { useTheme } from 'next-themes';
+import type { Enums } from '~/types/database.types';
+import { useNotificationStore } from '~/lib/stores/notificationStore';
 
 const SettingsTab = () => {
+  const { user } = useLoaderData<DashboardLoaderData>();
+  const fetcher = useFetcher();
+  const { theme, setTheme } = useTheme();
+  const { success, error } = useNotificationStore();
+
   // State for settings
-  const [batchSize, setBatchSize] = useState(10);
+  const [batchSize, setBatchSize] = useState<number>(5);
+  const [isLoading, setIsLoading] = useState(true);
   const [syncMode, setSyncMode] = useState<LibrarySyncMode>('automatic');
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(theme === 'dark');
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('general');
-  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null);
 
-  // Handle settings save
-  const handleSaveSettings = () => {
-    setNotification({
-      type: 'success',
-      message: 'Settings saved successfully'
-    });
+  // Track initial state to avoid unnecessary saves
+  const initialStateRef = useRef<{
+    batchSize: number;
+    syncMode: LibrarySyncMode;
+    theme: string;
+  } | null>(null);
 
-    setTimeout(() => setNotification(null), 3000);
+  // Debounce timer ref
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load user preferences on mount
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!user?.id) return;
+
+      try {
+        const response = await fetch('/api/user-preferences');
+        if (response.ok) {
+          const data = await response.json();
+          const preferences = data.preferences;
+          if (preferences) {
+            setBatchSize(preferences.batch_size);
+            setSyncMode(preferences.sync_mode);
+            if (preferences.theme_preference) {
+              setDarkMode(preferences.theme_preference === 'dark');
+              // Don't set theme here to avoid conflict
+            }
+
+            // Store initial state
+            initialStateRef.current = {
+              batchSize: preferences.batch_size,
+              syncMode: preferences.sync_mode,
+              theme: preferences.theme_preference || theme || 'dark'
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load preferences:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPreferences();
+  }, [user?.id]);
+
+  // Sync darkMode state with theme
+  useEffect(() => {
+    setDarkMode(theme === 'dark');
+  }, [theme]);
+
+  // Get dynamic batch size description
+  const getBatchSizeDescription = () => {
+    if (batchSize === 1) return 'Slowest but most reliable';
+    if (batchSize === 5) return 'Balanced speed and reliability';
+    if (batchSize === 10) return 'Maximum speed';
+    return 'Balanced speed and reliability';
+  };
+
+  // Debounced save settings
+  const debouncedSave = useCallback(() => {
+    if (!user?.id || !initialStateRef.current) return;
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set new timeout
+    saveTimeoutRef.current = setTimeout(async () => {
+      // Double-check if anything has actually changed before saving
+      if (!initialStateRef.current) return;
+      
+      const currentTheme = darkMode ? 'dark' : 'light';
+      const hasChanges =
+        batchSize !== initialStateRef.current.batchSize ||
+        syncMode !== initialStateRef.current.syncMode ||
+        currentTheme !== initialStateRef.current.theme;
+
+      if (!hasChanges) {
+        return; // No changes, don't save
+      }
+      // Save to localStorage for backward compatibility
+      localStorage.setItem('analysisBatchSize', String(batchSize));
+
+      const formData = {
+        batchSize,
+        syncMode,
+        theme: currentTheme as Enums<'theme'>
+      };
+
+      try {
+        const response = await fetch('/actions/update-preferences', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+          success('Settings saved successfully');
+          // Update initial state after successful save
+          initialStateRef.current = {
+            batchSize,
+            syncMode,
+            theme: currentTheme
+          };
+        } else {
+          error('Failed to save settings');
+        }
+      } catch (err) {
+        error('Failed to save settings');
+        console.error('Save error:', err);
+      }
+    }, 2000); // 2 second delay
+  }, [user?.id, batchSize, syncMode, darkMode, success, error]);
+
+  // Auto-save on preference changes
+  useEffect(() => {
+    if (!isLoading && user?.id && initialStateRef.current) {
+      // Check if current state matches initial state
+      const currentTheme = darkMode ? 'dark' : 'light';
+      const hasChanges =
+        batchSize !== initialStateRef.current.batchSize ||
+        syncMode !== initialStateRef.current.syncMode ||
+        currentTheme !== initialStateRef.current.theme;
+
+      if (hasChanges) {
+        debouncedSave();
+      } else {
+        // Cancel any pending save if we're back to initial state
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+          saveTimeoutRef.current = null;
+        }
+      }
+    }
+  }, [batchSize, syncMode, darkMode, isLoading, debouncedSave]);
+
+  // Handle theme change
+  const handleThemeChange = (checked: boolean) => {
+    const newTheme = checked ? 'dark' : 'light';
+    setTheme(newTheme);
+    setDarkMode(checked);
+  };
+
+  // Handle batch size change - snap to valid values
+  const handleBatchSizeChange = (value: number[]) => {
+    const val = value[0];
+    // Snap to nearest valid value: 1, 5, or 10
+    let snappedValue: number;
+    if (val <= 3) {
+      snappedValue = 1;
+    } else if (val <= 7) {
+      snappedValue = 5;
+    } else {
+      snappedValue = 10;
+    }
+    setBatchSize(snappedValue);
   };
 
   // Handle account deletion
   const handleDeleteAccount = () => {
-    setNotification({
-      type: 'info',
-      message: 'Account scheduled for deletion. You will receive a confirmation email.'
-    });
-
+    success('Account scheduled for deletion. You will receive a confirmation email.');
     setShowDeleteConfirm(false);
-    setTimeout(() => setNotification(null), 3000);
   };
 
   return (
@@ -56,20 +213,6 @@ const SettingsTab = () => {
         <h1 className="text-2xl font-bold text-foreground mb-1">Settings</h1>
         <p className="text-foreground">Customize your app preferences and manage your account</p>
       </div>
-
-      {/* Notification */}
-      {notification && (
-        <div className={`p-4 rounded-md border ${notification.type === 'success'
-          ? 'bg-green-900/20 border-green-800 text-green-400'
-          : notification.type === 'error'
-            ? 'bg-red-900/20 border-red-800 text-red-400'
-            : 'bg-blue-900/20 border-blue-800 text-blue-400'
-          }`}>
-          <div className="flex items-center gap-2">
-            {notification.message}
-          </div>
-        </div>
-      )}
 
       {/* Settings Tabs */}
       <div className="flex flex-col">
@@ -111,28 +254,52 @@ const SettingsTab = () => {
                 {/* Batch Size Setting */}
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="batchSize" className="text-foreground text-lg font-normal">Batch Size: {batchSize} songs</Label>
+                    <Label htmlFor="batchSize" className="text-foreground text-lg font-normal">
+                      Batch Size: {batchSize} {batchSize === 1 ? 'song' : 'songs'}
+                    </Label>
                     <span className="text-foreground">
-                      {batchSize <= 5 ? 'Low' : batchSize >= 15 ? 'High' : 'Recommended'}
+                      {getBatchSizeDescription()}
                     </span>
                   </div>
                   <div className="py-2">
-                    <Slider
-                      id="batchSize"
-                      min={1}
-                      max={20}
-                      step={5}
-                      value={[batchSize]}
-                      onValueChange={(value) => {
-                        const newValue = value[0] === 1 ? 1 : Math.round(value[0] / 5) * 5;
-                        setBatchSize(newValue);
-                      }}
-                      className="h-2"
-                    />
+                    <div className="relative">
+                      <Slider
+                        id="batchSize"
+                        min={0}
+                        max={2}
+                        step={1}
+                        value={[batchSize === 1 ? 0 : batchSize === 5 ? 1 : 2]}
+                        onValueChange={(value) => {
+                          const mappedValue = value[0] === 0 ? 1 : value[0] === 1 ? 5 : 10;
+                          setBatchSize(mappedValue);
+                        }}
+                        className="h-2 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-3">
+                        <button
+                          onClick={() => setBatchSize(1)}
+                          className="cursor-pointer hover:text-foreground transition-colors px-1"
+                        >
+                          1
+                        </button>
+                        <button
+                          onClick={() => setBatchSize(5)}
+                          className="cursor-pointer hover:text-foreground transition-colors px-1"
+                        >
+                          5
+                        </button>
+                        <button
+                          onClick={() => setBatchSize(10)}
+                          className="cursor-pointer hover:text-foreground transition-colors px-1"
+                        >
+                          10
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   <p className="text-foreground mt-1">
-                    Controls how many songs are analyzed in a single batch.
-                    Larger batches are faster but use more API credits.
+                    Controls how many songs are analyzed simultaneously.
+                    Larger batches are faster but may use more API credits.
                   </p>
                 </div>
 
@@ -143,8 +310,8 @@ const SettingsTab = () => {
                     <Button
                       onClick={() => setSyncMode('manual')}
                       className={syncMode === 'manual'
-                        ? 'bg-primary text-primary-foreground border-none rounded-md text-center font-normal'
-                        : 'bg-secondary text-secondary-foreground border border-border rounded-md text-center font-normal hover:bg-primary hover:text-primary-foreground'
+                        ? 'bg-primary text-primary-foreground border-none rounded-md text-center font-normal cursor-default'
+                        : 'bg-secondary text-secondary-foreground border border-border rounded-md text-center font-normal hover:bg-secondary/80 hover:text-foreground cursor-pointer transition-all'
                       }
                     >
                       Manual
@@ -152,8 +319,8 @@ const SettingsTab = () => {
                     <Button
                       onClick={() => setSyncMode('automatic')}
                       className={syncMode === 'automatic'
-                        ? 'bg-primary text-primary-foreground border-none rounded-md text-center font-normal'
-                        : 'bg-secondary text-secondary-foreground border border-border rounded-md text-center font-normal hover:bg-primary hover:text-primary-foreground'
+                        ? 'bg-primary text-primary-foreground border-none rounded-md text-center font-normal cursor-default'
+                        : 'bg-secondary text-secondary-foreground border border-border rounded-md text-center font-normal hover:bg-secondary/80 hover:text-foreground cursor-pointer transition-all'
                       }
                     >
                       Automatic
@@ -172,8 +339,8 @@ const SettingsTab = () => {
                   </div>
                   <Switch
                     checked={darkMode}
-                    onCheckedChange={setDarkMode}
-                    className="data-[state=checked]:bg-primary"
+                    onCheckedChange={handleThemeChange}
+                    className="data-[state=checked]:bg-primary cursor-pointer"
                   />
                 </div>
 
@@ -186,44 +353,14 @@ const SettingsTab = () => {
                   <Switch
                     checked={emailNotifications}
                     onCheckedChange={setEmailNotifications}
-                    className="data-[state=checked]:bg-primary"
+                    className="data-[state=checked]:bg-primary cursor-pointer"
                   />
                 </div>
               </CardContent>
 
               <CardFooter className="border-t border-border px-6 py-4">
-                <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 ml-auto"
-                  onClick={handleSaveSettings}
-                >
-                  Save Settings
-                </Button>
+                <p className="text-xs text-muted-foreground">Changes are saved automatically</p>
               </CardFooter>
-            </Card>
-
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-2 border-b border-border">
-                <CardTitle className="text-lg flex items-center gap-2 text-foreground">
-                  <div className="bg-purple-500/20 p-1.5 rounded-md">
-                    <RefreshCw className="h-5 w-5 text-purple-400" />
-                  </div>
-                  <span className="font-bold">Library Management</span>
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-foreground text-lg font-normal mb-1">Library Cache</h3>
-                    <p className="text-foreground">Clear local song analysis data and resync with Spotify</p>
-                  </div>
-                  <Button
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground border-0"
-                  >
-                    Clear & Refresh
-                  </Button>
-                </div>
-              </CardContent>
             </Card>
           </TabsContent>
 
@@ -253,7 +390,6 @@ const SettingsTab = () => {
 
                   <ApiKeyManager
                     autoSetActive={true}
-                    initialLoad={true}
                   />
 
                   <div className="rounded-lg bg-blue-900/20 border border-blue-800 p-4 text-foreground">

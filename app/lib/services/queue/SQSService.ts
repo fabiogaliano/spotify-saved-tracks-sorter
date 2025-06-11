@@ -26,6 +26,7 @@ export interface AnalysisJobPayload {
   title: string;
   userId: number; // User ID to fetch provider preferences
   batchId: string; // Shared ID for all tracks in the same batch analysis
+  batchSize?: 1 | 5 | 10; // Batch size for parallel processing
 }
 
 class SQSService {

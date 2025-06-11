@@ -495,6 +495,7 @@ export type Database = {
           active_provider: string | null
           batch_size: number
           sync_mode: Database["public"]["Enums"]["sync_mode_enum"]
+          theme_preference: Database["public"]["Enums"]["theme"] | null
           updated_at: string | null
           user_id: number
         }
@@ -502,6 +503,7 @@ export type Database = {
           active_provider?: string | null
           batch_size?: number
           sync_mode?: Database["public"]["Enums"]["sync_mode_enum"]
+          theme_preference?: Database["public"]["Enums"]["theme"] | null
           updated_at?: string | null
           user_id: number
         }
@@ -509,6 +511,7 @@ export type Database = {
           active_provider?: string | null
           batch_size?: number
           sync_mode?: Database["public"]["Enums"]["sync_mode_enum"]
+          theme_preference?: Database["public"]["Enums"]["theme"] | null
           updated_at?: string | null
           user_id?: number
         }
@@ -608,6 +611,7 @@ export type Database = {
         | "FAILED"
       sorting_status_enum: "unsorted" | "sorted" | "ignored"
       sync_mode_enum: "manual" | "automatic"
+      theme: "light" | "dark"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -734,6 +738,7 @@ export const Constants = {
       ],
       sorting_status_enum: ["unsorted", "sorted", "ignored"],
       sync_mode_enum: ["manual", "automatic"],
+      theme: ["light", "dark"],
     },
   },
 } as const

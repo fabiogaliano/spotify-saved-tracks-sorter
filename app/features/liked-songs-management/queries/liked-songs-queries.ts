@@ -20,6 +20,33 @@ interface AnalyzeTracksParams {
     artist: string;
     name: string;
   }>;
+  batchSize?: 1 | 5 | 10;
+}
+
+export interface AnalysisJobStats {
+  tracksProcessed: number;
+  tracksSucceeded: number;
+  tracksFailed: number;
+}
+
+export interface AnalysisJob {
+  id: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  trackCount: number;
+  trackStates: Map<number, 'queued' | 'in_progress' | 'completed' | 'failed'>;
+  startedAt: Date;
+  dbStats?: AnalysisJobStats;
+}
+
+export interface AnalysisStatusResponse {
+  hasActiveJob: boolean;
+  currentJob: AnalysisJob | null;
+  lastCompletionStats?: AnalysisJobStats;
+}
+
+export interface CompletionDelayJob {
+  job: AnalysisJob;
+  isActive: boolean;
 }
 
 interface SyncLikedSongsResult {
@@ -59,25 +86,34 @@ export function useLikedSongs(initialData?: TrackWithAnalysis[]) {
 // Hook to get analysis job status
 export function useAnalysisJob(jobId: string | null) {
   const notify = useNotificationStore();
-  
-  return useQuery({
+
+  return useQuery<AnalysisJob | null>({
     queryKey: likedSongsKeys.analysisJob(jobId || ''),
-    queryFn: async () => {
+    queryFn: async (): Promise<AnalysisJob | null> => {
       if (!jobId) throw new Error('No job ID provided');
-      
+
       const response = await fetch(`/api/analysis/active-job?jobId=${jobId}`);
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch job status');
       }
-      
-      return data;
+
+      if (!data) return null;
+
+      // Convert trackStates back to Map and structure for component
+      const trackStatesMap = new Map(Object.entries(data.trackStates || {}).map(([key, value]) => [parseInt(key, 10), value as string]));
+
+      return {
+        ...data,
+        trackStates: trackStatesMap,
+        startedAt: new Date(data.startedAt)
+      } as AnalysisJob;
     },
     enabled: !!jobId,
     refetchInterval: (data) => {
       // Stop polling if job is completed or failed
-      if (data?.status === 'completed' || data?.status === 'failed') {
+      if (data?.state.status === 'success' || data?.state.status === 'error') {
         return false;
       }
       return 2000; // Poll every 2 seconds while job is active
@@ -93,36 +129,36 @@ export function useAnalysisJob(jobId: string | null) {
 
 // Hook to get general analysis status - checking active job endpoint instead
 export function useAnalysisStatus() {
-  return useQuery({
+  return useQuery<AnalysisStatusResponse>({
     queryKey: likedSongsKeys.analysisStatus(),
-    queryFn: async () => {
+    queryFn: async (): Promise<AnalysisStatusResponse> => {
       const response = await fetch('/api/analysis/active-job');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch analysis status');
       }
-      
+
       // If no active job, return null
       if (!data) {
         return { hasActiveJob: false, currentJob: null };
       }
-      
+
       // Convert trackStates back to Map and structure for component
-      const trackStatesMap = new Map(Object.entries(data.trackStates || {}).map(([key, value]) => [parseInt(key, 10), value]));
-      
+      const trackStatesMap = new Map(Object.entries(data.trackStates || {}).map(([key, value]) => [parseInt(key, 10), value as string]));
+
       // Trust the server's job status completely
       // The server will mark jobs as complete when appropriate
       const isJobActive = data.status === 'pending' || data.status === 'in_progress';
-      
+
       // Server only returns active jobs now, no completed ones
-      
-      const currentJob = {
+
+      const currentJob: AnalysisJob = {
         ...data,
         trackStates: trackStatesMap,
         startedAt: new Date(data.startedAt)
       };
-      
+
       return {
         hasActiveJob: isJobActive, // Use actual job status, not hardcoded true
         currentJob
@@ -139,20 +175,20 @@ export function useAnalysisStatus() {
 export function useSyncLikedSongs() {
   const queryClient = useQueryClient();
   const notify = useNotificationStore();
-  
+
   return useMutation({
     mutationFn: async (): Promise<SyncLikedSongsResult> => {
       const syncPromise = async () => {
         const response = await fetch('/actions/sync-liked-songs', {
           method: 'POST',
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok || !data.success) {
           throw new Error(data.error || 'Failed to sync liked songs');
         }
-        
+
         return data;
       };
 
@@ -183,7 +219,7 @@ export function useSyncLikedSongs() {
 export function useAnalyzeTracks() {
   const queryClient = useQueryClient();
   const notify = useNotificationStore();
-  
+
   return useMutation({
     mutationFn: async (params: AnalyzeTracksParams): Promise<AnalysisJobResponse> => {
       const response = await fetch('/actions/analyze-liked-songs', {
@@ -193,42 +229,42 @@ export function useAnalyzeTracks() {
         },
         body: JSON.stringify(params),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to start analysis');
       }
-      
+
       return data;
     },
     onMutate: (variables) => {
       // Immediately update tracks to 'pending' status in the cache
       const trackIds = variables.tracks.map(t => t.id);
-      
+
       queryClient.setQueryData(likedSongsKeys.lists(), (oldData: TrackWithAnalysis[] = []) => {
-        return oldData.map(track => 
+        return oldData.map(track =>
           trackIds.includes(track.track.id)
             ? { ...track, uiAnalysisStatus: 'pending' as any }
             : track
         );
       });
-      
+
       // Show loading notification
       const trackCount = variables.tracks.length;
       notify.loading(`Queuing ${trackCount} track${trackCount > 1 ? 's' : ''} for analysis...`);
-      
+
       return { trackIds };
     },
     onSuccess: (data, variables) => {
       // Invalidate analysis status to pick up new job
       queryClient.invalidateQueries({ queryKey: likedSongsKeys.analysisStatus() });
-      
+
       // Dismiss loading notification and show info message
       const trackCount = variables.tracks.length;
       notify.dismiss(); // Clear loading notification
       notify.info(`${trackCount} track${trackCount > 1 ? 's' : ''} queued for analysis`);
-      
+
       // If there were partial errors, show additional info
       if (data.errors && data.errors.length > 0) {
         notify.warning(`${data.errors.length} tracks had issues and were skipped`);
@@ -238,14 +274,14 @@ export function useAnalyzeTracks() {
       // Revert the optimistic update
       if (context?.trackIds) {
         queryClient.setQueryData(likedSongsKeys.lists(), (oldData: TrackWithAnalysis[] = []) => {
-          return oldData.map(track => 
+          return oldData.map(track =>
             context.trackIds.includes(track.track.id)
               ? { ...track, uiAnalysisStatus: 'not_analyzed' as any }
               : track
           );
         });
       }
-      
+
       notify.dismiss(); // Clear loading notification
       notify.error(error.message || 'Failed to start analysis');
     },
@@ -255,16 +291,16 @@ export function useAnalyzeTracks() {
 // Hook to update track analysis in cache
 export function useUpdateTrackAnalysis() {
   const queryClient = useQueryClient();
-  
+
   return (trackId: number, analysisData: any, status: string) => {
     queryClient.setQueryData(likedSongsKeys.lists(), (oldData: TrackWithAnalysis[] = []) => {
-      return oldData.map(track => 
-        track.track.id === trackId 
-          ? { 
-              ...track, 
-              analysis: analysisData,
-              uiAnalysisStatus: status as any 
-            }
+      return oldData.map(track =>
+        track.track.id === trackId
+          ? {
+            ...track,
+            analysis: analysisData,
+            uiAnalysisStatus: status as any
+          }
           : track
       );
     });

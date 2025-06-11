@@ -7,6 +7,7 @@ export interface UserRepository {
   createUser(user: CreateUserParams): Promise<User>
   updateUser(spotifyUserId: string, updates: Partial<User>): Promise<User>
   updateSetupCompletion(spotifyUserId: string, hasSetupCompleted: boolean): Promise<User>
+  getUserPreferences(userId: number): Promise<UserPreferences | null>
   updateUserPreferences(userId: number, updates: Partial<UserPreferences>): Promise<UserPreferences>
   setUserHasSetupCompleted(userId: number, hasSetup: boolean): Promise<User>
 }
@@ -50,6 +51,17 @@ class SupabaseUserRepository implements UserRepository {
 
   async updateSetupCompletion(spotifyUserId: string, hasSetupCompleted: boolean): Promise<User> {
     return this.updateUser(spotifyUserId, { has_setup_completed: hasSetupCompleted })
+  }
+
+  async getUserPreferences(userId: number): Promise<UserPreferences | null> {
+    const { data, error } = await getSupabase()
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
   }
 
   async updateUserPreferences(userId: number, updates: Partial<UserPreferences>): Promise<UserPreferences> {

@@ -14,8 +14,10 @@
 		"test:watch": "vitest",
 		"worker": "bun run app/workers/index.ts",
 		"start-worker": "bun run scripts/analysisWorker.ts",
+		"start-worker-batch": "bun run scripts/analysisWorkerBatch.ts",
 		"websocket": "bun run scripts/websocketServer.ts",
-		"start-all": "concurrently -n dev,worker,ws -c green,blue,magenta \"bun dev\" \"bun run start-worker\" \"bun run websocket\" | tee logs/all.log"
+		"start-all": "concurrently -n dev,worker,ws -c green,blue,magenta \"bun dev\" \"bun run start-worker\" \"bun run websocket\" | tee logs/all.log",
+		"start-all-batch": "concurrently -n dev,worker,ws -c green,blue,magenta \"bun dev\" \"bun run start-worker-batch\" \"bun run websocket\" | tee logs/all-batch.log"
 	},
 	"dependencies": {
 		"@ai-sdk/anthropic": "^1.2.12",

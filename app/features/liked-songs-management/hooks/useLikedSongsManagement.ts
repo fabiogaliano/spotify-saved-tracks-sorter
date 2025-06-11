@@ -21,11 +21,11 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
   
   // Computed values
   const selectedTracks = useCallback(() => {
-    return likedSongs.filter((_, index) => rowSelection[index]);
+    return likedSongs.filter((_: TrackWithAnalysis, index: number) => rowSelection[index]);
   }, [likedSongs, rowSelection]);
   
   const filteredTracks = useMemo(() => {
-    return likedSongs.filter(track => {
+    return likedSongs.filter((track: TrackWithAnalysis) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -50,10 +50,10 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
   
   // Statistics
   const stats = useMemo(() => {
-    const analyzed = likedSongs.filter(t => t.uiAnalysisStatus === 'analyzed').length;
-    const pending = likedSongs.filter(t => t.uiAnalysisStatus === 'pending').length;
-    const failed = likedSongs.filter(t => t.uiAnalysisStatus === 'failed').length;
-    const notAnalyzed = likedSongs.filter(t => t.uiAnalysisStatus === 'not_analyzed').length;
+    const analyzed = likedSongs.filter((t: TrackWithAnalysis) => t.uiAnalysisStatus === 'analyzed').length;
+    const pending = likedSongs.filter((t: TrackWithAnalysis) => t.uiAnalysisStatus === 'pending').length;
+    const failed = likedSongs.filter((t: TrackWithAnalysis) => t.uiAnalysisStatus === 'failed').length;
+    const notAnalyzed = likedSongs.filter((t: TrackWithAnalysis) => t.uiAnalysisStatus === 'not_analyzed').length;
     
     return {
       total: likedSongs.length,
@@ -66,18 +66,18 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
   }, [likedSongs]);
   
   // Analysis actions
-  const analyzeSelectedTracks = useCallback(async () => {
+  const analyzeSelectedTracks = useCallback(async (batchSize?: 1 | 5 | 10) => {
     const tracks = selectedTracks();
     if (tracks.length === 0) return;
     
-    const trackData = tracks.map(track => ({
+    const trackData = tracks.map((track: TrackWithAnalysis) => ({
       id: track.track.id,
       spotifyTrackId: track.track.spotify_track_id,
       artist: track.track.artist,
       name: track.track.name,
     }));
     
-    await analyzeMutation.mutateAsync({ tracks: trackData });
+    await analyzeMutation.mutateAsync({ tracks: trackData, batchSize });
     
     // Clear selection after analysis starts
     setRowSelection({});
@@ -87,34 +87,35 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
     trackId?: number; 
     useSelected?: boolean; 
     useAll?: boolean; 
+    batchSize?: 1 | 5 | 10;
   }) => {
     let tracksToAnalyze: TrackWithAnalysis[] = [];
     
     if (options.trackId) {
-      const track = likedSongs.find(t => t.track.id === options.trackId);
+      const track = likedSongs.find((t: TrackWithAnalysis) => t.track.id === options.trackId);
       if (track) tracksToAnalyze = [track];
     } else if (options.useSelected) {
       tracksToAnalyze = selectedTracks();
     } else if (options.useAll) {
-      tracksToAnalyze = likedSongs.filter(t => t.uiAnalysisStatus === 'not_analyzed');
+      tracksToAnalyze = likedSongs.filter((t: TrackWithAnalysis) => t.uiAnalysisStatus === 'not_analyzed');
     }
     
     if (tracksToAnalyze.length === 0) return;
     
-    const trackData = tracksToAnalyze.map(track => ({
+    const trackData = tracksToAnalyze.map((track: TrackWithAnalysis) => ({
       id: track.track.id,
       spotifyTrackId: track.track.spotify_track_id,
       artist: track.track.artist,
       name: track.track.name,
     }));
     
-    await analyzeMutation.mutateAsync({ tracks: trackData });
+    await analyzeMutation.mutateAsync({ tracks: trackData, batchSize: options.batchSize });
   }, [likedSongs, selectedTracks, analyzeMutation]);
   
   // Track analysis update
   const updateSongAnalysisDetails = useCallback((
     trackId: number, 
-    analysisData: any, 
+    analysisData: Record<string, unknown>, 
     status: string
   ) => {
     updateTrackAnalysis(trackId, analysisData, status);
