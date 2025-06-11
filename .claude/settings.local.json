@@ -4,7 +4,12 @@
       "Bash(bun test)",
       "Bash(rg:*)",
       "Bash(grep:*)",
-      "WebFetch(domain:ai-sdk.dev)"
+      "WebFetch(domain:ai-sdk.dev)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(git mv:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

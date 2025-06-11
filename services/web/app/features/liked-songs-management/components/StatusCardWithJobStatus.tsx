@@ -185,7 +185,7 @@ export const StatusCardWithJobStatus = ({
             ></div>
           )}
 
-          <style jsx>{`
+          <style>{`
             @keyframes pulse-circle {
               0%, 100% {
                 transform: scale(1);

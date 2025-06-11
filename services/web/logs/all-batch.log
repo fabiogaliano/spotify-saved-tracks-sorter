@@ -1,0 +1,41 @@
+[worker] $ bun run workers/analysisWorkerBatch.ts
+[web] $ react-router dev
+[ws] $ bun run workers/websocketServer.ts
+[vector] $ cd ../vectorization && uv run python api.py
+[ws] WebSocket server listening on localhost:3001
+[worker] {[34m"level":"INFO",[34m"message":"Starting batch analysis worker...",[34m"timestamp":"2025-06-11T20:40:03.211Z"}[0m
+[worker] {[34m"level":"INFO",[34m"message":"Batch analysis worker configuration:",[34m"timestamp":"2025-06-11T20:40:03.211Z",[34m"queueUrl":"https://sqs.eu-north-1.amazonaws.com/477252478462/MusicAnalysis.fifo",[34m"region":"eu-north-1",[34m"batchSize":5,[34m"maxMessagesPerPoll":5}[0m
+[worker] {[90m"level":"DEBUG",[90m"message":"Polling for messages...",[90m"timestamp":"2025-06-11T20:40:03.212Z"}[0m
+[web]   ➜  Local:   http://localhost:5173/
+[web]   ➜  Network: use --host to expose
+[vector] 🚀 Enhanced Vectorization Server starting on http://localhost:8000
+[vector] INFO:     Started server process [38420]
+[vector] INFO:     Waiting for application startup.
+[vector] INFO:     Application startup complete.
+[vector] INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[web] Successfully set up queues: {
+[web]   mainQueueUrl: 'https://sqs.eu-north-1.amazonaws.com/477252478462/MusicAnalysis.fifo',
+[web]   dlqUrl: 'https://sqs.eu-north-1.amazonaws.com/477252478462/MusicAnalysisDLQ.fifo'
+[web] }
+[worker] {[90m"level":"DEBUG",[90m"message":"No messages received in this polling cycle.",[90m"timestamp":"2025-06-11T20:40:23.755Z"}[0m
+[worker] {[90m"level":"DEBUG",[90m"message":"Polling for messages...",[90m"timestamp":"2025-06-11T20:40:23.755Z"}[0m
+[web] Raw dbJob from database: {
+[web]   id: '58f8aac8-c953-4692-8fc8-949831c49ec6',
+[web]   user_id: 2,
+[web]   batch_id: '72980a8e-bde8-4661-b870-a584d7908775',
+[web]   status: 'completed',
+[web]   track_count: 1,
+[web]   tracks_processed: 1,
+[web]   tracks_succeeded: 1,
+[web]   tracks_failed: 0,
+[web]   created_at: '2025-06-11T19:31:04.035348+00:00',
+[web]   updated_at: '2025-06-11T19:31:14+00:00',
+[web]   track_ids: [ 10929 ]
+[web] }
+[web] Job 72980a8e-bde8-4661-b870-a584d7908775 is completed/failed, not returning to client
+[ws] WebSocket connection opened from ::1
+[ws] WebSocket closed: 1000 Component unmounting
+[worker] {[90m"level":"DEBUG",[90m"message":"No messages received in this polling cycle.",[90m"timestamp":"2025-06-11T20:40:43.887Z"}[0m
+[worker] {[90m"level":"DEBUG",[90m"message":"Polling for messages...",[90m"timestamp":"2025-06-11T20:40:43.887Z"}[0m
+[worker] {[90m"level":"DEBUG",[90m"message":"No messages received in this polling cycle.",[90m"timestamp":"2025-06-11T20:41:04.021Z"}[0m
+[worker] {[90m"level":"DEBUG",[90m"message":"Polling for messages...",[90m"timestamp":"2025-06-11T20:41:04.022Z"}[0m
