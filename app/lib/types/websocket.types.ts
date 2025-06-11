@@ -61,6 +61,14 @@ export interface JobCompletionMessage extends BaseMessage {
   };
 }
 
+// Batch tracks notification
+export interface BatchTracksNotification extends BaseMessage {
+  type: 'batch_tracks_queued';
+  jobId: string;
+  trackIds: number[];
+  status: 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+}
+
 // Union type for all possible WebSocket messages
 export type WebSocketMessage = 
   | ConnectionMessage 
@@ -68,7 +76,8 @@ export type WebSocketMessage =
   | DirectJobNotification
   | AnalysisUpdateMessage 
   | AnalysisFailedMessage
-  | JobCompletionMessage;
+  | JobCompletionMessage
+  | BatchTracksNotification;
 
 // Type guards
 export function isConnectionMessage(msg: any): msg is ConnectionMessage {
@@ -93,4 +102,8 @@ export function isAnalysisFailedMessage(msg: any): msg is AnalysisFailedMessage 
 
 export function isJobCompletionMessage(msg: any): msg is JobCompletionMessage {
   return msg?.type === 'job_completed' && msg?.jobId;
+}
+
+export function isBatchTracksNotification(msg: any): msg is BatchTracksNotification {
+  return msg?.type === 'batch_tracks_queued' && msg?.jobId && Array.isArray(msg?.trackIds);
 }

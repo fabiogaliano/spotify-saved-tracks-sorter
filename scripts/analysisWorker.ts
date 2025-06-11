@@ -273,7 +273,9 @@ const main = async () => {
         };
         await trackAnalysisRepository.insertAnalysis(analysisData);
 
-        // Clean up successful attempt record
+        // todo: review this
+        // Cleanup: Remove the attempt record after successful analysis
+        // At this point, the analysis data is already saved in the analysis table
         try {
           await trackAnalysisAttemptsRepository.deleteAttempt(attemptRecord.id);
           logger.info(`Deleted attempt record ID: ${attemptRecord.id} after successful analysis`);
@@ -308,7 +310,7 @@ const main = async () => {
                 logger.info(`Job ${batchId} is complete: ${newProcessedCount}/${job.track_count} tracks processed`);
                 await jobPersistenceService.markJobCompleted(batchId);
                 logger.info(`Job marked as completed successfully`);
-                
+
                 // Send job completion notification
                 try {
                   const completionNotification = {
@@ -323,15 +325,15 @@ const main = async () => {
                     },
                     timestamp: new Date().toISOString()
                   };
-                  
+
                   logger.info(`Sending job completion notification: ${JSON.stringify(completionNotification)}`);
-                  
+
                   const response = await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(completionNotification)
                   });
-                  
+
                   if (!response.ok) {
                     logger.warn(`Failed to send job completion notification: ${response.status} ${response.statusText}`);
                   } else {
@@ -410,7 +412,7 @@ const main = async () => {
                 logger.info(`Job ${batchId} is complete: ${newProcessedCount}/${job.track_count} tracks processed`);
                 await jobPersistenceService.markJobCompleted(batchId);
                 logger.info(`Job marked as completed successfully`);
-                
+
                 // Send job completion notification
                 try {
                   const completionNotification = {
@@ -425,15 +427,15 @@ const main = async () => {
                     },
                     timestamp: new Date().toISOString()
                   };
-                  
+
                   logger.info(`Sending job completion notification: ${JSON.stringify(completionNotification)}`);
-                  
+
                   const response = await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(completionNotification)
                   });
-                  
+
                   if (!response.ok) {
                     logger.warn(`Failed to send job completion notification: ${response.status} ${response.statusText}`);
                   } else {

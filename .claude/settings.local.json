@@ -3,7 +3,8 @@
     "allow": [
       "Bash(bun test)",
       "Bash(rg:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebFetch(domain:ai-sdk.dev)"
     ],
     "deny": []
   }

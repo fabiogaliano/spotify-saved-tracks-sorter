@@ -1,15 +1,15 @@
 import { RefreshCw, Sparkles, Play, Columns } from 'lucide-react';
 import { Button } from '~/shared/components/ui/button';
 import { Checkbox } from '~/shared/components/ui/checkbox';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface AnalysisControlsProps {
   selectedCount: number;
   totalCount: number;
   analyzedCount: number;
   unanalyzedCount: number;
-  onAnalyzeSelected: () => void;
-  onAnalyzeAll: () => void;
+  onAnalyzeSelected: (batchSize?: 1 | 5 | 10) => void;
+  onAnalyzeAll: (batchSize?: 1 | 5 | 10) => void;
   isAnalyzing: boolean;
   disabled: boolean;
   columnVisibility: Record<string, boolean>;
@@ -29,6 +29,31 @@ export const AnalysisControls = ({
   onColumnVisibilityChange
 }: AnalysisControlsProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [batchSize, setBatchSize] = useState<1 | 5 | 10>(5);
+
+  // Load user preferences including batch size
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const response = await fetch('/api/user-preferences');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.preferences?.batch_size) {
+            setBatchSize(data.preferences.batch_size as 1 | 5 | 10);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load preferences:', error);
+        // Fallback to localStorage
+        const savedBatchSize = localStorage.getItem('analysisBatchSize');
+        if (savedBatchSize && ['1', '5', '10'].includes(savedBatchSize)) {
+          setBatchSize(Number(savedBatchSize) as 1 | 5 | 10);
+        }
+      }
+    };
+
+    loadPreferences();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -110,7 +135,7 @@ export const AnalysisControls = ({
         <Button
           variant={selectedCount > 0 ? "default" : "outline"}
           disabled={selectedCount === 0 || disabled}
-          onClick={onAnalyzeSelected}
+          onClick={() => onAnalyzeSelected(batchSize)}
           className={`flex items-center gap-2 ${selectedCount > 0 ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}
         >
           <Sparkles className={`h-4 w-4 ${isAnalyzing ? 'animate-pulse' : ''}`} />
@@ -120,7 +145,7 @@ export const AnalysisControls = ({
         <Button
           variant="outline"
           disabled={unanalyzedCount === 0 || disabled}
-          onClick={onAnalyzeAll}
+          onClick={() => onAnalyzeAll(batchSize)}
           className="flex items-center gap-2"
         >
           <Play className={`h-4 w-4 ${isAnalyzing ? 'animate-pulse' : ''}`} />

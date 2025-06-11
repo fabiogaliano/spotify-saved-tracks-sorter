@@ -1,7 +1,8 @@
 import { 
   WebSocketMessage, 
   isJobStatusMessage, 
-  isDirectJobNotification 
+  isDirectJobNotification,
+  isBatchTracksNotification
 } from '~/lib/types/websocket.types';
 
 export type JobStatusUpdate = {
@@ -55,6 +56,24 @@ export class JobSubscriptionManager {
     // Only process if manager is active
     if (!this.isActive || !this.currentJobId) {
       return false;
+    }
+
+    // Handle batch tracks notification
+    if (isBatchTracksNotification(message)) {
+      // Check if this message belongs to the current job
+      if (message.jobId !== this.currentJobId) {
+        return false;
+      }
+
+      // Send update for each track in the batch
+      for (const trackId of message.trackIds) {
+        const update: JobStatusUpdate = {
+          trackId,
+          status: message.status
+        };
+        this.notifySubscribers(update);
+      }
+      return true;
     }
 
     // Handle direct job notification (from worker)

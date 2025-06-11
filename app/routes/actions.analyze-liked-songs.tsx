@@ -17,6 +17,7 @@ interface TrackForAnalysis {
 // Define the expected request payload
 interface AnalyzeTracksRequest {
   tracks: TrackForAnalysis[];
+  batchSize?: 1 | 5 | 10; // Optional batch size for parallel processing
 }
 
 /**
@@ -37,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Generate a single batch ID for all tracks in this request
     const batchId = crypto.randomUUID();
-    
+
     let enqueuedCount = 0;
     const enqueueErrors: { trackId: number, error: string }[] = [];
 
@@ -53,6 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
         title: track.name, // Map 'name' from track to 'title' expected by SQS
         userId: userSession.userId, // Include user ID for provider preferences
         batchId: batchId, // Shared batch ID for all tracks in this request
+        batchSize: body.batchSize || 1, // Default to 5 if not specified
       };
 
       try {
@@ -83,7 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const enqueuedTrackIds = body.tracks
           .filter(track => !enqueueErrors.some(error => error.trackId === track.id))
           .map(track => track.id);
-        
+
         await jobPersistenceService.saveJob(contextJob, userSession.userId, enqueuedTrackIds);
       } catch (error) {
         console.error('Failed to save job to database:', error);

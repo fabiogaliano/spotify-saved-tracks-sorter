@@ -34,8 +34,9 @@ import TrackAnalysisModal from '~/components/TrackAnalysisModal';
 import { useLikedSongsManagement } from '../hooks/useLikedSongsManagement';
 import { useAnalysisSubscription } from '../hooks/useAnalysisSubscription';
 import { useLikedSongsUIContext } from '../store/liked-songs-ui-store';
-import { useSyncLikedSongs, useAnalysisStatus, likedSongsKeys } from '../queries/liked-songs-queries';
+import { useSyncLikedSongs, useAnalysisStatus, likedSongsKeys, type AnalysisJob, type CompletionDelayJob } from '../queries/liked-songs-queries';
 import { useQueryClient } from '@tanstack/react-query';
+import type { VisibilityState } from '@tanstack/react-table';
 
 // Types
 export type UIAnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed' | 'unknown';
@@ -102,9 +103,9 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
   });
 
   // Completion delay state to keep job data available after completion
-  const [completionDelayJob, setCompletionDelayJob] = useState(null);
-  const completionTimeoutRef = useRef(null);
-  const previousJobRef = useRef(null);
+  const [completionDelayJob, setCompletionDelayJob] = useState<CompletionDelayJob | null>(null);
+  const completionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousJobRef = useRef<AnalysisJob | null>(null);
 
   // Detect job completion and maintain data for completion UI
   useEffect(() => {
@@ -113,7 +114,7 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
     const previousJob = previousJobRef.current;
 
     // Update ref
-    previousJobRef.current = currentJob;
+    previousJobRef.current = currentJob || null;
 
     // Job just completed (had job before, no job now)
     if (previousJob && !hasActiveJob) {
@@ -123,7 +124,7 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
       setCompletionDelayJob({
         job: {
           ...previousJob,
-          status: 'completed',
+          status: 'completed' as const,
           // Use the REAL completion stats from WebSocket message
           dbStats: realCompletionStats ? {
             tracksProcessed: realCompletionStats.tracksProcessed,
@@ -206,10 +207,10 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
       header: 'Date Added',
       cell: ({ getValue }) => (
         <div className="text-muted-foreground text-xs tabular-nums">
-          {new Date(getValue()).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
+          {new Date(getValue()).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
           })}
         </div>
       ),
@@ -290,7 +291,14 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
         }
       }
     },
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: (updater: any) => {
+      if (typeof updater === 'function') {
+        const newVisibility = updater(columnVisibility);
+        setColumnVisibility(newVisibility);
+      } else {
+        setColumnVisibility(updater);
+      }
+    },
     manualPagination: false,
     pageCount: Math.ceil(filteredTracks.length / pageSize),
   });
@@ -375,8 +383,8 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
                 totalCount={stats.total}
                 analyzedCount={stats.analyzed}
                 unanalyzedCount={stats.notAnalyzed}
-                onAnalyzeSelected={analyzeSelectedTracks}
-                onAnalyzeAll={() => analyzeTracks({ useAll: true })}
+                onAnalyzeSelected={(batchSize) => analyzeSelectedTracks(batchSize)}
+                onAnalyzeAll={(batchSize) => analyzeTracks({ useAll: true, batchSize })}
                 isAnalyzing={isAnalyzing}
                 disabled={isAnalyzing}
                 columnVisibility={columnVisibility}
