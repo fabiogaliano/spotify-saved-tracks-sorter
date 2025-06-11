@@ -7,33 +7,39 @@ import { createSpotifyApi } from '~/lib/api/spotify.api'
 /**
  * Gets user session if it exists, without redirecting
  * Use this for public routes that should still work for unauthenticated users
+ * Returns session data and cookie header if token was refreshed
  */
 export async function getUserSession(request: Request) {
   const logger = Logger.getInstance()
 
   try {
-    const session = await authService.getUserSession(request)
+    const result = await authService.getUserSession(request)
 
-    if (!session) {
+    if (!result.session) {
       logger.info('No session found')
       return null
     }
 
-    const timeUntilExpiry = session.expiresAt - Date.now()
+    const timeUntilExpiry = result.session.expiresAt - Date.now()
     const spotifyApi = createSpotifyApi({
-      accessToken: session.accessToken,
-      refreshToken: session.refreshToken,
+      accessToken: result.session.accessToken,
+      refreshToken: result.session.refreshToken,
       expiresIn: Math.floor(timeUntilExpiry / 1000),
     })
 
-    logger.info(`getUserSession: Valid session found for user ${session.user.id}`)
+    // Only log in debug mode to reduce verbosity
+    if (process.env.AUTH_DEBUG === 'true') {
+      logger.info(`getUserSession: Valid session found for user ${result.session.user.id}`)
+    }
 
     return {
-      session,
+      session: result.session,
       spotifyApi,
-      userId: session.appUser.id,
-      hasSetupCompleted: session.appUser.hasSetupCompleted,
-      spotifyUser: session.user,
+      userId: result.session.appUser.id,
+      hasSetupCompleted: result.session.appUser.hasSetupCompleted,
+      spotifyUser: result.session.user,
+      wasRefreshed: result.wasRefreshed,
+      cookieHeader: result.cookieHeader
     }
   } catch (error) {
     logger.error('Error in getUserSession:', error)
@@ -58,7 +64,10 @@ export async function requireUserSession(request: Request) {
       throw redirect('/')
     }
 
-    logger.info(`requireUserSession: Valid session confirmed for user ${sessionData.spotifyUser.id}`)
+    // Only log in debug mode to reduce verbosity
+    if (process.env.AUTH_DEBUG === 'true') {
+      logger.info(`requireUserSession: Valid session confirmed for user ${sessionData.spotifyUser.id}`)
+    }
     return sessionData
 
   } catch (error) {
@@ -68,4 +77,28 @@ export async function requireUserSession(request: Request) {
     logger.error('Unexpected error in requireUserSession:', error)
     throw redirect('/')
   }
+}
+
+/**
+ * Helper function to create a response with updated session cookie if needed
+ */
+export function createResponseWithUpdatedSession(
+  data: any,
+  sessionData: { wasRefreshed?: boolean; cookieHeader?: string } | null,
+  options: ResponseInit = {}
+): Response {
+  // If session was refreshed, include the Set-Cookie header
+  if (sessionData?.wasRefreshed && sessionData.cookieHeader) {
+    return new Response(JSON.stringify(data), {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+        'Set-Cookie': sessionData.cookieHeader
+      }
+    })
+  }
+
+  // Otherwise, use the standard Response.json
+  return Response.json(data, options)
 }

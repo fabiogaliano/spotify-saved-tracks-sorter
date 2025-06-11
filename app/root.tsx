@@ -2,7 +2,7 @@ import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from 'react-rout
 import { redirect } from 'react-router';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import { StrictMode } from 'react'
-import { getUserSession } from '~/features/auth/auth.utils'
+import { getUserSession, createResponseWithUpdatedSession } from '~/features/auth/auth.utils'
 import { Toaster } from '~/shared/components/ui/sonner'
 import { ThemeProvider } from '~/lib/providers/theme-provider';
 import { QueryProvider } from '~/lib/providers/query-provider';
@@ -49,14 +49,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		return redirect('/')
 	}
 
-	return Response.json({
+	const responseData: RootLoaderData = {
 		isAuthenticated,
 		spotifyUser: sessionData?.spotifyUser || null,
 		appUser: sessionData ? {
 			id: sessionData.userId,
 			hasSetupCompleted: sessionData.hasSetupCompleted
 		} : null,
-	} as RootLoaderData)
+	}
+
+	return createResponseWithUpdatedSession(responseData, sessionData)
 }
 
 

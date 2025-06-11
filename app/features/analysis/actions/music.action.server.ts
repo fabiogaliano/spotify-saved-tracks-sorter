@@ -1,4 +1,4 @@
-import { ActionFunctionArgs } from '@remix-run/node';
+import { ActionFunctionArgs } from 'react-router';
 import { trackAnalysisRepository } from "~/lib/repositories/TrackAnalysisRepository";
 import { sqsService, AnalysisJobPayload } from "~/lib/services/queue/SQSService";
 import { requireUserSession } from '~/features/auth/auth.utils';
@@ -28,7 +28,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return { success: true, trackId, analysisId: existingAnalysis.id, alreadyAnalyzed: true };
       }
 
-      const jobPayload: AnalysisJobPayload = {
+      const jobPayload: Omit<AnalysisJobPayload, 'batchId'> = {
         trackId,
         artist,
         title: name,

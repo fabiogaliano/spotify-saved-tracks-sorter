@@ -1,15 +1,15 @@
 import { LoaderFunctionArgs } from 'react-router';
-import { requireUserSession } from '~/features/auth/auth.utils';
+import { requireUserSession, createResponseWithUpdatedSession } from '~/features/auth/auth.utils';
 import { jobPersistenceService } from '~/lib/services/JobPersistenceService';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const userSession = await requireUserSession(request);
-  if (!userSession) {
+  const sessionData = await requireUserSession(request);
+  if (!sessionData) {
     return Response.json({ error: 'Authentication required' }, { status: 401 });
   }
 
   try {
-    const activeJob = await jobPersistenceService.getActiveJobForUser(userSession.userId);
+    const activeJob = await jobPersistenceService.getActiveJobForUser(sessionData.userId);
     
     if (activeJob) {
       // Convert trackStates Map to a plain object for JSON serialization
@@ -19,9 +19,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         ...activeJob,
         trackStates: trackStatesObj
       };
-      return Response.json(jobForSerialization);
+      return createResponseWithUpdatedSession(jobForSerialization, sessionData);
     } else {
-      return Response.json(null);
+      return createResponseWithUpdatedSession(null, sessionData);
     }
   } catch (error) {
     console.error('Error fetching active job:', error);

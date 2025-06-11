@@ -12,46 +12,93 @@ const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET
  */
 export class AuthService {
   private logger = Logger.getInstance()
+  // Map to track ongoing refresh operations per user to prevent race conditions
+  private refreshPromises = new Map<string, Promise<boolean>>()
 
   /**
    * Gets user session if it exists, without redirecting
    * Also handles token refresh if needed
+   * Returns both the session and whether it was refreshed
    */
-  async getUserSession(request: Request): Promise<SpotifySession | null> {
+  async getUserSession(request: Request): Promise<{ session: SpotifySession | null; wasRefreshed: boolean; cookieHeader?: string }> {
     try {
       const session = await sessionStorage.getSession(request.headers.get('Cookie'))
       const user = session.get(authenticator.sessionKey) as SpotifySession | null
 
       if (!user) {
         this.logger.info('No user session found')
-        return null
+        return { session: null, wasRefreshed: false }
       }
 
+      // Validate session structure
+      if (!user.user || !user.expiresAt) {
+        this.logger.error('Invalid session structure:', { 
+          hasUser: !!user.user, 
+          hasExpiresAt: !!user.expiresAt,
+          keys: Object.keys(user)
+        })
+        return { session: null, wasRefreshed: false }
+      }
 
       const now = Date.now()
       const timeUntilExpiry = user.expiresAt - now
 
+      // Only log debug info if token needs refresh or if explicitly in debug mode
+      const needsRefresh = timeUntilExpiry < REFRESH_THRESHOLD_MS
+      if (needsRefresh || process.env.AUTH_DEBUG === 'true') {
+        this.logger.info('[AUTH] Token status:', {
+          userId: user.user?.id || 'unknown',
+          timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + 's',
+          needsRefresh,
+          path: new URL(request.url).pathname
+        })
+      }
+
       if (timeUntilExpiry < REFRESH_THRESHOLD_MS) {
-        this.logger.info(`Token will expire soon (${timeUntilExpiry}ms), refreshing...`)
-        const refreshed = await this.refreshSessionToken(user)
+        const userId = user.user?.id || 'unknown'
+        
+        // Check if a refresh is already in progress for this user
+        let refreshPromise = this.refreshPromises.get(userId)
+        
+        if (!refreshPromise) {
+          // No refresh in progress, start a new one
+          this.logger.info(`[AUTH] Token refresh initiated for user ${userId}`)
+          refreshPromise = this.refreshSessionToken(user)
+            .finally(() => {
+              // Clean up the promise once it's done
+              this.refreshPromises.delete(userId)
+            })
+          this.refreshPromises.set(userId, refreshPromise)
+        } else {
+          this.logger.info(`[AUTH] Token refresh already in progress for user ${userId}, waiting...`)
+        }
+        
+        const refreshed = await refreshPromise
 
         if (refreshed) {
           session.set(authenticator.sessionKey, user)
-          await sessionStorage.commitSession(session)
+          const cookieHeader = await sessionStorage.commitSession(session)
 
-          this.logger.info('Successfully refreshed token and updated session')
-          // Note: We return the updated user object, but the new cookie will only be
-          // applied if the caller commits the session in a response
+          this.logger.info('[AUTH] Token refreshed successfully')
+          // Return the updated session and the cookie header that needs to be set
+          return { session: user, wasRefreshed: true, cookieHeader }
         } else {
-          this.logger.warn('Failed to refresh token, session may be invalid')
-          return null
+          this.logger.warn('[AUTH] Token refresh failed, session may be invalid')
+          return { session: null, wasRefreshed: false }
         }
       }
 
-      return user
+      // Log successful auth check in a condensed format (only in debug mode)
+      if (process.env.AUTH_DEBUG === 'true') {
+        const path = new URL(request.url).pathname
+        const userId = user.user?.id || 'unknown'
+        this.logger.debug(`[AUTH] Check OK: ${userId} @ ${path}`)
+      }
+
+      return { session: user, wasRefreshed: false }
     } catch (error) {
       this.logger.error('Error in getUserSession:', error)
-      return null
+      return { session: null, wasRefreshed: false }
     }
   }
 
@@ -106,6 +153,7 @@ export class AuthService {
         const newAccessToken = data.access_token
         const expiresIn = data.expires_in * 1000 // convert to ms
 
+        // Update the session object that was passed by reference
         session.accessToken = newAccessToken
         session.expiresAt = Date.now() + expiresIn
 
@@ -113,7 +161,14 @@ export class AuthService {
           session.refreshToken = data.refresh_token
         }
 
-        this.logger.info('Successfully refreshed token, expires in: ' + expiresIn / 1000 + ' seconds')
+        if (process.env.AUTH_DEBUG === 'true') {
+          this.logger.info('[AUTH DEBUG] Token refresh details:', {
+            oldExpiresAt: session.expiresAt - expiresIn,
+            newExpiresAt: session.expiresAt,
+            expiresIn: expiresIn / 1000 + ' seconds',
+            gotNewRefreshToken: !!data.refresh_token
+          })
+        }
         return true
       } else {
         this.logger.error('No access token in Spotify response:', data)

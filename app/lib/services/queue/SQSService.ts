@@ -126,7 +126,7 @@ class SQSService {
     return queueUrl;
   }
 
-  async enqueueAnalysisJob(payload: AnalysisJobPayload) {
+  async enqueueAnalysisJob(payload: Omit<AnalysisJobPayload, 'batchId'>) {
     const queueUrl = await this.getQueueUrl();
 
     const params: SendMessageCommandInput = {

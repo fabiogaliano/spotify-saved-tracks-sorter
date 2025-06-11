@@ -56,12 +56,30 @@ export const spotifyStrategy = new SpotifyStrategy(
     // Get or create the user in our database when authenticating
     const appUser = await userService.getOrCreateUser(profile.id, profile.emails[0].value)
 
+    // Debug logging for token expiration issue (only in debug mode)
+    if (process.env.AUTH_DEBUG === 'true') {
+      console.log('[AUTH DEBUG] Initial auth callback:', {
+        hasExtraParams: !!extraParams,
+        expiresIn: extraParams?.expiresIn,
+        tokenType: extraParams?.tokenType,
+        expiresInType: typeof extraParams?.expiresIn,
+        calculatedExpiresAt: extraParams?.expiresIn ? Date.now() + extraParams.expiresIn * 1000 : 'undefined'
+      })
+    }
+
+    // Default to 1 hour if expiresIn is not provided
+    const expiresIn = extraParams?.expiresIn || 3600 // 1 hour in seconds
+    if (!extraParams?.expiresIn) {
+      console.warn('[AUTH] No expiresIn received from Spotify, defaulting to 1 hour')
+    }
+    const expiresAt = Date.now() + expiresIn * 1000
+
     // Return the format expected by SpotifyStrategy but with our extra data
     return {
       accessToken,
       refreshToken: refreshToken!,
-      expiresAt: Date.now() + extraParams.expiresIn * 1000,
-      tokenType: extraParams.tokenType,
+      expiresAt,
+      tokenType: extraParams?.tokenType || 'Bearer',
       user: {
         id: profile.id,
         email: profile.emails[0].value,
