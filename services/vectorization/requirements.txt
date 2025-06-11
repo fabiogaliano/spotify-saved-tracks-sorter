@@ -1,10 +1,22 @@
+# Core dependencies
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+pydantic==2.10.6
+python-multipart==0.0.6
+
+# ML and NLP dependencies
+torch==2.6.0
+transformers==4.49.0
+sentence-transformers==2.2.2
+numpy==2.0.2
+
+# Required dependencies from working version
 annotated-types==0.7.0
 anyio==4.8.0
 certifi==2025.1.31
 charset-normalizer==3.4.1
 click==8.1.8
 exceptiongroup==1.2.2
-fastapi==0.115.8
 filelock==3.17.0
 fsspec==2025.2.0
 h11==0.16.0
@@ -14,9 +26,7 @@ Jinja2==3.1.5
 MarkupSafe==3.0.2
 mpmath==1.3.0
 networkx==3.2.1
-numpy==2.0.2
 packaging==24.2
-pydantic==2.10.6
 pydantic_core==2.27.2
 PyYAML==6.0.2
 regex==2024.11.6
@@ -26,9 +36,6 @@ sniffio==1.3.1
 starlette==0.45.3
 sympy==1.13.1
 tokenizers==0.21.0
-torch==2.6.0
 tqdm==4.67.1
-transformers==4.49.0
 typing_extensions==4.12.2
 urllib3==2.3.0
-uvicorn==0.34.0

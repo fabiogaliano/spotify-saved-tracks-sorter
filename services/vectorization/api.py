@@ -500,6 +500,8 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
+    import sys
     PORT = 8000
-    print(f"🚀 Enhanced Vectorization Server starting on http://localhost:{PORT}")
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    print(f"🚀 Enhanced Vectorization Server starting on http://localhost:{PORT}", flush=True)
+    sys.stdout.flush()
+    uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")
