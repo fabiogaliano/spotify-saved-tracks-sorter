@@ -46,9 +46,9 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
   );
 
   return (
-    <div className="md:col-span-4 lg:col-span-3">
-      <Card className="bg-card border-border h-full flex flex-col shadow-sm">
-        <CardHeader className="pb-2 border-b border-border">
+    <div className="lg:col-span-3">
+      <Card className="bg-card/50 backdrop-blur-sm border-border h-full flex flex-col shadow-sm">
+        <CardHeader className="pb-3 border-b border-border/50">
           <div className="flex justify-between items-center">
             <SectionTitle
               icon={<IconContainer icon={ListMusic} color="purple" />}
@@ -66,7 +66,7 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
               placeholder="Search playlists..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 bg-card/50 border-border"
+              className="pl-10 bg-background/50 border-border/50 focus:bg-background transition-colors"
             />
           </div>
         </div>
@@ -89,7 +89,7 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
                 </div>
                 <h3 className="text-base font-medium text-foreground mb-2">No playlists found</h3>
                 <p className="text-sm text-muted-foreground text-center max-w-sm">
-                  {searchQuery 
+                  {searchQuery
                     ? `No playlists match "${searchQuery}". Try adjusting your search terms.`
                     : 'No playlists available in this category. Create some playlists to get started.'
                   }
@@ -98,28 +98,28 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
             ) : (
               <div className="space-y-2">
                 {filteredPlaylists.map((playlist) => {
-                return (
-                  <button
-                    key={playlist.id}
-                    onClick={() => onSelectPlaylist(playlist.id)}
-                    className={`w-full p-3 min-h-[44px] text-left rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background ${selectedPlaylist === playlist.id
-                      ? 'bg-card-primary border border-primary/30 text-foreground'
-                      : 'bg-card/50 border border-border text-foreground hover:bg-card hover:border-border active:bg-card'
-                      }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <PlaylistCard color={playlist.imageColor} />
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span>{playlist.name}</span>
-                          {playlist.aiEnabled && (
-                            <IconContainer icon={Sparkles} color={playlist.imageColor} size="sm" />
-                          )}
+                  return (
+                    <button
+                      key={playlist.id}
+                      onClick={() => onSelectPlaylist(playlist.id)}
+                      className={`w-full p-3 min-h-[44px] text-left rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background ${selectedPlaylist === playlist.id
+                        ? 'bg-card-primary border border-primary/30 text-foreground'
+                        : 'bg-card/50 border border-border text-foreground hover:bg-card hover:border-border active:bg-card'
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <PlaylistCard color={playlist.imageColor} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span>{playlist.name}</span>
+                            {playlist.aiEnabled && (
+                              <IconContainer icon={Sparkles} color={playlist.imageColor} size="sm" />
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                );
+                    </button>
+                  );
                 })}
               </div>
             )}

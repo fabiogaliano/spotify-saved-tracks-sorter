@@ -11,8 +11,10 @@ import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisReposit
 import { TrackAnalysisAttemptsRepository } from '~/lib/repositories/TrackAnalysisAttemptsRepository';
 import { providerKeysRepository } from '~/lib/repositories/ProviderKeysRepository';
 import { analysisJobRepository } from '~/lib/repositories/AnalysisJobRepository';
+import { playlistAnalysisService } from '~/lib/services/PlaylistAnalysisService';
 import { jobPersistenceService } from '~/lib/services/JobPersistenceService';
 import { BatchSongAnalysisService, BatchAnalysisResult } from '~/lib/services/analysis/BatchSongAnalysisService';
+import { DefaultPlaylistAnalysisService } from '~/lib/services/analysis/PlaylistAnalysisService';
 import { DefaultLyricsService } from '~/lib/services/lyrics/LyricsService';
 import { LlmProviderManager, LlmProviderName } from '~/lib/services/llm/LlmProviderManager';
 import type { AnalysisJobPayload } from '~/lib/services/queue/SQSService';
@@ -181,7 +183,19 @@ async function processMessages() {
 }
 
 async function processBatch(batchId: string, messages: any[]) {
-  logger.info(`Processing batch ${batchId} with ${messages.length} tracks`);
+  logger.info(`Processing batch ${batchId} with ${messages.length} items`);
+
+  // Check if this is a playlist analysis batch
+  const firstMessage = messages[0];
+  if (!firstMessage.Body) return;
+  
+  const checkPayload = JSON.parse(firstMessage.Body) as AnalysisJobPayload;
+  
+  // Handle playlist analysis separately
+  if (checkPayload.type === 'playlist') {
+    await processPlaylistBatch(batchId, messages);
+    return;
+  }
 
   // Extract track info from messages
   const tracks = [];
@@ -192,7 +206,11 @@ async function processBatch(batchId: string, messages: any[]) {
       const payload = JSON.parse(message.Body) as AnalysisJobPayload;
       const { trackId, artist, title, userId } = payload;
 
-      tracks.push({ trackId: String(trackId), artist, song: title });
+      if (artist && title) {
+        tracks.push({ trackId: String(trackId), artist, song: title });
+      } else {
+        logger.warn(`Skipping track ${trackId} - missing artist or title`);
+      }
       messageMap.set(String(trackId), { message, payload });
     } catch (error) {
       logger.error(`Failed to process message: ${error}`);
@@ -381,6 +399,108 @@ async function processBatch(batchId: string, messages: any[]) {
     }
   } catch (error) {
     logger.error(`Failed to update job stats: ${error}`);
+  }
+}
+
+async function processPlaylistBatch(batchId: string, messages: any[]) {
+  logger.info(`Processing playlist analysis batch ${batchId}`);
+
+  if (messages.length !== 1) {
+    logger.error(`Playlist analysis expects exactly 1 message, got ${messages.length}`);
+    for (const message of messages) {
+      await deleteSqsMessage(message.ReceiptHandle);
+    }
+    return;
+  }
+
+  const message = messages[0];
+  try {
+    const payload = JSON.parse(message.Body) as AnalysisJobPayload;
+    const { playlistId, playlistName, playlistDescription, userId } = payload;
+
+    logger.info(`Analyzing playlist: ${playlistName} (ID: ${playlistId})`);
+
+    // Send initial notification
+    await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'batch_tracks_queued',
+        jobId: batchId,
+        trackIds: [null], // Playlist analysis doesn't have track IDs
+        status: 'QUEUED',
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    // Get user provider preference
+    let providerName: LlmProviderName = 'google';
+    let apiKey = GOOGLE_API_KEY || '';
+
+    try {
+      const userProviderPref = await providerKeysRepository.getUserProviderPreference(userId);
+      if (userProviderPref?.active_provider) {
+        providerName = userProviderPref.active_provider as LlmProviderName;
+        logger.info(`Using user's preferred provider: ${providerName}`);
+        if (providerName === 'google') apiKey = GOOGLE_API_KEY || '';
+      }
+    } catch (error) {
+      logger.error(`Error fetching user preferences: ${error}. Using default provider.`);
+    }
+
+    const llmManager = new LlmProviderManager(providerName, apiKey);
+
+    // Notify in progress
+    await notifyStatusChange(batchId, Number(playlistId), 'IN_PROGRESS');
+
+    try {
+      // Create playlist analysis service
+      const playlistAnalysisServiceInstance = new DefaultPlaylistAnalysisService(llmManager);
+      
+      // Analyze playlist using the service
+      const { model, analysisJson } = await playlistAnalysisServiceInstance.analyzePlaylistWithPrompt(
+        playlistName || 'Unknown Playlist',
+        playlistDescription || ''
+      );
+      
+      const analysisData = analysisJson;
+      
+      // Validate required fields
+      if (!analysisData.meaning || !analysisData.emotional || !analysisData.context || !analysisData.matchability) {
+        throw new Error('Analysis response is missing required fields');
+      }
+
+      // Save to database
+      await playlistAnalysisService.saveAnalysis(
+        Number(playlistId),
+        userId,
+        analysisData as Json,
+        llmManager.getCurrentModel(),
+        1
+      );
+
+      logger.info(`Playlist analysis saved for playlistId ${playlistId}`);
+
+      // Notify success
+      await notifyStatusChange(batchId, Number(playlistId), 'COMPLETED');
+
+      // Send batch progress update
+      await notifyBatchProgress(batchId, 1, 1);
+
+      // Mark job as completed
+      await jobPersistenceService.markJobCompleted(batchId);
+
+    } catch (error) {
+      logger.error(`Failed to analyze playlist ${playlistId}: ${error}`);
+      await notifyStatusChange(batchId, Number(playlistId), 'FAILED', undefined, error instanceof Error ? error.message : String(error));
+    }
+
+    // Delete processed message
+    await deleteSqsMessage(message.ReceiptHandle);
+
+  } catch (error) {
+    logger.error(`Failed to process playlist message: ${error}`);
+    await deleteSqsMessage(message.ReceiptHandle);
   }
 }
 
