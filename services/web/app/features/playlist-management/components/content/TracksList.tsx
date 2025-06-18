@@ -9,15 +9,16 @@ import { useSyncPlaylistTracks } from '../../hooks/useSyncPlaylistTracks';
 interface TrackListProps {
   currentPlaylist: PlaylistUIFormat;
   playlistTracks: PlaylistTrackUI[];
+  rescanAction?: React.ReactNode;
   isLoading: boolean;
 }
 
 const TrackList: React.FC<TrackListProps> = ({
   currentPlaylist,
   playlistTracks,
+  rescanAction,
   isLoading,
 }) => {
-  // Use the syncPlaylistTracks hook to get real-time syncing state
   const { isSyncing, syncPlaylistTracks: syncTracks } = useSyncPlaylistTracks();
   const renderTrackContent = () => {
     if (currentPlaylist.tracksSyncStatus === 'NOT_STARTED') {
@@ -58,10 +59,13 @@ const TrackList: React.FC<TrackListProps> = ({
   return (
     <Card className="bg-card border-border h-full">
       <CardHeader className="pb-2 border-b border-border">
-        <SectionTitle
-          icon={<IconContainer icon={Music} color="green" />}
-          title="Playlist Tracks"
-        />
+        <div className="flex items-center justify-between">
+          <SectionTitle
+            icon={<IconContainer icon={Music} color="green" />}
+            title="Playlist Tracks"
+          />
+          {rescanAction}
+        </div>
       </CardHeader>
 
       <CardContent className="p-0 relative">

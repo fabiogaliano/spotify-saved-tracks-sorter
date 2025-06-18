@@ -21,12 +21,21 @@ const sqsClient = new SQSClient({
 });
 
 export interface AnalysisJobPayload {
-  trackId: string; // Your internal DB track ID
-  artist: string;
-  title: string;
+  // Common fields
+  type: 'track' | 'playlist'; // Type of analysis job
   userId: number; // User ID to fetch provider preferences
-  batchId: string; // Shared ID for all tracks in the same batch analysis
+  batchId: string; // Shared ID for all items in the same batch analysis
   batchSize?: 1 | 5 | 10; // Batch size for parallel processing
+  
+  // Track-specific fields
+  trackId?: string; // Your internal DB track ID
+  artist?: string;
+  title?: string;
+  
+  // Playlist-specific fields
+  playlistId?: string; // Your internal DB playlist ID
+  playlistName?: string;
+  playlistDescription?: string;
 }
 
 class SQSService {
@@ -126,7 +135,7 @@ class SQSService {
     return queueUrl;
   }
 
-  async enqueueAnalysisJob(payload: Omit<AnalysisJobPayload, 'batchId'>) {
+  async enqueueAnalysisJob(payload: AnalysisJobPayload) {
     const queueUrl = await this.getQueueUrl();
 
     const params: SendMessageCommandInput = {
@@ -136,9 +145,20 @@ class SQSService {
 
     if (queueUrl.endsWith(".fifo")) {
       params.MessageGroupId = "song-analysis-group";
+      
+      // Generate deduplication ID based on job type
+      let deduplicationString: string;
+      if (payload.type === 'track') {
+        deduplicationString = `track-${payload.trackId}-${payload.artist}-${payload.title}-${Date.now()}`;
+      } else if (payload.type === 'playlist') {
+        deduplicationString = `playlist-${payload.playlistId}-${Date.now()}`;
+      } else {
+        throw new Error(`Invalid analysis job type: ${payload.type}`);
+      }
+      
       params.MessageDeduplicationId = crypto
         .createHash('sha256')
-        .update(`${payload.trackId}-${payload.artist}-${payload.title}-${Date.now()}`)
+        .update(deduplicationString)
         .digest('hex');
     }
 

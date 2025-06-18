@@ -4,7 +4,9 @@ import type {
 } from '~/lib/services'
 import { logger } from '~/lib/logging/Logger'
 
-const PLAYLIST_ANALYSIS_PROMPT = `Playlist Name: {playlist_name}
+const PLAYLIST_ANALYSIS_PROMPT = `You are a music analysis AI. Analyze the following playlist and return ONLY a valid JSON response with no additional text or explanation.
+
+Playlist Name: {playlist_name}
 Description: {playlist_description}
 
 Analyze this playlist and provide:
@@ -13,7 +15,7 @@ Analyze this playlist and provide:
 3. A detailed emotional analysis, focusing on the dominant mood.
 4. The adaptability of this playlist to different settings.
 
-Provide analysis in the following JSON format:
+Return ONLY the following JSON structure (no markdown, no code blocks, just the JSON object):
 {
   "meaning": {
     "themes": [
@@ -79,17 +81,39 @@ export class DefaultPlaylistAnalysisService implements PlaylistAnalysisService {
       try {
         analysisJson = JSON.parse(result.text)
       } catch (parseError) {
+        // Try to extract JSON from code blocks
         const jsonMatch = result.text.match(/```(?:json)?(\n|\r\n|\r)?(.*?)```/s)
         if (jsonMatch && jsonMatch[2]) {
           try {
             analysisJson = JSON.parse(jsonMatch[2].trim())
           } catch (extractError) {
-            throw new Error('Failed to parse extracted content as JSON')
+            // Try to find JSON object in the text
+            const jsonObjectMatch = result.text.match(/\{[\s\S]*\}/)
+            if (jsonObjectMatch) {
+              try {
+                analysisJson = JSON.parse(jsonObjectMatch[0])
+              } catch (e) {
+                logger.error('Failed to parse JSON from text', { text: result.text })
+                throw new Error('Failed to parse extracted content as JSON')
+              }
+            } else {
+              throw new Error('Failed to parse extracted content as JSON')
+            }
           }
         } else {
-          throw new Error(
-            'Failed to parse analysis result as JSON - no JSON code block found'
-          )
+          // Try to find JSON object in the text
+          const jsonObjectMatch = result.text.match(/\{[\s\S]*\}/)
+          if (jsonObjectMatch) {
+            try {
+              analysisJson = JSON.parse(jsonObjectMatch[0])
+            } catch (e) {
+              logger.error('Failed to parse JSON from text', { text: result.text })
+              throw new Error('Failed to parse analysis result as JSON - no valid JSON found')
+            }
+          } else {
+            logger.error('No JSON found in LLM response', { text: result.text })
+            throw new Error('Failed to parse analysis result as JSON - no JSON object found')
+          }
         }
       }
 
