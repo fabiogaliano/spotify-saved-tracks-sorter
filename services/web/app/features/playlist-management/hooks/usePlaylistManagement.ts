@@ -29,7 +29,7 @@ export function usePlaylistManagement({ playlists: initialPlaylists }: UsePlayli
 
   const filteredTabPlaylists = useMemo(() => {
     return mappedPlaylists.filter(playlist =>
-      selectedTab === 'is_flagged' ? playlist.aiEnabled : !playlist.aiEnabled
+      selectedTab === 'is_flagged' ? playlist.smartSortingEnabled : !playlist.smartSortingEnabled
     );
   }, [mappedPlaylists, selectedTab]);
 
@@ -55,13 +55,13 @@ export function usePlaylistManagement({ playlists: initialPlaylists }: UsePlayli
 
   const filteredPlaylists = useMemo(() => {
     return mappedPlaylists
-      .filter(playlist => selectedTab === 'is_flagged' ? playlist.aiEnabled : !playlist.aiEnabled)
+      .filter(playlist => selectedTab === 'is_flagged' ? playlist.smartSortingEnabled : !playlist.smartSortingEnabled)
       .filter(playlist => {
         if (!searchQuery) return true;
         const query = searchQuery.toLowerCase();
         return (
           playlist.name.toLowerCase().includes(query) ||
-          playlist.description.toLowerCase().includes(query)
+          playlist.description?.toLowerCase().includes(query)
         );
       });
   }, [mappedPlaylists, selectedTab, searchQuery]);

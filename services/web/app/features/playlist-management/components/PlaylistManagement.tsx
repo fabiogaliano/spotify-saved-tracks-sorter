@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Playlist } from '~/lib/models/Playlist';
-import PlaylistHeader from './content/PlaylistHeader';
+import PlaylistDetailsView from './content/PlaylistOverview';
 import TracksList from './content/TracksList';
 import PlaylistSelector from './sidebar/PlaylistSelector';
 import { NotificationBanner } from './ui';
@@ -20,10 +20,12 @@ import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { useSyncPlaylists } from '../hooks/useSyncPlaylists';
 import { PlaylistUIProvider } from '../store/playlist-ui-store';
 import { PlaylistTrackUI } from '../types';
-import { mapPlaylistToUIFormat } from '../utils';
+import { prefetchPlaylistImages } from '../queries/playlist-image-queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { useUpdatePlaylistInfo } from '../queries/playlist-queries';
 
-type PlaylistManagementProps = { 
-  playlists: Playlist[] 
+type PlaylistManagementProps = {
+  playlists: Playlist[]
 }
 
 const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
@@ -35,9 +37,10 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
   const [jobStatus, setJobStatus] = useState<{ status: string; progress?: number } | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [hasExistingAnalysis, setHasExistingAnalysis] = useState(false);
-  
+
   const analysisFetcher = useFetcher();
-  
+  const queryClient = useQueryClient();
+
   // WebSocket connection
   const wsUrl = `ws://localhost:3001/ws`;
   const { isConnected: wsConnected, lastMessage: wsMessage, connect, disconnect } = useWebSocket(wsUrl, {
@@ -66,25 +69,25 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
   // Process WebSocket messages
   useEffect(() => {
     if (!wsMessage) return;
-    
+
     // Route messages through subscription manager
     jobSubscriptionManager.processMessage(wsMessage);
   }, [wsMessage]);
-  
+
   // Subscribe to job updates
   // For playlist analysis, we track job progress differently since it's a single item
   useJobSubscription((update) => {
     // Playlist analysis has a single "track" so we just track overall status
     if (currentJobId && update.trackId === Number(selectedPlaylist)) {
-      const newStatus = { 
-        status: update.status === 'COMPLETED' ? 'completed' : 
-                update.status === 'FAILED' ? 'failed' : 
-                update.status === 'IN_PROGRESS' ? 'processing' : 'pending',
-        progress: update.status === 'COMPLETED' ? 100 : 
-                  update.status === 'IN_PROGRESS' ? 50 : 0
+      const newStatus = {
+        status: update.status === 'COMPLETED' ? 'completed' :
+          update.status === 'FAILED' ? 'failed' :
+            update.status === 'IN_PROGRESS' ? 'processing' : 'pending',
+        progress: update.status === 'COMPLETED' ? 100 :
+          update.status === 'IN_PROGRESS' ? 50 : 0
       };
       setJobStatus(newStatus);
-      
+
       // If completed, fetch the analysis results
       if (update.status === 'COMPLETED') {
         // Small delay to ensure data is saved
@@ -95,13 +98,13 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
               if (data.success && data.analysis) {
                 setAnalysisData(data.analysis);
                 setHasExistingAnalysis(true);
-                
+
                 // Always show success toast
                 toast.success('Playlist analyzed successfully!', {
                   duration: 5000,
                   dismissible: true,
                 });
-                
+
                 // If modal is already open (re-analysis), keep it open
                 // The modal will automatically update with new data
               }
@@ -121,7 +124,7 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
       }
     }
   }, !!currentJobId);
-  
+
   const {
     selectedPlaylist,
     selectedTab,
@@ -132,6 +135,17 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
     updateSelectedTab,
     setSearchQuery
   } = usePlaylistManagement({ playlists });
+
+  // Prefetch all playlist images when component mounts or playlists change
+  useEffect(() => {
+    const spotifyIds = filteredPlaylists.map(p => p.spotifyId);
+    if (spotifyIds.length > 0) {
+      // Use React Query's prefetching
+      prefetchPlaylistImages(queryClient, spotifyIds).catch(err => {
+        console.warn('Failed to prefetch some playlist images:', err);
+      });
+    }
+  }, [filteredPlaylists, queryClient]);
 
   // Handle selection of newly created playlist
   useEffect(() => {
@@ -147,37 +161,47 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
   const handlePlaylistCreated = (playlistSpotifyId: string) => {
     // First switch to AI-Enabled tab
     updateSelectedTab('is_flagged');
-    
+
     // Then set pending selection - useEffect will handle it when data is ready
     setPendingSelection(playlistSpotifyId);
   };
 
-  const { notification, showSuccess, showInfo } = useNotifications();
+  const { notification, showSuccess, showInfo, showError } = useNotifications();
   const { isSyncing } = useSyncPlaylists();
-  
-  // Use cleaned up tracks hook
-  const { 
-    tracks: rawPlaylistTracks, 
+
+  const {
+    tracks: rawPlaylistTracks,
     isLoading: isLoadingTracks,
     formatTrackData
   } = usePlaylistTracks(selectedPlaylist);
 
-  // Format track data using the hook's formatter
   const playlistTracks: PlaylistTrackUI[] = rawPlaylistTracks.map(formatTrackData);
 
-  const handleEditDescription = () => {
-    showSuccess('AI flag saved successfully!');
+  const updatePlaylistInfoMutation = useUpdatePlaylistInfo();
+
+  const handleEditInfo = (name: string, description: string) => {
+    if (!selectedPlaylist) return;
+
+    updatePlaylistInfoMutation.mutate({
+      playlistId: selectedPlaylist,
+      description: description,
+      name: name
+    });
   };
 
-  const handleEnableAI = (enabled: boolean) => {
-    showSuccess(
-      enabled
-        ? 'AI sorting enabled for this playlist'
-        : 'AI sorting disabled for this playlist',
-      false
-    );
-    // TODO: Update playlist data - count chars available for description 
-    // block api call if new description is too long
+  const handleToggleSmartSorting = (enabled: boolean) => {
+    if (!selectedPlaylist) return;
+
+    // Get current playlist to access its name and description
+    const currentPlaylist = playlists?.find(p => p.id.toString() === selectedPlaylist);
+    if (!currentPlaylist) return;
+
+    updatePlaylistInfoMutation.mutate({
+      playlistId: selectedPlaylist,
+      name: currentPlaylist.name,
+      description: currentPlaylist.description || '',
+      smartSortingEnabled: enabled
+    });
   };
 
   const handleRescanPlaylist = () => {
@@ -186,14 +210,14 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
 
   const handleAnalyzePlaylist = () => {
     if (!selectedPlaylist) return;
-    
+
     // Don't show modal when starting analysis
     setIsAnalyzing(true);
     // Don't clear analysis data if modal is open (re-analyzing)
     if (!showAnalysisModal) {
       setAnalysisData(null);
     }
-    
+
     // Submit analysis job to queue
     analysisFetcher.submit(
       { playlistId: selectedPlaylist },
@@ -203,19 +227,19 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
 
   const handleViewAnalysis = async () => {
     if (!selectedPlaylist) return;
-    
+
     setShowAnalysisModal(true);
-    
+
     // Don't set isAnalyzing for viewing, only for actual analysis
     if (analysisData) {
       // Analysis already loaded, just show modal
       return;
     }
-    
+
     try {
       const response = await fetch(`/api/playlist-analysis/${selectedPlaylist}`);
       const data = await response.json();
-      
+
       if (data.success && data.analysis) {
         setAnalysisData(data.analysis);
       } else {
@@ -253,9 +277,9 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
   }, [analysisFetcher.data, analysisFetcher.state]);
 
 
-  // Check for existing analysis when playlist changes
+  // Check for existing analysis when playlist changes (only for AI-enabled playlists)
   useEffect(() => {
-    if (selectedPlaylist) {
+    if (selectedPlaylist && currentPlaylist?.smartSortingEnabled) {
       fetch(`/api/playlist-analysis/${selectedPlaylist}`)
         .then(res => res.json())
         .then(data => {
@@ -264,15 +288,18 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
         .catch(() => {
           setHasExistingAnalysis(false);
         });
+    } else {
+      // Not an AI-enabled playlist, so no analysis exists
+      setHasExistingAnalysis(false);
     }
-  }, [selectedPlaylist]);
+  }, [selectedPlaylist, currentPlaylist?.smartSortingEnabled]);
 
   return (
     <div className="h-full flex flex-col">
       <div className="mb-6">
-        <ManagementToolbar 
-          isSyncing={isSyncing} 
-          onPlaylistCreated={handlePlaylistCreated} 
+        <ManagementToolbar
+          isSyncing={isSyncing}
+          onPlaylistCreated={handlePlaylistCreated}
         />
       </div>
 
@@ -296,14 +323,14 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
         <div className="lg:col-span-9 flex flex-col gap-6 min-h-0 overflow-hidden">
           {currentPlaylist && (
             <>
-              <PlaylistHeader
+              <PlaylistDetailsView
                 currentPlaylist={currentPlaylist}
-                onEditDescription={handleEditDescription}
-                onEnableAI={handleEnableAI}
-                onAnalyzePlaylist={handleAnalyzePlaylist}
-                onViewAnalysis={handleViewAnalysis}
                 hasAnalysis={hasExistingAnalysis}
                 isAnalyzing={isAnalyzing}
+                onToggleSmartSorting={handleToggleSmartSorting}
+                onViewAnalysis={handleViewAnalysis}
+                onAnalyzePlaylist={handleAnalyzePlaylist}
+                onEditInfo={handleEditInfo}
               />
               <TracksList
                 currentPlaylist={currentPlaylist}
@@ -324,7 +351,7 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
           )}
         </div>
       </div>
-      
+
       {currentPlaylist && (
         <PlaylistAnalysisModal
           open={showAnalysisModal}

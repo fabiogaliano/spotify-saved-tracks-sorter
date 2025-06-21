@@ -1,4 +1,4 @@
-import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
+import { playlistRepository, PlaylistUpdateInput } from '~/lib/repositories/PlaylistRepository'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { mapSpotifyPlaylistToPlaylistInsert, Playlist, SpotifyPlaylistDTO } from '~/lib/models/Playlist'
 import { mapPlaylistTrackToTrackInsert, Track } from '~/lib/models/Track';
@@ -11,6 +11,8 @@ import * as v from 'valibot'
 import { CreateAIPlaylistInputSchema, CreateAIPlaylistSchema } from '~/lib/validation/playlist.validation'
 
 import { logger } from '~/lib/logging/Logger';
+import { PLAYLIST_AI_PREFIX, PLAYLIST_MAX_DESCRIPTION_LENGTH } from '../constants/playlist.constants';
+
 
 export class PlaylistService {
   constructor(
@@ -33,17 +35,22 @@ export class PlaylistService {
     return playlistRepository.getPlaylistsByIds(playlistIds)
   }
 
+  async getPlaylistImage(playlistId: string) {
+    return this.spotifyService.getPlaylistImage(playlistId)
+  }
+
+
   async createAIPlaylist(name: string, description: string, userId: number): Promise<Playlist> {
-    // First validate the user input (without "AI:" prefix requirement)
+    // First validate the user input (without "✨:" prefix requirement)
     const userInput = v.parse(CreateAIPlaylistInputSchema, { name, description })
-    
-    // Add "AI:" prefix to description if it's user input without prefix
-    const finalDescription = description.startsWith('AI:') ? description : `AI: ${userInput.description}`
-    
+
+    // Add "✨:" prefix to description if it's user input without prefix
+    const finalDescription = description.startsWith(PLAYLIST_AI_PREFIX) ? description : `${PLAYLIST_AI_PREFIX}${userInput.description}`
+
     // Validate the final description with full schema
-    const validatedInput = v.parse(CreateAIPlaylistSchema, { 
-      name: userInput.name, 
-      description: finalDescription 
+    const validatedInput = v.parse(CreateAIPlaylistSchema, {
+      name: userInput.name,
+      description: finalDescription
     })
 
     // Create playlist in Spotify
@@ -54,7 +61,7 @@ export class PlaylistService {
       id: spotifyPlaylist.id,
       name: spotifyPlaylist.name,
       description: validatedInput.description,
-      is_flagged: validatedInput.description.startsWith('AI:'),
+      is_flagged: validatedInput.description.startsWith('✨:'),
       owner: { id: '' }, // Will be filled by the repository
       track_count: 0
     }
@@ -71,19 +78,65 @@ export class PlaylistService {
     return savedPlaylist
   }
 
-  async getAIEnabledPlaylistsWithTracks(userId: number): Promise<PlaylistWithTracks[]> {
+  async updatePlaylistInfo(userId: number, playlistUpdate: PlaylistUpdateInput): Promise<Playlist> {
     try {
-      const aiEnabledPlaylists = await playlistRepository.getFlaggedPlaylists(userId);
+      const playlist = await playlistRepository.getPlaylistById(playlistUpdate.id)
+
+      if (!playlist || playlist.user_id !== userId) {
+        throw new Error('Playlist not found or unauthorized')
+      }
+
+      let finalDescription = playlistUpdate.description
+      let shouldBeAIFlagged = playlist.is_flagged || false
+
+      if (shouldBeAIFlagged && playlistUpdate.description.trim() !== '' && !playlistUpdate.description.startsWith(PLAYLIST_AI_PREFIX)) {
+        finalDescription = `${PLAYLIST_AI_PREFIX}${playlistUpdate.description}`
+      }
+      else if (!shouldBeAIFlagged) {
+        finalDescription = playlistUpdate.description
+      }
+
+      if (finalDescription.length > PLAYLIST_MAX_DESCRIPTION_LENGTH) {
+        throw new Error('Description is too long. Maximum 300 characters allowed.')
+      }
+
+      // Update in Spotify first (source of truth)
+      await this.spotifyService.updatePlaylist(playlist.spotify_playlist_id, finalDescription, playlistUpdate.name)
+      const updatedPlaylist = await playlistRepository.updatePlaylistInfo(
+        playlistUpdate
+      )
+
+      if (!updatedPlaylist) {
+        throw new Error('Failed to update playlist in database')
+      }
+
+      return updatedPlaylist
+    } catch (error) {
+      logger.error('Error in updatePlaylistDescription', {
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : 'Unknown',
+          stack: error instanceof Error ? error.stack : undefined
+        },
+        ...playlistUpdate
+      })
+      throw error
+    }
+  }
+
+  async getSmartSortingEnabledPlaylistsWithTracks(userId: number): Promise<PlaylistWithTracks[]> {
+    try {
+      const smartSortingEnabledPlaylists = await playlistRepository.getFlaggedPlaylists(userId);
       const userPlaylistTracks = await playlistRepository.getPlaylistTracksByUserId(userId);
 
       const playlistTracksMap = createPlaylistTracksMap(userPlaylistTracks);
       const trackMap = await createTrackLookupMap(userPlaylistTracks);
 
-      const results = await buildPlaylistsWithTracks(aiEnabledPlaylists, playlistTracksMap, trackMap);
+      const results = await buildPlaylistsWithTracks(smartSortingEnabledPlaylists, playlistTracksMap, trackMap);
 
       return extractSuccessfulResults(results);
     } catch (error) {
-      logger.error(`Error in getAIEnabledPlaylistsWithTracks: ${error}`);
+      logger.error(`Error in getSmartSortingEnabledPlaylistsWithTracks: ${error}`);
       return [];
     }
 

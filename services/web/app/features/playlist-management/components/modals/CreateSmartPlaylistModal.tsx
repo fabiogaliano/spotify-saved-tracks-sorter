@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from '~/shared/components/ui/dialog'
 import { Plus, Music, Zap, Moon, Coffee, Heart } from 'lucide-react'
+import { PLAYLIST_AI_PREFIX, PLAYLIST_MAX_DESCRIPTION_LENGTH } from '~/lib/constants/playlist.constants'
 
 interface CreateAIPlaylistModalProps {
   onCreatePlaylist: (name: string, description: string) => void
@@ -78,8 +79,7 @@ const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (name.trim() && description.trim()) {
-      // Automatically prepend "AI: " to the description
-      const finalDescription = `AI: ${description.trim()}`
+      const finalDescription = `${PLAYLIST_AI_PREFIX}${description.trim()}`
       onCreatePlaylist(name.trim(), finalDescription)
       setOpen(false)
       resetForm()
@@ -87,9 +87,6 @@ const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
   }
 
   const isValidForm = name.trim().length > 0 && description.trim().length > 0
-  
-  // Calculate remaining characters (accounting for "AI: " prefix)
-  const remainingChars = 300 - description.length - 4 // 4 = "AI: ".length
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
@@ -139,17 +136,17 @@ const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
               <div className="relative">
                 <div className="flex gap-2">
                   <div className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary text-sm font-medium shrink-0">
-                    AI:
+                    {PLAYLIST_AI_PREFIX.slice(0, 1)}
                   </div>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => {
-                      const value = e.target.value.slice(0, 296) // 296 = 300 - 4 ("AI: ")
+                      const value = e.target.value.slice(0, PLAYLIST_MAX_DESCRIPTION_LENGTH - PLAYLIST_AI_PREFIX.length)
                       setDescription(value)
                     }}
                     placeholder="Describe your playlist..."
-                    maxLength={296}
+                    maxLength={PLAYLIST_MAX_DESCRIPTION_LENGTH - PLAYLIST_AI_PREFIX.length}
                     rows={3}
                     className="flex-1"
                   />
@@ -172,11 +169,10 @@ const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
                       key={index}
                       type="button"
                       onClick={() => handleTemplateSelect(template, index)}
-                      className={`p-3 rounded-lg border-2 text-left transition-all hover:scale-105 ${
-                        isSelected 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
+                      className={`p-3 rounded-lg border-2 text-left transition-all hover:scale-105 ${isSelected
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                        }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Icon className={`h-4 w-4 ${template.color}`} />
@@ -192,9 +188,9 @@ const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="secondary" 
+            <Button
+              type="button"
+              variant="secondary"
               onClick={() => {
                 setOpen(false)
                 resetForm()
@@ -203,8 +199,8 @@ const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!isValidForm || isCreating}
             >
               {isCreating ? 'Creating...' : 'Create Playlist'}

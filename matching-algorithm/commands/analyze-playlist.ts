@@ -8,7 +8,7 @@ import { join } from 'path'
 import { LlmProviderManager } from '~/lib/services/llm/LlmProviderManager'
 
 const DEFAULT_PLAYLIST_NAME = 'my reset ritual'
-const DEFAULT_PLAYLIST_DESCRIPTION = 'AI: the feel good playlist to put on for, my weekend reset ritual. light a scented candle, take a long slow shower while singing along, deep conditioning and then shaving, finishing off with the skin care routine that leaves me refreshed, positive and ready to face the world with high self esteem'
+const DEFAULT_PLAYLIST_DESCRIPTION = '✨: the feel good playlist to put on for, my weekend reset ritual. light a scented candle, take a long slow shower while singing along, deep conditioning and then shaving, finishing off with the skin care routine that leaves me refreshed, positive and ready to face the world with high self esteem'
 const MAX_NAME_LENGTH = 100
 const MAX_DESCRIPTION_LENGTH = 300
 

@@ -16,12 +16,10 @@ const queryClient = new QueryClient({
         if (error?.status === 401) return false;
         return failureCount < 2;
       },
-      // Refetch on window focus in production
       refetchOnWindowFocus: process.env.NODE_ENV === 'production',
     },
     mutations: {
-      // Retry mutations once
-      retry: 1,
+      retry: 0,
     },
   },
 });

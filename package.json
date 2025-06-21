@@ -4,15 +4,6 @@
   "private": true,
   "description": "Automatically sort your Spotify liked songs into playlists using AI-powered analysis",
   "scripts": {
-    "setup": "./setup.sh",
-    "setup:clean": "./setup.sh --clean",
-    "setup:web": "cd services/web && bun install",
-    "setup:python": "cd services/vectorization && uv pip sync requirements.txt",
-    "clean:web": "cd services/web && bun run clean",
-    "clean:python": "cd services/vectorization && rm -rf .venv .uv uv.lock __pycache__ *.pyc",
-    "clean": "bun run clean:web && bun run clean:python",
-    "clean:logs": "rm -rf services/web/logs",
-    "clean:all": "bun run clean && bun run clean:logs",
     "dev": "cd services/web && bun run dev:standard",
     "dev:full": "cd services/web && bun run dev:full",
     "dev:web": "cd services/web && bun dev",
@@ -24,7 +15,16 @@
     "start": "cd services/web && bun run start:prod",
     "test": "cd services/web && bun test",
     "lint": "cd services/web && bun run lint",
-    "typecheck": "cd services/web && bun run typecheck"
+    "typecheck": "cd services/web && bun run typecheck",
+    "setup": "./setup.sh",
+    "setup:clean": "./setup.sh --clean",
+    "setup:web": "cd services/web && bun install",
+    "setup:python": "cd services/vectorization && uv pip sync requirements.txt",
+    "clean:web": "cd services/web && bun run clean",
+    "clean:python": "cd services/vectorization && rm -rf .venv .uv uv.lock __pycache__ *.pyc",
+    "clean": "bun run clean:web && bun run clean:python",
+    "clean:logs": "rm -rf services/web/logs",
+    "clean:all": "bun run clean && bun run clean:logs"
   },
   "repository": {
     "type": "git",

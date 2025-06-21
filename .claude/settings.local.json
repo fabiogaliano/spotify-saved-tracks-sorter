@@ -9,7 +9,10 @@
       "Bash(cp:*)",
       "Bash(rm:*)",
       "Bash(git mv:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(mv:*)",
+      "WebFetch(domain:tanstack.com)"
     ],
     "deny": []
   }

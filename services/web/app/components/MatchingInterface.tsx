@@ -25,13 +25,13 @@ const MatchingInterface = () => {
 
   // Demo data
   const playlists = [
-    { id: '1', name: 'Chill Vibes', songCount: 42, description: 'AI: relaxing beats with mellow lyrics', aiEnabled: true },
-    { id: '2', name: 'Morning Energy', songCount: 28, description: 'AI: upbeat tracks to start your day', aiEnabled: true },
-    { id: '3', name: 'Late Night Feels', songCount: 35, description: 'AI: emotional and introspective tracks', aiEnabled: true },
-    { id: '4', name: 'Workout Mix', songCount: 50, description: 'AI: high energy songs with driving beats', aiEnabled: true },
-    { id: '5', name: 'Focus', songCount: 32, description: 'AI: ambient and minimal music for concentration', aiEnabled: true },
-    { id: '6', name: 'Party Playlist', songCount: 64, description: 'Good vibes only', aiEnabled: false },
-    { id: '7', name: 'Road Trip', songCount: 47, description: 'Music for the open road', aiEnabled: false },
+    { id: '1', name: 'Chill Vibes', songCount: 42, description: 'AI: relaxing beats with mellow lyrics', smartSortingEnabled: true },
+    { id: '2', name: 'Morning Energy', songCount: 28, description: 'AI: upbeat tracks to start your day', smartSortingEnabled: true },
+    { id: '3', name: 'Late Night Feels', songCount: 35, description: 'AI: emotional and introspective tracks', smartSortingEnabled: true },
+    { id: '4', name: 'Workout Mix', songCount: 50, description: 'AI: high energy songs with driving beats', smartSortingEnabled: true },
+    { id: '5', name: 'Focus', songCount: 32, description: 'AI: ambient and minimal music for concentration', smartSortingEnabled: true },
+    { id: '6', name: 'Party Playlist', songCount: 64, description: 'Good vibes only', smartSortingEnabled: false },
+    { id: '7', name: 'Road Trip', songCount: 47, description: 'Music for the open road', smartSortingEnabled: false },
   ];
 
   const likedSongs = [
@@ -162,8 +162,8 @@ const MatchingInterface = () => {
     return playlist ? playlist.name : '';
   };
 
-  // Get only AI-enabled playlists
-  const aiPlaylists = playlists.filter(p => p.aiEnabled);
+  // Get only smart sorting enabled playlists
+  const smartSortingPlaylists = playlists.filter(p => p.smartSortingEnabled);
 
   // Count of analyzable songs
   const unanalyzedCount = likedSongs.filter(song => !song.analyzed).length;
@@ -332,7 +332,7 @@ const MatchingInterface = () => {
 
                 <div className="pt-3 border-t border-border mt-3">
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Other Playlists</h3>
-                  {playlists.filter(p => !p.aiEnabled).map((playlist) => (
+                  {playlists.filter(p => !p.smartSortingEnabled).map((playlist) => (
                     <div
                       key={playlist.id}
                       className="w-full p-3 text-left rounded-md flex justify-between items-center bg-card/30 border border-border text-muted-foreground mb-2"
