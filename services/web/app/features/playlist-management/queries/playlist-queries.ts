@@ -1,10 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlaylistService } from '~/lib/services/PlaylistService';
-import { SpotifyService } from '~/lib/services/SpotifyService';
-import { SyncService } from '~/lib/services/SyncService';
-import { TrackService } from '~/lib/services/TrackService';
+
 import { Playlist } from '~/lib/models/Playlist';
 import { useNotificationStore } from '~/lib/stores/notificationStore';
+import { toast } from 'sonner';
+import { PLAYLIST_AI_PREFIX } from '~/lib/constants/playlist.constants';
 
 // Query keys factory for better organization
 export const playlistKeys = {
@@ -22,13 +21,11 @@ interface CreatePlaylistParams {
   description: string;
 }
 
-interface SyncPlaylistsParams {
-  userId: string;
-  spotifyApi: any; // Replace with proper SpotifyApi type
-}
-
-interface LoadPlaylistTracksParams {
+interface UpdatePlaylistInfoParams {
   playlistId: string;
+  description: string;
+  name: string;
+  smartSortingEnabled?: boolean; // Optional parameter to toggle smart sorting flag
 }
 
 // Hook to get playlists (this would typically come from a loader, but shown for completeness)
@@ -49,26 +46,26 @@ export function usePlaylists(initialData?: Playlist[]) {
 // Hook to get tracks for a specific playlist
 export function usePlaylistTracks(playlistId: string | null) {
   const notify = useNotificationStore();
-  
+
   return useQuery({
     queryKey: playlistKeys.tracks(playlistId || ''),
     queryFn: async () => {
       if (!playlistId) throw new Error('No playlist ID provided');
-      
+
       const formData = new FormData();
       formData.append('playlistId', playlistId);
-      
+
       const response = await fetch('/actions/load-playlist-tracks', {
         method: 'POST',
         body: formData,
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to load tracks');
       }
-      
+
       return data.tracks || [];
     },
     enabled: !!playlistId,
@@ -85,29 +82,30 @@ export function usePlaylistTracks(playlistId: string | null) {
 export function useCreatePlaylist() {
   const queryClient = useQueryClient();
   const notify = useNotificationStore();
-  
+
   return useMutation({
     mutationFn: async ({ name, description }: CreatePlaylistParams) => {
       const formData = new FormData();
       formData.append('name', name);
       formData.append('description', description);
-      
+
       const response = await fetch('/actions/create-ai-playlist', {
         method: 'POST',
         body: formData,
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to create playlist');
       }
-      
+
       return data.playlist;
     },
     onSuccess: (newPlaylist) => {
       // Add the new playlist to the cache in the correct sort position (by updated_at DESC)
-      queryClient.setQueryData(playlistKeys.lists(), (oldData: Playlist[] = []) => {
+      queryClient.setQueryData<Playlist[]>(playlistKeys.lists(), (oldData) => {
+        if (!oldData) return [newPlaylist];
         const updatedData = [newPlaylist, ...oldData];
         // Sort by updated_at descending to match the repository sort order
         return updatedData.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
@@ -125,19 +123,19 @@ export function useSyncPlaylists() {
   const queryClient = useQueryClient();
   const notify = useNotificationStore();
   let loadingToastId: string | number | null = null;
-  
+
   return useMutation({
     mutationFn: async () => {
       const response = await fetch('/actions/sync-playlists', {
         method: 'POST',
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to sync playlists');
       }
-      
+
       return data;
     },
     onMutate: () => {
@@ -149,10 +147,10 @@ export function useSyncPlaylists() {
       if (loadingToastId) {
         notify.dismiss(loadingToastId);
       }
-      
+
       // Invalidate playlists to trigger refetch
       queryClient.invalidateQueries({ queryKey: playlistKeys.lists() });
-      
+
       // Show success message based on response
       const stats = data.details?.stats;
       if (data.details?.noPlaylists) {
@@ -178,23 +176,23 @@ export function useSyncPlaylistTracks() {
   const queryClient = useQueryClient();
   const notify = useNotificationStore();
   let loadingToastId: string | number | null = null;
-  
+
   return useMutation({
     mutationFn: async (playlistId: string) => {
       const formData = new FormData();
       formData.append('playlistId', playlistId);
-      
+
       const response = await fetch('/actions/sync-playlist-tracks', {
         method: 'POST',
         body: formData,
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to sync playlist tracks');
       }
-      
+
       return { data, playlistId };
     },
     onMutate: () => {
@@ -204,10 +202,10 @@ export function useSyncPlaylistTracks() {
       if (loadingToastId) {
         notify.dismiss(loadingToastId);
       }
-      
+
       // Invalidate the specific playlist's tracks
       queryClient.invalidateQueries({ queryKey: playlistKeys.tracks(playlistId) });
-      
+
       if (data.message) {
         notify.success(data.message);
       } else {
@@ -223,28 +221,148 @@ export function useSyncPlaylistTracks() {
   });
 }
 
-// Hook to prefetch playlist tracks (for better UX)
+// update playlist information with optimistic updates
+export function useUpdatePlaylistInfo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ playlistId, description, name, smartSortingEnabled }: UpdatePlaylistInfoParams) => {
+      const updatePromise = async () => {
+        let updatedDescription = description;
+
+        if (smartSortingEnabled !== undefined) {
+          if (smartSortingEnabled && !updatedDescription.startsWith(PLAYLIST_AI_PREFIX)) {
+            updatedDescription = `${PLAYLIST_AI_PREFIX}${updatedDescription}`;
+          }
+          else if (!smartSortingEnabled && updatedDescription.startsWith(PLAYLIST_AI_PREFIX)) {
+            updatedDescription = updatedDescription.replace(PLAYLIST_AI_PREFIX, '');
+          }
+        }
+
+        const formData = new FormData();
+        formData.append('playlistId', playlistId);
+        formData.append('description', updatedDescription);
+        formData.append('name', name);
+
+        // Include is_flagged if we're updating the smart sorting setting
+        if (smartSortingEnabled !== undefined) {
+          formData.append('is_flagged', smartSortingEnabled.toString());
+        }
+
+        const response = await fetch('/actions/update-playlist-description', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Failed to update playlist information');
+        }
+
+        return data.playlist;
+      };
+
+      const isSmartSortingUpdate = smartSortingEnabled !== undefined;
+      const loadingMessage = isSmartSortingUpdate
+        ? (smartSortingEnabled ? 'Enabling smart sorting...' : 'Disabling smart sorting...')
+        : 'Updating playlist information...';
+      const successMessage = isSmartSortingUpdate
+        ? (smartSortingEnabled ? 'Smart sorting enabled!' : 'Smart sorting disabled!')
+        : 'Playlist information updated successfully!';
+      const errorHandler = (error: Error) => error.message ||
+        (isSmartSortingUpdate ? 'Failed to update smart sorting' : 'Failed to update playlist information');
+
+      const updatePromiseInstance = updatePromise();
+
+      toast.promise(updatePromiseInstance, {
+        loading: loadingMessage,
+        success: successMessage,
+        error: errorHandler,
+      });
+
+      return await updatePromiseInstance;
+    },
+    onMutate: async ({ playlistId, description, name, smartSortingEnabled }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: playlistKeys.lists() });
+
+      const previousPlaylists = queryClient.getQueryData<Playlist[]>(playlistKeys.lists());
+
+      queryClient.setQueryData<Playlist[]>(playlistKeys.lists(), (old) => {
+        if (!old) return [];
+        return old.map(playlist => {
+          if (playlist.id.toString() === playlistId) {
+            let updatedDescription = description;
+
+            // Handle smart sorting flag changes if specified
+            if (smartSortingEnabled !== undefined) {
+              // If enabling smart sorting and description doesn't have AI prefix, add it
+              if (smartSortingEnabled && !updatedDescription.startsWith(PLAYLIST_AI_PREFIX)) {
+                updatedDescription = `${PLAYLIST_AI_PREFIX}${updatedDescription}`;
+              }
+              // If disabling smart sorting and description has AI prefix, remove it
+              else if (!smartSortingEnabled && updatedDescription.startsWith(PLAYLIST_AI_PREFIX)) {
+                updatedDescription = updatedDescription.replace(PLAYLIST_AI_PREFIX, '');
+              }
+            }
+
+            return {
+              ...playlist,
+              name: name,
+              description: updatedDescription,
+              // Update is_flagged if smartSortingEnabled is specified
+              ...(smartSortingEnabled !== undefined && { is_flagged: smartSortingEnabled }),
+              updated_at: new Date().toISOString()
+            };
+          }
+          return playlist;
+        });
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousPlaylists };
+    },
+    onError: (error: Error, variables, context) => {
+      if (context?.previousPlaylists) {
+        queryClient.setQueryData(playlistKeys.lists(), context.previousPlaylists);
+      }
+    },
+    onSuccess: (updatedPlaylist) => {
+      // Update the cache with the actual server response
+      queryClient.setQueryData<Playlist[]>(playlistKeys.lists(), (old) => {
+        if (!old) return [updatedPlaylist];
+        return old.map(playlist =>
+          playlist.id === updatedPlaylist.id
+            ? updatedPlaylist
+            : playlist
+        );
+      });
+    },
+  });
+}
+
 export function usePrefetchPlaylistTracks() {
   const queryClient = useQueryClient();
-  
+
   return (playlistId: string) => {
     queryClient.prefetchQuery({
       queryKey: playlistKeys.tracks(playlistId),
       queryFn: async () => {
         const formData = new FormData();
         formData.append('playlistId', playlistId);
-        
+
         const response = await fetch('/actions/load-playlist-tracks', {
           method: 'POST',
           body: formData,
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok || !data.success) {
           throw new Error(data.error || 'Failed to load tracks');
         }
-        
+
         return data.tracks || [];
       },
       staleTime: 2 * 60 * 1000,

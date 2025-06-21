@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from '~/shared/components/ui/Card';
 import { Input } from '~/shared/components/ui/input';
 import { ScrollArea } from '~/shared/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
-import { PlaylistCard, IconContainer, SectionTitle } from '../ui';
+import { PlaylistCard, PlaylistImage, IconContainer, SectionTitle } from '../ui';
 import { PlaylistUIFormat, PlaylistDetailViewTabs } from '../../types';
 
 interface PlaylistSelectorProps {
@@ -108,11 +108,15 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        <PlaylistCard color={playlist.imageColor} />
+                        <PlaylistImage 
+                          spotifyPlaylistId={playlist.spotifyId}
+                          playlistName={playlist.name}
+                          color={playlist.imageColor} 
+                        />
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span>{playlist.name}</span>
-                            {playlist.aiEnabled && (
+                            {playlist.smartSortingEnabled && (
                               <IconContainer icon={Sparkles} color={playlist.imageColor} size="sm" />
                             )}
                           </div>

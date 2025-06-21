@@ -4,6 +4,14 @@ import { SYNC_STATUS, type SyncStatus } from './TrackRepository'
 import type { Playlist, PlaylistInsert, PlaylistTrackInsert, PlaylistRepository as IPlaylistRepository, PlaylistTrack } from '~/lib/models/Playlist'
 import type { Enums } from '~/types/database.types'
 
+//todo: infer from models database types
+export type PlaylistUpdateInput = {
+  id: number;
+  name: string;
+  description: string;
+  isFlagged: boolean;
+}
+
 class SupabasePlaylistRepository implements IPlaylistRepository {
   async getPlaylists(userId: number): Promise<Playlist[]> {
     const { data, error } = await getSupabase()
@@ -220,6 +228,26 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
 
     if (error) throw error
     return data || []
+  }
+
+
+  async updatePlaylistInfo(
+    playlist: PlaylistUpdateInput
+  ): Promise<Playlist | null> {
+    const { data, error } = await getSupabase()
+      .from('playlists')
+      .update({
+        name: playlist.name,
+        description: playlist.description,
+        is_flagged: playlist.isFlagged,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', playlist.id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   }
 }
 

@@ -9,8 +9,8 @@ export const mapPlaylistToUIFormat = (playlist: Playlist | PlaylistWithTracks): 
     name: playlist.name,
     songCount: playlist.track_count,
     imageColor: getColorForPlaylist(playlist.id.toString()),
-    description: playlist.description || 'No description',
-    aiEnabled: playlist.is_flagged || false,
+    description: playlist.description || null,
+    smartSortingEnabled: playlist.is_flagged || false,
     tracksSyncStatus: playlist.tracks_sync_status,
     spotifyId: playlist.spotify_playlist_id
   };

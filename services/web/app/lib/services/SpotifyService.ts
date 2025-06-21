@@ -171,7 +171,7 @@ export class SpotifyService {
   async createPlaylist(name: string, description: string): Promise<{ id: string; name: string }> {
     try {
       const currentUser = await this.fetchWithRetry(() => this.spotifyApi.currentUser.profile());
-      const playlist = await this.fetchWithRetry(() => 
+      const playlist = await this.fetchWithRetry(() =>
         this.spotifyApi.playlists.createPlaylist(currentUser.id, {
           name,
           description,
@@ -189,6 +189,59 @@ export class SpotifyService {
         'SPOTIFY_API_ERROR',
         500,
         { operation: 'createPlaylist', name, description, error }
+      );
+    }
+  }
+
+  async updatePlaylist(playlistId: string, description: string, name: string): Promise<void> {
+    try {
+      await this.fetchWithRetry(() =>
+        this.spotifyApi.playlists.changePlaylistDetails(playlistId, {
+          description,
+          name
+        })
+      );
+    } catch (error) {
+      throw new logger.AppError(
+        'Failed to update playlist description',
+        'SPOTIFY_API_ERROR',
+        500,
+        {
+          operation: 'updatePlaylistDescription', playlistId, description, error: {
+            message: error instanceof Error ? error.message : String(error),
+            status: (error as any)?.status
+          }
+        }
+      );
+    }
+  }
+
+
+
+  async getPlaylistImage(playlistId: string): Promise<string | null> {
+    try {
+      const playlist = await this.fetchWithRetry(() =>
+        this.spotifyApi.playlists.getPlaylist(playlistId, undefined)
+      );
+
+      // Check if playlist has images
+      if (playlist.images && playlist.images.length > 0) {
+        return playlist.images[0].url;
+      }
+
+      return null;
+    } catch (error: any) {
+      // If it's a 404, the playlist doesn't exist or user doesn't have access
+      if (error?.status === 404) {
+        logger.warn('Playlist not found or no access', { playlistId });
+        return null;
+      }
+
+      throw new logger.AppError(
+        'Failed to get playlist image',
+        'SPOTIFY_API_ERROR',
+        error?.status || 500,
+        { operation: 'getPlaylistImage', playlistId, error: error?.message || error }
       );
     }
   }
