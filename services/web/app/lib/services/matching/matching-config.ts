@@ -79,9 +79,10 @@ export const MATCHING_WEIGHTS = {
 
   // Tier processing thresholds
   tiers: {
-    // Minimum combined score to run deep analysis
-    // Lowered to ensure thematic/context analysis runs for more candidates
-    deepAnalysisThreshold: 0.25
+    // Minimum weighted early score to run deep analysis
+    // Uses weighted sum of metadata/vector/audio scores (max ~0.65)
+    // 0.10 threshold ≈ 15% of max, keeping gate inclusive to avoid missing good matches
+    deepAnalysisThreshold: 0.10
   }
 } as const
 

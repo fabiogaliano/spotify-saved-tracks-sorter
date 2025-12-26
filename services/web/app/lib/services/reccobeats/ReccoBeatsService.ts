@@ -1,4 +1,5 @@
 import { logger } from '~/lib/logging/Logger'
+import { ConcurrencyLimiter } from '~/lib/utils/concurrency'
 
 /**
  * ReccoBeats API types
@@ -53,24 +54,13 @@ export interface ReccoBeatsValidationError {
 export class ReccoBeatsService {
   private readonly baseUrl = 'https://api.reccobeats.com/v1'
   private readonly headers: HeadersInit
-  private lastRequestTime = 0
-  private readonly minRequestInterval = 50 // 50ms between requests to avoid rate limiting
+  // Limit to 5 concurrent requests with 50ms minimum interval between starts
+  private readonly limiter = new ConcurrencyLimiter(5, 50)
 
   constructor() {
     this.headers = {
       'Content-Type': 'application/json'
     }
-  }
-
-  private async waitForRateLimit(): Promise<void> {
-    const now = Date.now()
-    const timeSinceLastRequest = now - this.lastRequestTime
-    if (timeSinceLastRequest < this.minRequestInterval) {
-      await new Promise(resolve =>
-        setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest)
-      )
-    }
-    this.lastRequestTime = Date.now()
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
@@ -91,23 +81,23 @@ export class ReccoBeatsService {
 
   private async getReccoBeatsId(spotifyTrackId: string): Promise<string | null> {
     try {
-      await this.waitForRateLimit()
+      return await this.limiter.run(async () => {
+        const response = await fetch(
+          `${this.baseUrl}/track?ids=${spotifyTrackId}`,
+          {
+            method: 'GET',
+            headers: this.headers
+          }
+        )
 
-      const response = await fetch(
-        `${this.baseUrl}/track?ids=${spotifyTrackId}`,
-        {
-          method: 'GET',
-          headers: this.headers
+        const result = await this.handleResponse<{ content: ReccoBeatsTrack[] }>(response)
+
+        if (result.content && result.content.length > 0) {
+          return result.content[0].id
         }
-      )
 
-      const result = await this.handleResponse<{ content: ReccoBeatsTrack[] }>(response)
-
-      if (result.content && result.content.length > 0) {
-        return result.content[0].id
-      }
-
-      return null
+        return null
+      })
     } catch (error) {
       logger.error('Failed to get ReccoBeats ID', {
         spotifyTrackId,
@@ -126,21 +116,24 @@ export class ReccoBeatsService {
     const results = new Map<string, ReccoBeatsAudioFeatures>();
     const failedIds: string[] = [];
 
-    // Process all tracks in parallel
+    // Process all tracks with concurrency limiting
     const promises = spotifyTrackIds.map(async (spotifyTrackId) => {
       try {
+        // getReccoBeatsId already uses the limiter
         const reccoBeatsId = await this.getReccoBeatsId(spotifyTrackId);
         if (!reccoBeatsId) {
           throw new Error('No ReccoBeats ID found');
         }
 
-        await this.waitForRateLimit();
-        const response = await fetch(
-          `${this.baseUrl}/track/${reccoBeatsId}/audio-features`,
-          { method: 'GET', headers: this.headers }
-        );
-        
-        const features = await this.handleResponse<ReccoBeatsAudioFeatures>(response);
+        // Wrap the audio-features fetch in the limiter
+        const features = await this.limiter.run(async () => {
+          const response = await fetch(
+            `${this.baseUrl}/track/${reccoBeatsId}/audio-features`,
+            { method: 'GET', headers: this.headers }
+          );
+          return this.handleResponse<ReccoBeatsAudioFeatures>(response);
+        });
+
         return { spotifyTrackId, features };
       } catch (error) {
         failedIds.push(spotifyTrackId);
@@ -178,18 +171,18 @@ export class ReccoBeatsService {
 
   async getTrack(spotifyTrackId: string): Promise<ReccoBeatsTrack | null> {
     try {
-      await this.waitForRateLimit()
+      return await this.limiter.run(async () => {
+        const response = await fetch(
+          `${this.baseUrl}/track?ids=${spotifyTrackId}`,
+          {
+            method: 'GET',
+            headers: this.headers
+          }
+        )
 
-      const response = await fetch(
-        `${this.baseUrl}/track?ids=${spotifyTrackId}`,
-        {
-          method: 'GET',
-          headers: this.headers
-        }
-      )
-
-      const result = await this.handleResponse<{ content: ReccoBeatsTrack[] }>(response)
-      return result.content?.[0] || null
+        const result = await this.handleResponse<{ content: ReccoBeatsTrack[] }>(response)
+        return result.content?.[0] || null
+      })
     } catch (error) {
       logger.error('Failed to get track info', {
         spotifyTrackId,

@@ -197,7 +197,15 @@ export class MatchingService {
     let thematicScore = 0
     let flowScore = 0.5 // Default neutral
 
-    if (song.analysis && (metadataScore + vectorScore + audioScore) > MATCHING_WEIGHTS.tiers.deepAnalysisThreshold) {
+    // Use weighted early scores to decide if deep analysis is worth it
+    // This respects the same importance hierarchy as final scoring
+    const weights = this.getAdaptiveWeights(song, profile)
+    const weightedEarlyScore =
+      weights.metadata * metadataScore +
+      weights.vector * vectorScore +
+      weights.audio * audioScore
+
+    if (song.analysis && weightedEarlyScore > MATCHING_WEIGHTS.tiers.deepAnalysisThreshold) {
       contextScore = this.calculateContextAlignment(song, profile)
       thematicScore = await this.calculateThematicAlignment(song, profile)
       // Calculate flow compatibility if we have existing playlist songs
@@ -206,8 +214,7 @@ export class MatchingService {
       }
     }
 
-    // Adaptive weighting based on what data we have
-    const weights = this.getAdaptiveWeights(song, profile)
+    // Reuse weights from above for final score calculation
 
     const finalScore =
       weights.metadata * metadataScore +
@@ -274,7 +281,7 @@ export class MatchingService {
     // Era matching (if we had release date)
     // This would be added when we have more metadata
 
-    return factors > 0 ? score : MATCHING_WEIGHTS.scoring.mood.neutral // Default neutral score
+    return factors > 0 ? score : 0 // No metadata to match against - let other factors determine score
   }
 
   /**
