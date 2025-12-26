@@ -13,10 +13,10 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUserSession(request)
   const formData = await request.formData()
   
-  const playlistId = parseInt(formData.get('playlistId') as string)
+  const playlistId = parseInt(formData.get('playlistId') as string, 10)
   const trackIdsJson = formData.get('trackIds') as string
-  
-  if (!playlistId || !trackIdsJson) {
+
+  if (Number.isNaN(playlistId) || !trackIdsJson) {
     return Response.json(
       { error: 'Missing playlistId or trackIds' },
       { status: 400 }

@@ -37,9 +37,8 @@ export class ConcurrencyLimiter {
       return
     }
 
-    // Wait in queue for a slot
+    // Wait in queue for a slot (slot is transferred atomically in release())
     await new Promise<void>(resolve => this.queue.push(resolve))
-    this.running++
 
     if (this.minIntervalMs > 0) {
       await this.delay(this.minIntervalMs)
@@ -50,10 +49,13 @@ export class ConcurrencyLimiter {
    * Release a slot, allowing the next queued operation to proceed.
    */
   release(): void {
-    this.running--
     const next = this.queue.shift()
     if (next) {
+      // Transfer slot directly to next waiter (running count unchanged)
       next()
+    } else {
+      // No waiters, free the slot
+      this.running--
     }
   }
 

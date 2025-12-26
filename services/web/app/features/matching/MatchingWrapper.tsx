@@ -14,17 +14,17 @@ export default function MatchingWrapper({ initialPlaylists, initialTracks }: Mat
 
   // Load data if not provided as props
   useEffect(() => {
-    if (!initialPlaylists && !initialTracks && fetcher.state === 'idle' && !fetcher.data) {
+    if ((!initialPlaylists || !initialTracks) && fetcher.state === 'idle' && !fetcher.data) {
       fetcher.load('/matching')
     }
-  }, [fetcher, initialPlaylists, initialTracks])
+  }, [fetcher.state, fetcher.data, initialPlaylists, initialTracks])
 
   // Use provided data or fetched data
   const playlists = initialPlaylists || fetcher.data?.playlists || []
   const tracks = initialTracks || fetcher.data?.tracks || []
 
   // Show loading state when fetching data
-  if (!initialPlaylists && !initialTracks && fetcher.state === 'loading') {
+  if ((!initialPlaylists || !initialTracks) && fetcher.state === 'loading') {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">

@@ -5,7 +5,6 @@
 	"type": "module",
 	"scripts": {
 		"dev": "react-router dev",
-		"dev:standard": "concurrently -n web,worker,ws,vector -c green,blue,magenta,yellow \"bun dev\" \"bun run worker\" \"bun run websocket\" \"bun run dev:vector\" | tee logs/all.log",
 		"dev:full": "concurrently -n web,worker,ws,vector -c green,blue,magenta,yellow \"bun dev\" \"bun run worker\" \"bun run websocket\" \"bun run dev:vector\" | tee logs/all-batch.log",
 		"dev:vector": "cd ../vectorization && uv run python api_v2.py",
 		"worker": "bun run workers/analysisWorker.ts",

@@ -62,6 +62,10 @@ export class DefaultVectorizationService implements VectorizationService {
    * Generate embedding for a Song using extraction + hybrid embedding
    */
   async vectorizeSong(song: Song): Promise<number[]> {
+    if (!song.analysis) {
+      throw new logger.AppError('Song analysis required for vectorization', 'VALIDATION_ERROR', 400)
+    }
+
     const songId = `${song.track.artist}-${song.track.title}`
 
     // Check cache first

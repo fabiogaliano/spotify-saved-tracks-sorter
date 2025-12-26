@@ -61,6 +61,7 @@ const MatchingInterface = ({ playlists: propPlaylists, tracks: propTracks }: Mat
   // Use props if provided, otherwise use fetched data
   const playlists = propPlaylists || dataFetcher.data?.playlists || [];
   const tracks = propTracks || dataFetcher.data?.tracks || [];
+  const analyzedTracks = tracks.filter(t => t.analysis);
 
   // Handle matching results
   useEffect(() => {
@@ -114,8 +115,7 @@ const MatchingInterface = ({ playlists: propPlaylists, tracks: propTracks }: Mat
   };
 
   const handleSelectAllTracks = () => {
-    const analyzedTracks = tracks.filter(t => t.analysis);
-    if (selectedTracks.size === analyzedTracks.length) {
+    if (analyzedTracks.length > 0 && analyzedTracks.every(t => selectedTracks.has(t.id))) {
       setSelectedTracks(new Set());
     } else {
       setSelectedTracks(new Set(analyzedTracks.map(t => t.id)));
@@ -352,7 +352,7 @@ const MatchingInterface = ({ playlists: propPlaylists, tracks: propTracks }: Mat
             className="transition-all duration-200 gap-2 hover:scale-105 active:scale-95 hover:shadow-sm"
           >
             <CheckCircle2 className="h-4 w-4" /> 
-            {selectedTracks.size === tracksWithMatches.filter(t => t.analyzed).length ? 'Deselect All' : 'Select All Analyzed'}
+            {analyzedTracks.length > 0 && analyzedTracks.every(t => selectedTracks.has(t.id)) ? 'Deselect All' : 'Select All Analyzed'}
           </Button>
 
           <Button
