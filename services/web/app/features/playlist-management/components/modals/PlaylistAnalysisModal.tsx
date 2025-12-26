@@ -160,10 +160,10 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">Dominant Mood</span>
-                        <Badge>{analysis?.emotional?.dominantMood?.mood}</Badge>
+                        <Badge>{analysis?.emotional?.dominant_mood?.mood}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {analysis?.emotional?.dominantMood?.description}
+                        {analysis?.emotional?.dominant_mood?.description}
                       </p>
                     </div>
                     <div>

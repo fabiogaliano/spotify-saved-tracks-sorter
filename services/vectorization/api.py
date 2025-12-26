@@ -192,8 +192,8 @@ def create_playlist_vector_query(playlist_data: Dict[str, Any]) -> str:
     
     # Extract emotional elements
     emotional = playlist_data.get("emotional", {})
-    dominant_mood = emotional.get("dominantMood", {}).get("mood", "")
-    mood_description = emotional.get("dominantMood", {}).get("description", "")
+    dominant_mood = emotional.get("dominant_mood", {}).get("mood", "")
+    mood_description = emotional.get("dominant_mood", {}).get("description", "")
     intensity = emotional.get("intensity_score", 0)
     
     # NEW: Determine emotional valence
@@ -277,8 +277,8 @@ def create_song_vector_query(song_analysis: Dict[str, Any]) -> str:
     
     # Extract emotional elements
     emotional = analysis.get("emotional", {})
-    dominant_mood = emotional.get("dominantMood", {}).get("mood", "")
-    mood_description = emotional.get("dominantMood", {}).get("description", "")
+    dominant_mood = emotional.get("dominant_mood", {}).get("mood", "")
+    mood_description = emotional.get("dominant_mood", {}).get("description", "")
     intensity = emotional.get("intensity_score", 0)
     
     # NEW: Determine emotional valence

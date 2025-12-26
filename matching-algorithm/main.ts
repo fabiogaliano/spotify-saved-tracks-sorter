@@ -31,7 +31,7 @@ async function main() {
     const playlist = playlistRaw.playlist || playlistRaw;
 
     console.log(chalk.cyan(`Playlist: ${chalk.bold(playlist.id || 'Unknown')}`));
-    console.log(chalk.cyan(`Playlist Mood: ${chalk.bold(playlist.emotional?.dominantMood?.mood || 'Unknown')}`));
+    console.log(chalk.cyan(`Playlist Mood: ${chalk.bold(playlist.emotional?.dominant_mood?.mood || 'Unknown')}`));
     console.log();
 
     // Run the enhanced matching algorithm
@@ -167,8 +167,8 @@ function displayResults(matches: MatchResult[], songs: Song[]) {
   console.log(chalk.blue.bold('\n📊 Detailed Song-Playlist Compatibility:'));
   
   // Get playlist mood
-  const playlistMood = matches.length > 0 
-    ? songs.find(s => s.track.title === matches[0].track_info.title)?.analysis.emotional.dominantMood.mood || 'Unknown'
+  const playlistMood = matches.length > 0
+    ? songs.find(s => s.track.title === matches[0].track_info.title)?.analysis.emotional.dominant_mood.mood || 'Unknown'
     : 'Unknown';
 
   console.log(chalk.cyan(`Playlist mood: ${chalk.bold(playlistMood)}`));
@@ -196,7 +196,7 @@ function displayResults(matches: MatchResult[], songs: Song[]) {
       s.track.title === title && 
       s.track.artist === artist
     );
-    const mood = songObj?.analysis?.emotional?.dominantMood?.mood || 'Unknown';
+    const mood = songObj?.analysis?.emotional?.dominant_mood?.mood || 'Unknown';
     
     // Format scores
     const score = getScoreColor(match.similarity)(match.similarity.toFixed(2));
@@ -269,7 +269,7 @@ function saveResultsForEvaluation(matches: MatchResult[], songs: Song[], playlis
     playlist: {
       id: playlist.id || 'unknown',
       name: playlist.name || 'unknown',
-      dominant_mood: playlist.emotional?.dominantMood?.mood || 'unknown'
+      dominant_mood: playlist.emotional?.dominant_mood?.mood || 'unknown'
     },
     matches: matches.map(match => ({
       track: {

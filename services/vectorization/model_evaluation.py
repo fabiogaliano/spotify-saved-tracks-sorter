@@ -82,7 +82,7 @@ def create_song_vector_query(song_analysis: Dict[str, Any]) -> str:
     """Create a comprehensive query for song embedding"""
     # Extract key information
     themes = song_analysis.get("meaning", {}).get("themes", [])
-    mood = song_analysis.get("emotional", {}).get("dominantMood", {})
+    mood = song_analysis.get("emotional", {}).get("dominant_mood", {})
     
     # Build query components
     theme_descriptions = [f"Theme: {t.get('name', '')} - {t.get('description', '')}" 
@@ -100,7 +100,7 @@ def create_playlist_vector_query(playlist_data: Dict[str, Any]) -> str:
     """Create a comprehensive query for playlist embedding"""
     # Extract key information
     themes = playlist_data.get("meaning", {}).get("themes", [])
-    mood = playlist_data.get("emotional", {}).get("dominantMood", {})
+    mood = playlist_data.get("emotional", {}).get("dominant_mood", {})
     
     # Build query components
     theme_descriptions = [f"Theme: {t.get('name', '')} - {t.get('description', '')}" 
@@ -192,7 +192,7 @@ def create_test_data_template():
                 ]
             },
             "emotional": {
-                "dominantMood": {
+                "dominant_mood": {
                     "mood": "Uplifting & Empowering",
                     "description": "The playlist has an uplifting and empowering emotional tone."
                 }
@@ -214,7 +214,7 @@ def create_test_data_template():
                         ]
                     },
                     "emotional": {
-                        "dominantMood": {
+                        "dominant_mood": {
                             "mood": "Mood Name",
                             "description": "Mood description"
                         }

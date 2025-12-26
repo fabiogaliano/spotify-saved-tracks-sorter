@@ -15,7 +15,7 @@ export interface PlaylistAnalysis {
         main_message: string;
       };
       emotional: {
-        dominantMood: {
+        dominant_mood: {
           mood: string;
           description: string;
         };

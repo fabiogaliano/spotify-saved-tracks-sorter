@@ -49,7 +49,7 @@ export type Meaning = {
 };
 
 export type Emotional = {
-  dominantMood: Mood;
+  dominant_mood: Mood;
   progression?: any[];
   intensity_score?: number;
 };
@@ -530,8 +530,8 @@ export function extractMoodText(data: Song | Playlist): string {
   const emotional = 'analysis' in data ? data.analysis.emotional : data.emotional;
 
   // Extract mood and description
-  const dominantMood = emotional.dominantMood?.mood || '';
-  const moodDescription = emotional.dominantMood?.description || '';
+  const dominantMood = emotional.dominant_mood?.mood || '';
+  const moodDescription = emotional.dominant_mood?.description || '';
 
   // Add intensity descriptor if available
   const intensity = emotional.intensity_score;
@@ -1146,8 +1146,8 @@ export function calculateFinalScore(
  */
 export function determinePlaylistType(playlist: Playlist): 'mood' | 'activity' | 'theme' | 'general' {
   // Extract key information
-  const hasMood = !!playlist.emotional?.dominantMood?.mood;
-  const hasMoodDescription = !!playlist.emotional?.dominantMood?.description;
+  const hasMood = !!playlist.emotional?.dominant_mood?.mood;
+  const hasMoodDescription = !!playlist.emotional?.dominant_mood?.description;
 
   const hasActivities = (playlist.context?.situations?.perfect_for?.length ?? 0) > 0;
   const hasPrimarySetting = !!playlist.context?.primary_setting;
@@ -1218,11 +1218,11 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
   const playlistType = determinePlaylistType(playlist);
   console.log(`Playlist Type: ${playlistType}`);
   console.log(`Playlist: ${playlist.id || 'Unknown'}`);
-  console.log(`Playlist Mood: ${playlist.emotional?.dominantMood?.mood || 'Unknown'}`);
+  console.log(`Playlist Mood: ${playlist.emotional?.dominant_mood?.mood || 'Unknown'}`);
 
-  // Get playlist embeddings 
+  // Get playlist embeddings
   const playlistEmbedding = await getPlaylistEmbedding(playlist);
-  const playlistMood = playlist.emotional?.dominantMood;
+  const playlistMood = playlist.emotional?.dominant_mood;
   const playlistIntensity = playlist.emotional?.intensity_score;
   const playlistThemeText = extractThemesText(playlist);
   const playlistMoodText = extractMoodText(playlist);
@@ -1241,7 +1241,7 @@ export async function matchSongsToPlaylist(playlist: Playlist, songs: Song[]): P
   const matchPromises = songs.map(async (song, index) => {
     // Get song embedding and metadata
     const songEmbedding = await getSongEmbedding(song);
-    const songMood = song.analysis.emotional?.dominantMood;
+    const songMood = song.analysis.emotional?.dominant_mood;
     const songIntensity = song.analysis.emotional?.intensity_score;
     const songThemeText = extractThemesText(song);
     const songMoodText = extractMoodText(song);
