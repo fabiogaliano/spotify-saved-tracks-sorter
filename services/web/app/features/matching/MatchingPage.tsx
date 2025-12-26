@@ -334,10 +334,10 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
                   <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{playlist.description}</p>
                 )}
 
-                {playlist.analysis?.emotional?.dominantMood?.mood && (
+                {playlist.analysis?.emotional?.dominant_mood?.mood && (
                   <div className="mb-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                      {playlist.analysis.emotional.dominantMood.mood}
+                      {playlist.analysis.emotional.dominant_mood.mood}
                     </span>
                   </div>
                 )}

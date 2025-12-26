@@ -50,7 +50,7 @@ Provide analysis in this JSON format:
     }
   },
   "emotional": {
-    "dominantMood": {
+    "dominant_mood": {
       "mood": "Overall emotional tone",
       "description": "Why this mood dominates the playlist",
       "consistency": 0.8

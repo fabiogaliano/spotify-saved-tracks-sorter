@@ -71,8 +71,8 @@ def extract_key_aspects(playlist: Dict[str, Any]) -> Dict[str, float]:
         aspects["theme"] = min(1.0, theme_confidence * 1.2)  # Boost theme importance slightly
     
     # Check for strong mood focus
-    if playlist.get("emotional", {}).get("dominantMood"):
-        mood = playlist["emotional"]["dominantMood"]
+    if playlist.get("emotional", {}).get("dominant_mood"):
+        mood = playlist["emotional"]["dominant_mood"]
         if mood.get("mood") and mood.get("description"):
             # Longer mood descriptions indicate stronger mood focus
             mood_strength = min(1.0, len(mood.get("description", "")) / 100)
@@ -117,7 +117,7 @@ def create_contextual_embedding(item: Dict[str, Any], aspect: str) -> np.ndarray
         return get_embedding(combined_text)
     
     elif aspect == "mood":
-        mood = item.get("emotional", {}).get("dominantMood", {})
+        mood = item.get("emotional", {}).get("dominant_mood", {})
         if not mood:
             return np.zeros(384)
         
@@ -134,7 +134,7 @@ def create_contextual_embedding(item: Dict[str, Any], aspect: str) -> np.ndarray
     
     elif aspect == "intensity":
         # For intensity, we use a combination of mood and emotional progression
-        mood = item.get("emotional", {}).get("dominantMood", {})
+        mood = item.get("emotional", {}).get("dominant_mood", {})
         progression = item.get("emotional", {}).get("progression", [])
         
         intensity_text = f"{mood.get('mood', '')} {mood.get('description', '')}"

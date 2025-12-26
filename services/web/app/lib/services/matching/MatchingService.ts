@@ -158,7 +158,7 @@ export class MatchingService {
     const vector = await this.vectorization.vectorizePlaylist(playlist)
 
     // Extract metadata from playlist analysis
-    const moods = playlist.emotional?.dominantMood ? [playlist.emotional.dominantMood.mood] : []
+    const moods = playlist.emotional?.dominant_mood ? [playlist.emotional.dominant_mood.mood] : []
     const themes = playlist.meaning?.core_themes?.map(t => t.name) || []
 
     return {

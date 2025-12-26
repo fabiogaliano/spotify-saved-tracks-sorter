@@ -133,7 +133,7 @@ export const PlaylistAnalysisSchema = v.object({
     }))
   }),
   emotional: v.object({
-    dominantMood: v.object({
+    dominant_mood: v.object({
       mood: v.string(),
       description: v.string(),
       consistency: v.pipe(v.number(), v.minValue(0), v.maxValue(1))

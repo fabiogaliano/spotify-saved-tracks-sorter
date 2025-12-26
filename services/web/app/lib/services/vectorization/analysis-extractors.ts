@@ -211,12 +211,12 @@ function extractPlaylistAnalysisText(playlist: Playlist): string {
   }
 
   // Mood (nested object in Playlist schema)
-  if (playlist.emotional?.dominantMood) {
-    if (playlist.emotional.dominantMood.mood) {
-      parts.push(playlist.emotional.dominantMood.mood)
+  if (playlist.emotional?.dominant_mood) {
+    if (playlist.emotional.dominant_mood.mood) {
+      parts.push(playlist.emotional.dominant_mood.mood)
     }
-    if (playlist.emotional.dominantMood.description) {
-      parts.push(playlist.emotional.dominantMood.description)
+    if (playlist.emotional.dominant_mood.description) {
+      parts.push(playlist.emotional.dominant_mood.description)
     }
   }
 
