@@ -25,7 +25,8 @@
 		"clean": "bun run clean:web && bun run clean:python",
 		"clean:logs": "rm -rf services/web/logs",
 		"clean:all": "bun run clean && bun run clean:logs",
-		"clean:sqs": "bun run ./scripts/purgeSQS.ts"
+		"clean:sqs": "bun run ./scripts/purgeSQS.ts",
+		"gen:types": "supabase gen types typescript --local >| services/web/app/types/database.types.ts"
 	},
 	"repository": {
 		"type": "git",

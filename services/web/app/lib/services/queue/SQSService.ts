@@ -4,7 +4,9 @@ import {
   SendMessageBatchCommand,
   CreateQueueCommand,
   GetQueueAttributesCommand,
-  GetQueueUrlCommand
+  GetQueueUrlCommand,
+  SendMessageBatchResultEntry,
+  SendMessageBatchRequestEntry
 } from "@aws-sdk/client-sqs";
 import crypto from "crypto";
 import { logger } from '~/lib/logging/Logger';
@@ -34,6 +36,16 @@ export interface AnalysisJobPayload {
   playlistId?: string; // Your internal DB playlist ID
   playlistName?: string;
   playlistDescription?: string;
+}
+
+export interface EnqueueJobResult {
+  batchId: string;
+  result: SendMessageBatchResultEntry;
+}
+
+export interface EnqueueBatchResult {
+  batchId: string;
+  results: SendMessageBatchResultEntry[];
 }
 
 class SQSService {
@@ -125,25 +137,50 @@ class SQSService {
     return queueUrl;
   }
 
-  async enqueueAnalysisJob(payload: Omit<AnalysisJobPayload, 'batchId'>) {
-    const results = await this.enqueueBatchAnalysisJobs([payload]);
-    return results[0];
+  /**
+   * Enqueue a single analysis job. Generates batchId if not provided.
+   * Returns the batchId and SQS result for tracking.
+   */
+  async enqueueAnalysisJob(
+    payload: Omit<AnalysisJobPayload, 'batchId'>,
+    batchId?: string
+  ): Promise<EnqueueJobResult> {
+    const { batchId: returnedBatchId, results } = await this.enqueueBatchAnalysisJobs([payload], batchId);
+    return { batchId: returnedBatchId, result: results[0] };
   }
 
-  async enqueueBatchAnalysisJobs(payloads: Omit<AnalysisJobPayload, 'batchId'>[]) {
-    if (payloads.length === 0) return [];
+  /**
+   * Enqueue multiple analysis jobs in a batch. All jobs share the same batchId.
+   * Generates batchId if not provided. Returns the batchId and SQS results.
+   */
+  async enqueueBatchAnalysisJobs(
+    payloads: Omit<AnalysisJobPayload, 'batchId'>[],
+    batchId?: string
+  ): Promise<EnqueueBatchResult> {
+    // Generate batchId if not provided - this is the single source of truth
+    const effectiveBatchId = batchId || crypto.randomUUID();
+
+    if (payloads.length === 0) {
+      return { batchId: effectiveBatchId, results: [] };
+    }
 
     const queueUrl = await this.getQueueUrl();
-    const results: any[] = [];
+    const results: SendMessageBatchResultEntry[] = [];
 
     const MAX_BATCH_SIZE = 10;
 
     for (let i = 0; i < payloads.length; i += MAX_BATCH_SIZE) {
       const batch = payloads.slice(i, i + MAX_BATCH_SIZE);
       const entries = batch.map((payload, index) => {
-        const entry: any = {
+        // Include batchId in the payload sent to SQS
+        const payloadWithBatchId: AnalysisJobPayload = {
+          ...payload,
+          batchId: effectiveBatchId
+        };
+
+        const entry: SendMessageBatchRequestEntry = {
           Id: `${i + index}`,
-          MessageBody: JSON.stringify(payload),
+          MessageBody: JSON.stringify(payloadWithBatchId),
         };
 
         if (queueUrl.endsWith(".fifo")) {
@@ -187,7 +224,7 @@ class SQSService {
       }
     }
 
-    return results;
+    return { batchId: effectiveBatchId, results };
   }
 }
 

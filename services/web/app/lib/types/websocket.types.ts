@@ -28,7 +28,7 @@ export interface JobStatusMessage extends BaseMessage {
 // Direct notification from worker (non-nested format)
 export interface DirectJobNotification extends BaseMessage {
   jobId: string;
-  trackId: number;
+  trackId: number | null;
   status: 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
   progress?: number;
   error?: string;
@@ -54,10 +54,10 @@ export interface JobCompletionMessage extends BaseMessage {
   jobId: string;
   status: 'completed' | 'failed';
   stats: {
-    totalTracks: number;
-    tracksProcessed: number;
-    tracksSucceeded: number;
-    tracksFailed: number;
+    totalItems: number;
+    itemsProcessed: number;
+    itemsSucceeded: number;
+    itemsFailed: number;
   };
 }
 
@@ -88,8 +88,25 @@ export function isJobStatusMessage(msg: any): msg is JobStatusMessage {
   return msg?.type === 'job_status' && msg?.data;
 }
 
+/**
+ * Type guard for DirectJobNotification messages.
+ *
+ * IMPORTANT: This guard allows `trackId: null` to pass through, as the interface
+ * declares `trackId: number | null`. This is intentional for job-level notifications
+ * (e.g., playlist analysis) that don't have a specific track.
+ *
+ * Consumers MUST check `msg.trackId !== null` before using trackId as a number.
+ *
+ * @example
+ * if (isDirectJobNotification(msg)) {
+ *   if (msg.trackId !== null) {
+ *     // Safe to use msg.trackId as number
+ *     updateTrack(msg.trackId);
+ *   }
+ * }
+ */
 export function isDirectJobNotification(msg: any): msg is DirectJobNotification {
-  return msg?.jobId && msg?.trackId && msg?.status && !msg?.type;
+  return msg?.jobId && msg?.status && !msg?.type && 'trackId' in msg;
 }
 
 export function isAnalysisUpdateMessage(msg: any): msg is AnalysisUpdateMessage {

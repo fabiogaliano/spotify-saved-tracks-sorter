@@ -209,11 +209,12 @@ export function useWebSocket(url: string, options: WebSocketHookOptions = { auto
     }
   }, [log]);
   
-  // Subscribe to track updates
-  const subscribeToTrack = useCallback((trackId: number | string) => {
+  // Subscribe to item updates (tracks or other entities)
+  // Note: Wire protocol uses 'trackId' for backwards compatibility with server
+  const subscribeToItem = useCallback((itemId: number | string) => {
     return sendMessage({
       type: 'subscribe',
-      trackId
+      trackId: itemId  // Server expects 'trackId' field
     });
   }, [sendMessage]);
   
@@ -244,11 +245,11 @@ export function useWebSocket(url: string, options: WebSocketHookOptions = { auto
     reconnectAttemptsRef.current = 0;
   }, [log]);
 
-  return { 
-    isConnected, 
-    lastMessage, 
+  return {
+    isConnected,
+    lastMessage,
     sendMessage,
-    subscribeToTrack,
+    subscribeToItem,
     reconnect,
     connect,
     disconnect

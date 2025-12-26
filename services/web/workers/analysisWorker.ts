@@ -348,11 +348,11 @@ async function processBatch(batchId: string, messages: any[]) {
       const successCount = results.filter(r => r.success).length;
       const failCount = results.filter(r => !r.success).length;
 
-      const newProcessedCount = job.tracks_processed + results.length;
-      const newSucceededCount = job.tracks_succeeded + successCount;
-      const newFailedCount = job.tracks_failed + failCount;
+      const newProcessedCount = job.items_processed + results.length;
+      const newSucceededCount = job.items_succeeded + successCount;
+      const newFailedCount = job.items_failed + failCount;
 
-      logger.debug(`Job ${batchId} progress: ${newProcessedCount}/${job.track_count}`);
+      logger.debug(`Job ${batchId} progress: ${newProcessedCount}/${job.item_count}`);
 
       const updatedJob = await analysisJobRepository.updateJobProgress(
         batchId,
@@ -364,7 +364,7 @@ async function processBatch(batchId: string, messages: any[]) {
 
 
       // Check if job is complete
-      if (newProcessedCount >= job.track_count) {
+      if (newProcessedCount >= job.item_count) {
         logger.info(`Job ${batchId} complete: ${newSucceededCount} succeeded, ${newFailedCount} failed`);
         await jobPersistenceService.markJobCompleted(batchId);
 
@@ -376,10 +376,10 @@ async function processBatch(batchId: string, messages: any[]) {
             jobId: batchId,
             status: 'completed' as const,
             stats: {
-              totalTracks: job.track_count,
-              tracksProcessed: newProcessedCount,
-              tracksSucceeded: newSucceededCount,
-              tracksFailed: newFailedCount
+              totalItems: job.item_count,
+              itemsProcessed: newProcessedCount,
+              itemsSucceeded: newSucceededCount,
+              itemsFailed: newFailedCount
             },
             timestamp: new Date().toISOString()
           };

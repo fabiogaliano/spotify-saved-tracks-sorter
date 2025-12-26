@@ -8,6 +8,7 @@ import { jobPersistenceService } from '~/lib/services/JobPersistenceService';
 import { PlaylistService } from '~/lib/services/PlaylistService';
 import { SpotifyService } from '~/lib/services/SpotifyService';
 import { logger } from '~/lib/logging/Logger';
+import { PlaylistJob } from '~/lib/types/analysis.types';
 
 // Define the expected request payload
 interface AnalyzePlaylistRequest {
@@ -53,18 +54,17 @@ export async function action({ request }: ActionFunctionArgs) {
     // Generate a batch ID for this analysis
     const batchId = crypto.randomUUID();
 
-    const payload: AnalysisJobPayload = {
+    const payload: Omit<AnalysisJobPayload, 'batchId'> = {
       type: 'playlist',
       playlistId: playlist.id.toString(),
       playlistName: playlist.name,
       playlistDescription: playlist.description || '',
       userId: userSession.userId,
-      batchId: batchId,
       batchSize: 1
     };
 
     try {
-      await sqsService.enqueueAnalysisJob(payload);
+      await sqsService.enqueueAnalysisJob(payload, batchId);
       logger.info(`Successfully enqueued playlist analysis job`, {
         playlistId: playlist.id,
         batchId,
@@ -80,20 +80,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Save job to database
     try {
-      const contextJob = {
+      const contextJob: PlaylistJob = {
         id: batchId,
-        status: 'pending' as const,
-        trackCount: 1, // Single playlist counts as 1 item
-        trackStates: new Map(),
+        jobType: 'playlist',
+        status: 'pending',
+        itemCount: 1,
         startedAt: new Date(),
         dbStats: {
-          tracksProcessed: 0,
-          tracksSucceeded: 0,
-          tracksFailed: 0
+          itemsProcessed: 0,
+          itemsSucceeded: 0,
+          itemsFailed: 0
         }
       };
 
-      // For playlist analysis, we'll use the playlist ID as the "track" ID
       await jobPersistenceService.saveJob(contextJob, userSession.userId, [playlist.id]);
     } catch (error) {
       logger.error('Failed to save job to database:', error);

@@ -2,6 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRoutes } from '~/lib/config/routes';
 import { TrackWithAnalysis } from '~/lib/models/Track';
 import { useNotificationStore } from '~/lib/stores/notificationStore';
+import { AnalysisJob, AnalysisJobDbStats } from '~/lib/types/analysis.types';
+
+// Re-export types for backwards compatibility
+export type { AnalysisJob } from '~/lib/types/analysis.types';
+export type AnalysisJobStats = AnalysisJobDbStats;
 
 // Query keys factory for better organization
 export const likedSongsKeys = {
@@ -22,21 +27,8 @@ interface AnalyzeTracksParams {
     name: string;
   }>;
   batchSize?: 1 | 5 | 10;
-}
-
-export interface AnalysisJobStats {
-  tracksProcessed: number;
-  tracksSucceeded: number;
-  tracksFailed: number;
-}
-
-export interface AnalysisJob {
-  id: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  trackCount: number;
-  trackStates: Map<number, 'queued' | 'in_progress' | 'completed' | 'failed'>;
-  startedAt: Date;
-  dbStats?: AnalysisJobStats;
+  /** Client-generated batchId to eliminate race condition in WebSocket subscription setup */
+  batchId?: string;
 }
 
 export interface AnalysisStatusResponse {
@@ -102,12 +94,12 @@ export function useAnalysisJob(jobId: string | null) {
 
       if (!data) return null;
 
-      // Convert trackStates back to Map and structure for component
-      const trackStatesMap = new Map(Object.entries(data.trackStates || {}).map(([key, value]) => [parseInt(key, 10), value as string]));
+      // Convert itemStates back to Map and structure for component
+      const itemStatesMap = new Map(Object.entries(data.itemStates || {}).map(([key, value]) => [parseInt(key, 10), value as string]));
 
       return {
         ...data,
-        trackStates: trackStatesMap,
+        itemStates: itemStatesMap,
         startedAt: new Date(data.startedAt)
       } as AnalysisJob;
     },
@@ -145,8 +137,8 @@ export function useAnalysisStatus() {
         return { hasActiveJob: false, currentJob: null };
       }
 
-      // Convert trackStates back to Map and structure for component
-      const trackStatesMap = new Map(Object.entries(data.trackStates || {}).map(([key, value]) => [parseInt(key, 10), value as string]));
+      // Convert itemStates back to Map and structure for component
+      const itemStatesMap = new Map(Object.entries(data.itemStates || {}).map(([key, value]) => [parseInt(key, 10), value as string]));
 
       // Trust the server's job status completely
       // The server will mark jobs as complete when appropriate
@@ -156,7 +148,7 @@ export function useAnalysisStatus() {
 
       const currentJob: AnalysisJob = {
         ...data,
-        trackStates: trackStatesMap,
+        itemStates: itemStatesMap,
         startedAt: new Date(data.startedAt)
       };
 
@@ -299,11 +291,17 @@ export function useUpdateTrackAnalysis() {
         track.track.id === trackId
           ? {
             ...track,
-            analysis: analysisData,
+            // Only update analysis if new data is provided, otherwise keep existing
+            analysis: analysisData !== null ? analysisData : track.analysis,
             uiAnalysisStatus: status as any
           }
           : track
       );
     });
+
+    // If status is 'analyzed' and no analysis data provided, invalidate to fetch from server
+    if (status === 'analyzed' && analysisData === null) {
+      queryClient.invalidateQueries({ queryKey: likedSongsKeys.lists() });
+    }
   };
 }

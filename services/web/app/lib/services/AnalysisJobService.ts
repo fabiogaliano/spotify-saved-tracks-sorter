@@ -8,16 +8,19 @@ import { Database } from '~/types/database.types';
 // Type definitions for job status and related data
 export type AnalysisJobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
+export type AnalysisJobType = 'track_batch' | 'playlist';
+
 export interface AnalysisJob {
   id: number;
   userId: number;
+  jobType: AnalysisJobType;
   status: AnalysisJobStatus;
   createdAt: string;
   updatedAt: string;
-  trackCount: number;
-  tracksProcessed: number;
-  tracksSucceeded: number;
-  tracksFailed: number;
+  itemCount: number;
+  itemsProcessed: number;
+  itemsSucceeded: number;
+  itemsFailed: number;
   completionPercentage: number;
 }
 
@@ -82,13 +85,14 @@ export class AnalysisJobService {
     return {
       id: job.id,
       userId,
+      jobType: (job.job_type || 'track_batch') as AnalysisJobType,
       status: job.status as AnalysisJobStatus,
       createdAt: job.created_at,
       updatedAt: job.updated_at,
-      trackCount: job.track_count,
-      tracksProcessed: job.tracks_processed,
-      tracksSucceeded: job.tracks_succeeded,
-      tracksFailed: job.tracks_failed,
+      itemCount: job.item_count,
+      itemsProcessed: job.items_processed,
+      itemsSucceeded: job.items_succeeded,
+      itemsFailed: job.items_failed,
       completionPercentage: job.completion_percentage
     };
   }
@@ -116,20 +120,21 @@ export class AnalysisJobService {
     }
 
     // Calculate completion percentage
-    const completionPercentage = data.track_count > 0
-      ? Math.floor((data.tracks_processed * 100) / data.track_count)
+    const completionPercentage = data.item_count > 0
+      ? Math.floor((data.items_processed * 100) / data.item_count)
       : 0;
 
     return {
       id: data.id,
       userId: data.user_id,
+      jobType: (data.job_type || 'track_batch') as AnalysisJobType,
       status: data.status as AnalysisJobStatus,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-      trackCount: data.track_count,
-      tracksProcessed: data.tracks_processed,
-      tracksSucceeded: data.tracks_succeeded,
-      tracksFailed: data.tracks_failed,
+      itemCount: data.item_count,
+      itemsProcessed: data.items_processed,
+      itemsSucceeded: data.items_succeeded,
+      itemsFailed: data.items_failed,
       completionPercentage
     };
   }

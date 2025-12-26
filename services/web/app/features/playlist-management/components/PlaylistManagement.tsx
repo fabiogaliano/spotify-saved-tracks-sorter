@@ -310,12 +310,20 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
   useEffect(() => {
     if (trackAnalysisFetcher.data && trackAnalysisFetcher.state === 'idle') {
       const data = trackAnalysisFetcher.data as any;
-      if (data.success) {
+      if (data.success && data.batchId) {
+        // Set the job ID so we can receive WebSocket notifications
+        setCurrentJobId(data.batchId);
+        toast.info(`Analyzing ${data.totalQueued || 'tracks'}...`, {
+          duration: 5000,
+          dismissible: true,
+        });
+      } else if (data.success) {
         toast.success(`${data.message || 'Tracks queued for analysis'}`);
+        setIsAnalyzingTracks(false);
       } else {
         toast.error(data.error || 'Failed to start track analysis');
+        setIsAnalyzingTracks(false);
       }
-      setIsAnalyzingTracks(false);
     }
   }, [trackAnalysisFetcher.data, trackAnalysisFetcher.state]);
 

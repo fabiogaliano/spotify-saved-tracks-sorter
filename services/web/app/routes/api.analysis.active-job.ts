@@ -1,6 +1,7 @@
 import { LoaderFunctionArgs } from 'react-router';
 import { requireUserSession, createResponseWithUpdatedSession } from '~/features/auth/auth.utils';
 import { jobPersistenceService } from '~/lib/services/JobPersistenceService';
+import { isTrackBatchJob } from '~/lib/types/analysis.types';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const sessionData = await requireUserSession(request);
@@ -10,14 +11,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const activeJob = await jobPersistenceService.getActiveJobForUser(sessionData.userId);
-    
+
     if (activeJob) {
-      // Convert trackStates Map to a plain object for JSON serialization
-      const trackStatesObj = Object.fromEntries(activeJob.trackStates.entries());
-      
+      // Convert itemStates Map to a plain object for JSON serialization
+      // Only track_batch jobs have itemStates; playlist jobs don't
+      const itemStatesObj = isTrackBatchJob(activeJob)
+        ? Object.fromEntries(activeJob.itemStates.entries())
+        : {};
+
       const jobForSerialization = {
         ...activeJob,
-        trackStates: trackStatesObj
+        itemStates: itemStatesObj
       };
       return createResponseWithUpdatedSession(jobForSerialization, sessionData);
     } else {
