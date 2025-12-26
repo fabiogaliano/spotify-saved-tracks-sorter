@@ -6,6 +6,7 @@ import { SearchResponse, ResponseReferents, } from './types/genius.types'
 import { LyricsParser } from './utils/lyrics-parser'
 import { LyricsTransformer, TransformedLyricsBySection } from './utils/lyrics-transformer'
 import { calculateSimilarity } from './utils/string-similarity'
+import { ConcurrencyLimiter } from '~/lib/utils/concurrency'
 
 export interface GeniusServiceConfig {
 	accessToken: string
@@ -14,6 +15,8 @@ export interface GeniusServiceConfig {
 export class DefaultLyricsService implements LyricsService {
 	private readonly baseUrl = 'https://api.genius.com'
 	private readonly client: ReturnType<typeof wretch>
+	// Limit to 3 concurrent requests with 100ms minimum interval (Genius API is stricter)
+	private readonly limiter = new ConcurrencyLimiter(3, 100)
 
 	constructor(config: GeniusServiceConfig) {
 		if (!config.accessToken) {
@@ -49,9 +52,9 @@ export class DefaultLyricsService implements LyricsService {
 		const searchQuery = encodeURIComponent(`${artist} ${song}`)
 
 		try {
-			const response: SearchResponse = await this.client
-				.get(`/search?q=${searchQuery}`)
-				.json()
+			const response: SearchResponse = await this.limiter.run(() =>
+				this.client.get(`/search?q=${searchQuery}`).json()
+			)
 
 			const firstHit = response.response?.hits?.[0]?.result
 
@@ -90,12 +93,14 @@ export class DefaultLyricsService implements LyricsService {
 
 		while (hasMoreReferents) {
 			try {
-				const response: ResponseReferents = await this.client
-					.url(
-						`/referents?song_id=${songId}&text_format=plain&per_page=${perPage}&page=${page}`
-					)
-					.get()
-					.json()
+				const response: ResponseReferents = await this.limiter.run(() =>
+					this.client
+						.url(
+							`/referents?song_id=${songId}&text_format=plain&per_page=${perPage}&page=${page}`
+						)
+						.get()
+						.json()
+				)
 
 				const referents = response.response.referents
 				if (!referents || referents.length === 0) {
@@ -120,7 +125,9 @@ export class DefaultLyricsService implements LyricsService {
 	private async fetchLyrics(url: string): Promise<LyricsSection[]> {
 		try {
 			console.log('Fetching lyrics from URL:', url)
-			const response = await wretch(url).get().text()
+			const response = await this.limiter.run(() =>
+				wretch(url).get().text()
+			)
 
 			if (!response.includes('lyrics-root')) {
 				throw new logger.AppError(`Failed to find lyrics content. URL: ${url}`, 'LYRICS_SERVICE_ERROR', 422, {
