@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiRoutes } from '~/lib/config/routes';
 import { ApiKeyManager, type ProviderStatus, type Notification } from './ApiKeyManager';
 import { Notification as NotificationComponent } from '~/components/common/Notification';
 
@@ -47,7 +48,7 @@ export function ProviderKeysManager({
     try {
       setLoading('setting');
 
-      const response = await fetch('/api/llm-provider', {
+      const response = await fetch(apiRoutes.llmProvider.base, {
         method: 'POST',
         body: formData,
       });
@@ -63,14 +64,14 @@ export function ProviderKeysManager({
           }));
         });
 
-        setLoading(null); // Reset loading state
+        setLoading(null);
         setNotification({
           type: 'success',
           message: data.message || `${getProviderDisplayName(provider)} set as active provider`,
         });
       } else {
         console.error('Error setting active provider:', data);
-        setLoading(null); // Reset loading state
+        setLoading(null);
         setNotification({
           type: 'error',
           message: data.details || data.error || 'Failed to set active provider',
@@ -78,7 +79,7 @@ export function ProviderKeysManager({
       }
     } catch (error) {
       console.error('Error setting active provider:', error);
-      setLoading(null); // Reset loading state
+      setLoading(null);
       setNotification({
         type: 'error',
         message: `Failed to set ${getProviderDisplayName(provider)} as active provider`,
@@ -103,7 +104,7 @@ export function ProviderKeysManager({
     try {
       setLoading('removing');
 
-      const response = await fetch('/api/llm-provider', {
+      const response = await fetch(apiRoutes.llmProvider.base, {
         method: 'POST',
         body: formData,
       });
@@ -139,10 +140,11 @@ export function ProviderKeysManager({
             }
           }
 
+
           return updatedStatuses;
         });
 
-        setLoading(null); // Reset loading state
+        setLoading(null);
         // If the deleted provider was active, automatically set the remaining provider as active in the backend
         if (wasActive) {
           const remainingWithKey = localProviderStatuses.find(
@@ -155,7 +157,7 @@ export function ProviderKeysManager({
             formData.append('action', 'setActiveProvider');
             formData.append('provider', newActiveProvider);
 
-            fetch('/api/llm-provider', {
+            fetch(apiRoutes.llmProvider.base, {
               method: 'POST',
               body: formData,
             })
@@ -193,7 +195,7 @@ export function ProviderKeysManager({
         }
       } else {
         console.error('Error removing API key:', data);
-        setLoading(null); // Reset loading state
+        setLoading(null);
         setNotification({
           type: 'error',
           message: data.details || data.error || 'Failed to remove API key',
@@ -201,7 +203,7 @@ export function ProviderKeysManager({
       }
     } catch (error) {
       console.error('Error removing API key:', error);
-      setLoading(null); // Reset loading state
+      setLoading(null);
       setNotification({
         type: 'error',
         message: `Failed to remove ${getProviderDisplayName(provider)} API key`,

@@ -1,7 +1,7 @@
 import { ActionFunctionArgs, LoaderFunction, redirect } from "react-router";
 import { useLoaderData } from "react-router";
 import { getUserSession } from "~/features/auth/auth.utils";
-import InitialSetup from "~/features/initial-setup/InitialSetup";
+import Onboarding from "~/features/onboarding/Onboarding";
 import { LibrarySyncMode } from "~/lib/models/User";
 import { userService } from "~/lib/services/UserService";
 
@@ -42,5 +42,5 @@ export const loader: LoaderFunction = async ({ request }) => {
 export default function Setup() {
   const { userId } = useLoaderData<{ userId: number | undefined }>();
 
-  return <InitialSetup userId={userId} />;
+  return <Onboarding userId={userId} />;
 }

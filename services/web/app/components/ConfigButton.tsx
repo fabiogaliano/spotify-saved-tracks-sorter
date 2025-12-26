@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
-import { useLoaderData } from 'react-router';
+import { useState } from 'react'
+import { apiRoutes } from '~/lib/config/routes';
 import { ProviderKeysManager } from './ApiKeys/ProviderKeysManager'
+import { useLoaderData } from 'react-router';
 
 type RootLoaderData = {
 	isAuthenticated: boolean;
@@ -31,7 +32,7 @@ export function ConfigButton() {
 		if (!user?.id) return
 
 		try {
-			const response = await fetch(`/api/llm-provider?action=getProviderStatuses`)
+			const response = await fetch(apiRoutes.llmProvider.base + '?action=getProviderStatuses')
 			const data = await response.json()
 
 			if (data.providerStatuses) {

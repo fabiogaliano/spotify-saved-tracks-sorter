@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useFetcher } from 'react-router';
+import { useMutation } from '@tanstack/react-query';
+import { vectorCache } from '~/lib/services/vectorization/VectorCache';
 import { Card, CardContent, CardHeader, CardTitle } from '~/shared/components/ui/Card';
 import { Button } from '~/shared/components/ui/button';
 import { Input } from '~/shared/components/ui/input';
@@ -16,117 +19,128 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 import { ScrollArea } from '~/shared/components/ui/scroll-area';
 import { NotificationBanner } from '~/features/playlist-management/components/ui';
+import type { AnalyzedTrack, AnalyzedPlaylist } from '~/types/analysis';
+import type { MatchResult } from '~/lib/models/Matching';
 
-const MatchingInterface = () => {
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+interface MatchingInterfaceProps {
+  playlists?: AnalyzedPlaylist[];
+  tracks?: AnalyzedTrack[];
+}
+
+interface MatchingResults {
+  playlistId: string;
+  results: MatchResult[];
+  processingTime: number;
+  error?: string;
+}
+
+interface MatchingData {
+  playlists: AnalyzedPlaylist[];
+  tracks: AnalyzedTrack[];
+}
+
+const MatchingInterface = ({ playlists: propPlaylists, tracks: propTracks }: MatchingInterfaceProps = {}) => {
+  const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState('all');
-  const [notification, setNotification] = useState(null);
+  const [notification, setNotification] = useState<{ type: string; message: string } | null>(null);
+  const [selectedTracks, setSelectedTracks] = useState<Set<number>>(new Set());
+  const [showCacheStats, setShowCacheStats] = useState(false);
+  
+  // Use useFetcher for data loading (Remix way)
+  const dataFetcher = useFetcher<MatchingData>();
+  const matchingFetcher = useFetcher<MatchingResults>();
 
-  // Demo data
-  const playlists = [
-    { id: '1', name: 'Chill Vibes', songCount: 42, description: 'AI: relaxing beats with mellow lyrics', smartSortingEnabled: true },
-    { id: '2', name: 'Morning Energy', songCount: 28, description: 'AI: upbeat tracks to start your day', smartSortingEnabled: true },
-    { id: '3', name: 'Late Night Feels', songCount: 35, description: 'AI: emotional and introspective tracks', smartSortingEnabled: true },
-    { id: '4', name: 'Workout Mix', songCount: 50, description: 'AI: high energy songs with driving beats', smartSortingEnabled: true },
-    { id: '5', name: 'Focus', songCount: 32, description: 'AI: ambient and minimal music for concentration', smartSortingEnabled: true },
-    { id: '6', name: 'Party Playlist', songCount: 64, description: 'Good vibes only', smartSortingEnabled: false },
-    { id: '7', name: 'Road Trip', songCount: 47, description: 'Music for the open road', smartSortingEnabled: false },
-  ];
-
-  const likedSongs = [
-    {
-      id: '101',
-      title: 'Redbone',
-      artist: 'Childish Gambino',
-      album: 'Awaken, My Love!',
-      colorClass: 'blue',
-      addedAt: '2 days ago',
-      analyzed: true,
-      match: 98,
-      matchingPlaylists: ['1', '3']
-    },
-    {
-      id: '102',
-      title: 'Blinding Lights',
-      artist: 'The Weeknd',
-      album: 'After Hours',
-      colorClass: 'pink',
-      addedAt: '1 week ago',
-      analyzed: true,
-      match: 95,
-      matchingPlaylists: ['2', '4']
-    },
-    {
-      id: '103',
-      title: 'Heat Waves',
-      artist: 'Glass Animals',
-      colorClass: 'purple',
-      album: 'Dreamland',
-      addedAt: '3 days ago',
-      analyzed: true,
-      match: 89,
-      matchingPlaylists: ['3']
-    },
-    {
-      id: '104',
-      title: 'As It Was',
-      artist: 'Harry Styles',
-      album: 'Harry\'s House',
-      colorClass: 'green',
-      addedAt: '5 days ago',
-      analyzed: true,
-      match: 92,
-      matchingPlaylists: ['1', '2']
-    },
-    {
-      id: '105',
-      title: 'Bad Habit',
-      artist: 'Steve Lacy',
-      album: 'Gemini Rights',
-      colorClass: 'yellow',
-      addedAt: '1 day ago',
-      analyzed: true,
-      match: 87,
-      matchingPlaylists: ['3', '4']
-    },
-    {
-      id: '106',
-      title: 'Glimpse of Us',
-      artist: 'Joji',
-      album: 'Smithereens',
-      colorClass: 'blue',
-      addedAt: '2 weeks ago',
-      analyzed: true,
-      match: 94,
-      matchingPlaylists: ['1', '3']
-    },
-    {
-      id: '107',
-      title: 'Running Up That Hill',
-      artist: 'Kate Bush',
-      album: 'Hounds of Love',
-      colorClass: 'purple',
-      addedAt: '1 month ago',
-      analyzed: false,
-      match: null,
-      matchingPlaylists: []
-    },
-    {
-      id: '108',
-      title: 'Flowers',
-      artist: 'Miley Cyrus',
-      album: 'Endless Summer Vacation',
-      colorClass: 'pink',
-      addedAt: '3 days ago',
-      analyzed: false,
-      match: null,
-      matchingPlaylists: []
+  // Load data if not provided as props
+  useEffect(() => {
+    if (!propPlaylists && !propTracks && dataFetcher.state === 'idle' && !dataFetcher.data) {
+      dataFetcher.load('/matching');
     }
-  ];
+  }, [dataFetcher, propPlaylists, propTracks]);
+
+  // Use props if provided, otherwise use fetched data
+  const playlists = propPlaylists || dataFetcher.data?.playlists || [];
+  const tracks = propTracks || dataFetcher.data?.tracks || [];
+
+  // Handle matching results
+  useEffect(() => {
+    if (matchingFetcher.data) {
+      if (matchingFetcher.data.error) {
+        setNotification({
+          type: 'error',
+          message: `Matching failed: ${matchingFetcher.data.error}`
+        });
+      } else {
+        setNotification({
+          type: 'success',
+          message: `Found ${matchingFetcher.data.results.length} matches in ${matchingFetcher.data.processingTime}ms`
+        });
+      }
+      setTimeout(() => setNotification(null), 5000);
+    }
+  }, [matchingFetcher.data]);
+
+  // Transform real data to match UI expectations
+  const transformedPlaylists = playlists.map(playlist => ({
+    id: playlist.id.toString(),
+    name: playlist.name,
+    songCount: playlist.track_count,
+    description: playlist.description || `Smart: ${playlist.analysis?.meaning?.main_message || 'No description'}`,
+    smartSortingEnabled: playlist.is_flagged && !!playlist.analysis // Smart playlists are flagged ones with analysis
+  }));
+
+  const transformedTracks = tracks.map((track, index) => ({
+    id: track.id.toString(),
+    title: track.name,
+    artist: track.artist,
+    album: track.album || 'Unknown Album',
+    colorClass: ['blue', 'green', 'purple', 'pink', 'yellow'][index % 5],
+    addedAt: track.liked_at ? new Date(track.liked_at).toLocaleDateString() : 'Unknown',
+    analyzed: !!track.analysis,
+    match: null, // Will be populated from matching results
+    matchingPlaylists: [] // Will be populated from matching results
+  }));
+
+  // Handle track selection
+  const handleTrackToggle = (trackId: string) => {
+    const trackDbId = parseInt(trackId);
+    const newSelected = new Set(selectedTracks);
+    if (newSelected.has(trackDbId)) {
+      newSelected.delete(trackDbId);
+    } else {
+      newSelected.add(trackDbId);
+    }
+    setSelectedTracks(newSelected);
+  };
+
+  const handleSelectAllTracks = () => {
+    const analyzedTracks = tracks.filter(t => t.analysis);
+    if (selectedTracks.size === analyzedTracks.length) {
+      setSelectedTracks(new Set());
+    } else {
+      setSelectedTracks(new Set(analyzedTracks.map(t => t.id)));
+    }
+  };
+
+  // Update tracks with matching results
+  const tracksWithMatches = transformedTracks.map(track => {
+    if (matchingFetcher.data?.results) {
+      const matchResult = matchingFetcher.data.results.find(
+        result => result.track_info.title === track.title && result.track_info.artist === track.artist
+      );
+      if (matchResult) {
+        return {
+          ...track,
+          match: Math.round(matchResult.similarity * 100),
+          matchingPlaylists: selectedPlaylist ? [selectedPlaylist] : []
+        };
+      }
+    }
+    return track;
+  });
 
   // Filter songs based on selectedPlaylist and searchQuery
-  const filteredSongs = likedSongs
+  const filteredSongs = tracksWithMatches
     .filter(song => {
       // First, filter by playlist if one is selected
       if (selectedPlaylist && song.analyzed) {
@@ -157,44 +171,66 @@ const MatchingInterface = () => {
     });
 
   // Get playlist name by ID
-  const getPlaylistName = (playlistId) => {
-    const playlist = playlists.find(p => p.id === playlistId);
+  const getPlaylistName = (playlistId: string) => {
+    const playlist = transformedPlaylists.find(p => p.id === playlistId);
     return playlist ? playlist.name : '';
   };
 
   // Get only smart sorting enabled playlists
-  const smartSortingPlaylists = playlists.filter(p => p.smartSortingEnabled);
+  const smartSortingPlaylists = transformedPlaylists.filter(p => p.smartSortingEnabled);
 
   // Count of analyzable songs
-  const unanalyzedCount = likedSongs.filter(song => !song.analyzed).length;
-  const analysisDone = likedSongs.filter(song => song.analyzed).length;
-  const totalSongs = likedSongs.length;
-  const analysisProgress = Math.round((analysisDone / totalSongs) * 100);
+  const unanalyzedCount = tracksWithMatches.filter(song => !song.analyzed).length;
+  const analysisDone = tracksWithMatches.filter(song => song.analyzed).length;
+  const totalSongs = tracksWithMatches.length;
+  const analysisProgress = totalSongs > 0 ? Math.round((analysisDone / totalSongs) * 100) : 0;
 
-  // Handle sorting a song into playlists
-  const handleSortSong = (songId, playlistIds) => {
-    const song = likedSongs.find(s => s.id === songId);
+  // Handle running the matching algorithm
+  const handleRunMatching = () => {
+    if (!selectedPlaylist || selectedTracks.size === 0) {
+      setNotification({
+        type: 'error',
+        message: 'Please select a playlist and at least one track to match'
+      });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('playlistId', selectedPlaylist);
+    formData.append('trackIds', JSON.stringify(Array.from(selectedTracks)));
+
+    matchingFetcher.submit(formData, {
+      method: 'POST',
+      action: '/matching'
+    });
+  };
+
+  // Handle sorting a song into playlists (placeholder for future implementation)
+  const handleSortSong = (songId: string, playlistIds: string[]) => {
+    const song = tracksWithMatches.find(s => s.id === songId);
     const playlistNames = playlistIds.map(id => getPlaylistName(id));
 
     setNotification({
       type: 'success',
-      message: `"${song.title}" sorted into: ${playlistNames.join(', ')}`
+      message: `"${song?.title}" sorted into: ${playlistNames.join(', ')}`
     });
 
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Handle analyzing a song
-  const handleAnalyzeSong = (songId) => {
+  // Handle analyzing a song (placeholder for future implementation)
+  const handleAnalyzeSong = (songId: string) => {
+    const song = tracksWithMatches.find(s => s.id === songId);
     setNotification({
       type: 'info',
-      message: `Analyzing "${likedSongs.find(s => s.id === songId).title}"...`
+      message: `Analyzing "${song?.title}"...`
     });
 
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Handle batch analysis
+  // Handle batch analysis (placeholder for future implementation)
   const handleBatchAnalysis = () => {
     setNotification({
       type: 'info',
@@ -203,6 +239,46 @@ const MatchingInterface = () => {
 
     setTimeout(() => setNotification(null), 3000);
   };
+
+  // Show loading state
+  if (dataFetcher.state === 'loading' && !propPlaylists && !propTracks) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Loading matching data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show no data state
+  if (playlists.length === 0 && tracks.length === 0) {
+    return (
+      <div className="p-8">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <Info className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">
+                No analysis data available
+              </h3>
+              <div className="mt-2 text-sm text-blue-700">
+                <p>To use the matching algorithm, you need:</p>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>Analyzed playlists (run playlist analysis from the playlist management page)</li>
+                  <li>Analyzed liked songs (run track analysis from the liked songs page)</li>
+                </ul>
+                <p className="mt-2">Once you have analyzed data, the matching algorithm will compare your songs against your playlists to find the best matches.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Color mapping helper function
   const getColorClasses = (colorName) => {
@@ -253,11 +329,48 @@ const MatchingInterface = () => {
 
         <div className="flex flex-wrap gap-2">
           <Button
+            onClick={handleRunMatching}
+            disabled={!selectedPlaylist || selectedTracks.size === 0 || matchingFetcher.state === 'submitting'}
+            className="transition-all duration-200 gap-2 hover:scale-105 active:scale-95 hover:shadow-sm"
+          >
+            {matchingFetcher.state === 'submitting' ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" /> 
+                Matching...
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4" /> 
+                Run Matching ({selectedTracks.size} songs)
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={handleSelectAllTracks}
+            variant="secondary"
+            className="transition-all duration-200 gap-2 hover:scale-105 active:scale-95 hover:shadow-sm"
+          >
+            <CheckCircle2 className="h-4 w-4" /> 
+            {selectedTracks.size === tracksWithMatches.filter(t => t.analyzed).length ? 'Deselect All' : 'Select All Analyzed'}
+          </Button>
+
+          <Button
             onClick={handleBatchAnalysis}
             variant="secondary"
             className="transition-all duration-200 gap-2 hover:scale-105 active:scale-95 hover:shadow-sm"
           >
             <RefreshCw className="h-4 w-4" /> Analyze More Songs
+          </Button>
+
+          <Button
+            onClick={() => setShowCacheStats(!showCacheStats)}
+            variant="outline"
+            size="sm"
+            className="transition-all duration-200 gap-2 hover:scale-105 active:scale-95 hover:shadow-sm"
+          >
+            <Info className="h-4 w-4" /> 
+            {showCacheStats ? 'Hide' : 'Show'} Cache Stats
           </Button>
 
           <Tabs defaultValue="all" value={activeView} onValueChange={setActiveView} className="w-auto">
@@ -275,6 +388,44 @@ const MatchingInterface = () => {
         <NotificationBanner type={notification.type} message={notification.message} />
       )}
 
+      {/* Cache Statistics */}
+      {showCacheStats && (
+        <Card className="bg-card border-border shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Info className="h-4 w-4 text-cyan-400" />
+              Vector Cache Performance
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Cached Vectors:</span>
+                <span className="ml-2 font-medium text-foreground">{vectorCache.getStats().size}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Memory Usage:</span>
+                <span className="ml-2 font-medium text-foreground">{vectorCache.getStats().memoryUsage}</span>
+              </div>
+              <div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => {
+                    vectorCache.clear();
+                    setNotification({ type: 'info', message: 'Vector cache cleared' });
+                    setTimeout(() => setNotification(null), 2000);
+                  }}
+                  className="text-xs"
+                >
+                  Clear Cache
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
         {/* Playlists Column */}
         <div className="md:col-span-4 lg:col-span-3">
@@ -284,7 +435,7 @@ const MatchingInterface = () => {
                 <div className="bg-green-500/20 p-1.5 rounded-md">
                   <ListMusic className="h-5 w-5 text-green-400" />
                 </div>
-                <span className="font-bold">AI-Enabled Playlists</span>
+                <span className="font-bold">Smart Playlists</span>
               </CardTitle>
             </CardHeader>
 
@@ -299,14 +450,14 @@ const MatchingInterface = () => {
                 >
                   <div className="flex items-center gap-2">
                     <Music className="h-4 w-4 text-muted-foreground" />
-                    <span>All Playlists</span>
+                    <span>All Smart Playlists</span>
                   </div>
                   <div className="bg-secondary px-2 py-0.5 rounded-md text-xs text-foreground">
-                    {likedSongs.filter(s => s.analyzed).length}
+                    {tracksWithMatches.filter(s => s.analyzed).length}
                   </div>
                 </button>
 
-                {aiPlaylists.map((playlist) => (
+                {transformedPlaylists.filter(p => p.smartSortingEnabled).map((playlist) => (
                   <button
                     key={playlist.id}
                     onClick={() => setSelectedPlaylist(playlist.id)}
@@ -325,14 +476,14 @@ const MatchingInterface = () => {
                       )}
                     </div>
                     <div className="bg-secondary px-2 py-0.5 rounded-md text-xs text-foreground">
-                      {likedSongs.filter(s => s.analyzed && s.matchingPlaylists.includes(playlist.id)).length}
+                      {playlist.songCount}
                     </div>
                   </button>
                 ))}
 
                 <div className="pt-3 border-t border-border mt-3">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Other Playlists</h3>
-                  {playlists.filter(p => !p.smartSortingEnabled).map((playlist) => (
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Regular Playlists</h3>
+                  {transformedPlaylists.filter(p => !p.smartSortingEnabled).map((playlist) => (
                     <div
                       key={playlist.id}
                       className="w-full p-3 text-left rounded-md flex justify-between items-center bg-card/30 border border-border text-muted-foreground mb-2"
@@ -342,7 +493,7 @@ const MatchingInterface = () => {
                         <span>{playlist.name}</span>
                       </div>
                       <div className="text-xs bg-card px-2 py-1 rounded text-muted-foreground">
-                        No AI flag
+                        Not Smart
                       </div>
                     </div>
                   ))}
@@ -454,6 +605,12 @@ const MatchingInterface = () => {
                         >
                           <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedTracks.has(parseInt(song.id))}
+                                onChange={() => handleTrackToggle(song.id)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              />
                               <div className={`w-12 h-12 ${colorClasses.bg} rounded-md flex items-center justify-center`}>
                                 <div className={`w-8 h-8 ${colorClasses.inner} rounded-sm`}></div>
                               </div>
@@ -464,20 +621,26 @@ const MatchingInterface = () => {
                               </div>
                             </div>
 
-                            {song.analyzed ? (
-                              <div className="px-3 py-1.5 text-green-400 text-sm font-medium bg-green-500/10 border border-green-500/20 rounded-full">
-                                {song.match}% match
-                              </div>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="transition-all duration-200 hover:scale-105 active:scale-95"
-                                onClick={() => handleAnalyzeSong(song.id)}
-                              >
-                                Analyze
-                              </Button>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {song.analyzed && song.match !== null ? (
+                                <div className="px-3 py-1.5 text-green-400 text-sm font-medium bg-green-500/10 border border-green-500/20 rounded-full">
+                                  {song.match}% match
+                                </div>
+                              ) : song.analyzed ? (
+                                <div className="px-3 py-1.5 text-blue-400 text-sm font-medium bg-blue-500/10 border border-blue-500/20 rounded-full">
+                                  Ready to match
+                                </div>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="transition-all duration-200 hover:scale-105 active:scale-95"
+                                  onClick={() => handleAnalyzeSong(song.id)}
+                                >
+                                  Analyze
+                                </Button>
+                              )}
+                            </div>
                           </div>
 
                           {song.analyzed && (

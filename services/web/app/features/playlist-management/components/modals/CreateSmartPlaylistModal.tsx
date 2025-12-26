@@ -15,7 +15,7 @@ import {
 import { Plus, Music, Zap, Moon, Coffee, Heart } from 'lucide-react'
 import { PLAYLIST_AI_PREFIX, PLAYLIST_MAX_DESCRIPTION_LENGTH } from '~/lib/constants/playlist.constants'
 
-interface CreateAIPlaylistModalProps {
+interface CreateSmartPlaylistModalProps {
   onCreatePlaylist: (name: string, description: string) => void
   isCreating?: boolean
 }
@@ -53,7 +53,7 @@ const PLAYLIST_TEMPLATES = [
   }
 ]
 
-const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
+const CreateSmartPlaylistModal: React.FC<CreateSmartPlaylistModalProps> = ({
   onCreatePlaylist,
   isCreating = false
 }) => {
@@ -99,14 +99,14 @@ const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
         <Button
           className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 transition-colors gap-2"
         >
-          <Plus className="h-4 w-4" /> Create AI Playlist
+          <Plus className="h-4 w-4" /> Create Smart Playlist
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create AI Playlist</DialogTitle>
+          <DialogTitle>Create Smart Playlist</DialogTitle>
           <DialogDescription>
-            Choose a template or create a custom AI-managed playlist.
+            Choose a template or create a custom smart playlist.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -212,4 +212,4 @@ const CreateAIPlaylistModal: React.FC<CreateAIPlaylistModalProps> = ({
   )
 }
 
-export default CreateAIPlaylistModal
+export default CreateSmartPlaylistModal

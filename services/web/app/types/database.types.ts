@@ -68,7 +68,9 @@ export type Database = {
           id: number
           instrumentalness: number | null
           liveness: number | null
+          loudness: number | null
           speechiness: number | null
+          spotify_track_id: string | null
           tempo: number | null
           track_id: number | null
           valence: number | null
@@ -81,7 +83,9 @@ export type Database = {
           id?: number
           instrumentalness?: number | null
           liveness?: number | null
+          loudness?: number | null
           speechiness?: number | null
+          spotify_track_id?: string | null
           tempo?: number | null
           track_id?: number | null
           valence?: number | null
@@ -94,7 +98,9 @@ export type Database = {
           id?: number
           instrumentalness?: number | null
           liveness?: number | null
+          loudness?: number | null
           speechiness?: number | null
+          spotify_track_id?: string | null
           tempo?: number | null
           track_id?: number | null
           valence?: number | null

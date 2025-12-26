@@ -1,24 +1,26 @@
 #!/usr/bin/env bun
-// scripts/analysisWorker.ts
+// scripts/analysisWorkerBatch.ts
 
 import {
   SQSClient,
   ReceiveMessageCommand,
   DeleteMessageCommand,
 } from '@aws-sdk/client-sqs';
-import { getSupabase } from '~/lib/services/DatabaseService';
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository';
 import { TrackAnalysisAttemptsRepository } from '~/lib/repositories/TrackAnalysisAttemptsRepository';
 import { providerKeysRepository } from '~/lib/repositories/ProviderKeysRepository';
 import { analysisJobRepository } from '~/lib/repositories/AnalysisJobRepository';
+import { playlistAnalysisStore } from '~/lib/services/PlaylistAnalysisStore';
 import { jobPersistenceService } from '~/lib/services/JobPersistenceService';
-import { DefaultSongAnalysisService } from '~/lib/services/analysis/SongAnalysisService';
+import { SongAnalysisService } from '~/lib/services/analysis/SongAnalysisService';
+import { PlaylistAnalysisService } from '~/lib/services/analysis/PlaylistAnalysisService';
 import { DefaultLyricsService } from '~/lib/services/lyrics/LyricsService';
 import { LlmProviderManager, LlmProviderName } from '~/lib/services/llm/LlmProviderManager';
 import type { AnalysisJobPayload } from '~/lib/services/queue/SQSService';
 import type { TrackAnalysisInsert } from '~/lib/models/TrackAnalysis';
 import { logger } from '~/lib/logging/Logger';
 import { Json } from '~/types/database.types';
+import { ANALYSIS_VERSION } from '~/lib/services/analysis/analysis-version';
 import { fetch } from 'bun';
 
 const AWS_REGION = process.env.AWS_REGION;
@@ -29,16 +31,17 @@ const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const WEBSOCKET_SERVER_URL = process.env.WEBSOCKET_SERVER_URL || 'http://localhost:3001';
 
 const GENIUS_API_KEY = process.env.GENIUS_CLIENT_TOKEN;
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GOOGLE_API_KEY = process.env.GEMINI_API_KEY;
+
+// Batch processing configuration
+const BATCH_SIZE = Number(process.env.ANALYSIS_BATCH_SIZE) || 1;
+const MAX_MESSAGES_PER_POLL = Math.min(BATCH_SIZE, 10); // SQS max is 10
 
 if (!AWS_REGION || !AWS_SQS_QUEUE_URL || !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
   logger.error('FATAL: Missing AWS SQS configuration in environment variables. Worker cannot start.');
   process.exit(1);
 }
 
-/**
- * Sends a status update to the WebSocket server
- */
 async function notifyStatusChange(jobId: string, trackId: number, status: string, progress?: number, error?: string) {
   try {
     const notification = {
@@ -50,29 +53,41 @@ async function notifyStatusChange(jobId: string, trackId: number, status: string
       timestamp: new Date().toISOString()
     };
 
-    logger.debug(`Sending status update to WebSocket server: ${JSON.stringify(notification)}`);
-
-    const response = await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
+    await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(notification)
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(notification),
     });
-
-    if (!response.ok) {
-      logger.warn(`Failed to notify WebSocket server: ${response.status} ${response.statusText}`);
-    } else {
-      logger.debug('Successfully notified WebSocket server');
-    }
   } catch (error) {
-    logger.error(`Error notifying WebSocket server: ${error}`);
+    logger.error(`Failed to send WebSocket notification: ${error}`);
   }
 }
 
-if (!GENIUS_API_KEY) {
-  logger.warn('Warning: GENIUS_API_KEY is not set. Lyrics service might fail.');
-}
-if (!GOOGLE_API_KEY) {
-  logger.warn('Warning: GOOGLE_API_KEY is not set. LLM provider might fail.');
+/**
+ * Sends batch progress update to the WebSocket server
+ */
+async function notifyBatchProgress(jobId: string, completed: number, total: number) {
+  try {
+    const notification = {
+      jobId,
+      type: 'BATCH_PROGRESS',
+      completed,
+      total,
+      timestamp: new Date().toISOString()
+    };
+
+    await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(notification),
+    });
+  } catch (error) {
+    logger.error(`Failed to send batch progress notification: ${error}`);
+  }
 }
 
 const sqsClient = new SQSClient({
@@ -83,415 +98,457 @@ const sqsClient = new SQSClient({
   },
 });
 
-const main = async () => {
-  logger.info('Starting analysis worker...');
+// Initialize repositories without passing getSupabase()
+const trackAnalysisAttemptsRepository = new TrackAnalysisAttemptsRepository();
+const lyricsService = new DefaultLyricsService({ accessToken: GENIUS_API_KEY || '' });
 
-  const trackAnalysisAttemptsRepository = new TrackAnalysisAttemptsRepository();
-  const lyricsService = new DefaultLyricsService({ accessToken: GENIUS_API_KEY || '' });
+async function deleteSqsMessage(receiptHandle: string | undefined) {
+  if (!receiptHandle) {
+    logger.warn('No receipt handle provided. Cannot delete SQS message.');
+    return;
+  }
 
-  logger.info('Analysis worker configuration:', {
-    queueUrl: AWS_SQS_QUEUE_URL,
-    region: AWS_REGION
-  });
+  try {
+    await sqsClient.send(
+      new DeleteMessageCommand({
+        QueueUrl: AWS_SQS_QUEUE_URL,
+        ReceiptHandle: receiptHandle,
+      })
+    );
+  } catch (error) {
+    logger.error(`Failed to delete SQS message: ${error}`);
+  }
+}
 
+async function processMessages() {
   while (true) {
     try {
+      // Receive multiple messages at once
       const receiveMessageCommand = new ReceiveMessageCommand({
         QueueUrl: AWS_SQS_QUEUE_URL,
-        MaxNumberOfMessages: 1,      // Process one message at a time
-        WaitTimeSeconds: 20,          // Long-polling for FIFO queue
+        MaxNumberOfMessages: MAX_MESSAGES_PER_POLL,
+        WaitTimeSeconds: 20,
         MessageAttributeNames: ['All'],
-        VisibilityTimeout: 60,        // Time before message becomes visible again
+        VisibilityTimeout: 300, // 5 minutes for batch processing
       });
 
-      logger.debug('Polling for messages...');
       const { Messages } = await sqsClient.send(receiveMessageCommand);
 
-      if (!Messages?.length) {
-        logger.debug('No messages received in this polling cycle.');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!Messages || Messages.length === 0) {
         continue;
       }
 
-      const message = Messages[0];
-      logger.info(`Received message ID: ${message.MessageId}`);
+      logger.info(`Received ${Messages.length} messages for batch processing`);
 
-      if (!message.Body) {
-        logger.warn(`Message ${message.MessageId} has no body. Deleting.`);
-        await deleteSqsMessage(message.ReceiptHandle);
-        continue;
-      }
+      // Group messages by batch ID
+      const messagesByBatch = new Map<string, typeof Messages>();
 
-      let jobPayload: AnalysisJobPayload;
-      try {
-        jobPayload = JSON.parse(message.Body);
-      } catch (parseError) {
-        logger.error(`Failed to parse message body for ID ${message.MessageId}. Error: ${parseError}. Deleting.`);
-        await deleteSqsMessage(message.ReceiptHandle);
-        continue;
-      }
+      for (const message of Messages) {
+        if (!message.Body) continue;
 
-      const { trackId: jobTrackIdString, artist, title, userId, batchId } = jobPayload;
-      const trackId = parseInt(jobTrackIdString, 10);
-
-      if (isNaN(trackId)) {
-        logger.error(`Invalid trackId format in SQS message: ${jobTrackIdString}. Deleting message.`);
-        await deleteSqsMessage(message.ReceiptHandle);
-        continue;
-      }
-
-      logger.info(`Processing job for trackId: ${trackId}, Artist: ${artist}, Title: ${title}, UserId: ${userId}`);
-
-      // Notify that analysis is queued
-      await notifyStatusChange(batchId || message.MessageId || '', trackId, 'QUEUED');
-
-
-      try {
-        const existingAnalysis = await trackAnalysisRepository.getByTrackId(trackId);
-        const existingAttempts = await trackAnalysisAttemptsRepository.getAttemptsByTrackId(trackId);
-        if (existingAnalysis || existingAttempts.length > 0) {
-          logger.info(`Analysis already exists for trackId ${trackId}. Skipping.`);
-          // Send FAILED status for skipped tracks so they count towards failed tracks in UI
-          await notifyStatusChange(batchId || message.MessageId || '', trackId, 'FAILED', undefined, 'Analysis already exists - skipped');
-          await deleteSqsMessage(message.ReceiptHandle);
-          continue;
-        }
-      } catch (error) {
-        logger.error(`Failed to query existing analysis for trackId ${trackId}. Error: ${error}. Proceeding with analysis.`);
-      }
-
-
-      let providerName: LlmProviderName = 'google';
-      let apiKey = GOOGLE_API_KEY || '';
-
-      try {
-        const userProviderPref = await providerKeysRepository.getUserProviderPreference(userId);
-
-        if (userProviderPref?.active_provider) {
-          providerName = userProviderPref.active_provider as LlmProviderName;
-          logger.info(`Using user's preferred provider: ${providerName}`);
-
-          const providerKey = await providerKeysRepository.getByUserIdAndProvider(userId, providerName);
-
-          if (providerKey) {
-            // In production, decrypt the key here
-            logger.info(`Found API key for provider: ${providerName}`);
-            if (providerName === 'google') apiKey = GOOGLE_API_KEY || '';
-          } else {
-            logger.warn(`No API key found for provider: ${providerName}, falling back to default`);
-          }
-        } else {
-          logger.info(`No preferred provider found for user ${userId}, using default: ${providerName}`);
-        }
-      } catch (error) {
-        logger.error(`Error fetching user preferences: ${error}. Using default provider.`);
-      }
-
-      const llmProviderManager = new LlmProviderManager(providerName, apiKey);
-      const songAnalysisService = new DefaultSongAnalysisService(lyricsService, llmProviderManager);
-
-      try {
-        if (!artist || !title) {
-          const errorMsg = `Missing artist or title for trackId ${trackId}. Cannot analyze. Artist: [${artist}], Title: [${title}]`;
-
-          try {
-            await trackAnalysisAttemptsRepository.createAttempt({
-              track_id: trackId,
-              job_id: batchId || message.MessageId || '',
-              status: 'FAILED',
-              error_type: 'MISSING_ARTIST_TITLE',
-              error_message: errorMsg,
-            });
-
-            await notifyStatusChange(batchId || message.MessageId || '', trackId, 'FAILED', undefined, 'Missing artist or title information');
-          } catch (attemptError) {
-            logger.warn(`Could not create failure record for trackId ${trackId}, may already exist: ${attemptError}`);
-            // Try to update existing attempt instead
-            try {
-              const existingAttempt = await trackAnalysisAttemptsRepository.getLatestAttemptForTrack(trackId);
-              if (existingAttempt) {
-                await trackAnalysisAttemptsRepository.markAttemptAsFailed(
-                  existingAttempt.id,
-                  'MISSING_ARTIST_TITLE',
-                  errorMsg
-                );
-                logger.info(`Updated existing attempt record ID: ${existingAttempt.id} for trackId: ${trackId}`);
-              }
-            } catch (updateError) {
-              logger.error(`Failed to update existing attempt for trackId ${trackId}: ${updateError}`);
-            }
-          }
-
-          await deleteSqsMessage(message.ReceiptHandle);
-          logger.info(`Deleted SQS message for trackId ${trackId} due to missing artist/title.`);
-          continue;
-        }
-
-        // Check for existing attempt and use it or create a new one
-        let attemptRecord;
         try {
-          attemptRecord = await trackAnalysisAttemptsRepository.createAttempt({
-            track_id: trackId,
-            job_id: batchId || message.MessageId || '',
-            status: 'IN_PROGRESS',
-          });
+          const payload = JSON.parse(message.Body) as AnalysisJobPayload;
+          const batchId = payload.batchId || 'default';
 
-          // Notify that analysis has started
-          await notifyStatusChange(batchId || message.MessageId || '', trackId, 'IN_PROGRESS', 0);
-        } catch (createError) {
-          // If we can't create a new attempt, try to find and update an existing one
-          logger.warn(`Could not create attempt record for trackId ${trackId}, may already exist: ${createError}`);
-          const existingAttempt = await trackAnalysisAttemptsRepository.getLatestAttemptForTrack(trackId);
-          if (existingAttempt) {
-            // Update the existing attempt to IN_PROGRESS
-            attemptRecord = await trackAnalysisAttemptsRepository.updateAttempt(
-              existingAttempt.id,
-              { status: 'IN_PROGRESS', updated_at: new Date().toISOString() }
-            );
-            logger.info(`Updated existing attempt record ID: ${existingAttempt.id} for trackId: ${trackId}`);
-          } else {
-            // This shouldn't happen, but just in case
-            logger.error(`Cannot find or create attempt record for trackId ${trackId}`);
-            await deleteSqsMessage(message.ReceiptHandle);
-            continue;
+          if (!messagesByBatch.has(batchId)) {
+            messagesByBatch.set(batchId, []);
           }
+          messagesByBatch.get(batchId)!.push(message);
+        } catch (error) {
+          logger.error(`Failed to parse message body: ${error}`);
+          await deleteSqsMessage(message.ReceiptHandle);
         }
+      }
 
-        logger.info(`Created analysis attempt record ID: ${attemptRecord.id} for trackId: ${trackId}`);
+      // Process each batch
+      for (const [batchId, batchMessages] of messagesByBatch) {
+        await processBatch(batchId, batchMessages);
+      }
 
-        const analysisResultString = await songAnalysisService.analyzeSong(artist, title);
-        const { model, analysis } = JSON.parse(analysisResultString) as { model: string, analysis: Json };
+    } catch (error) {
+      logger.error(`Error in message processing loop: ${error}`);
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
+}
 
-        logger.info(`Successfully analyzed trackId: ${trackId}. Model: ${model}`);
+async function processBatch(batchId: string, messages: any[]) {
+  logger.info(`Processing batch ${batchId} (${messages.length} items)`);
 
-        // Store analysis results
-        const analysisData: TrackAnalysisInsert = {
+  // Check if this is a playlist analysis batch
+  const firstMessage = messages[0];
+  if (!firstMessage.Body) return;
+
+  const checkPayload = JSON.parse(firstMessage.Body) as AnalysisJobPayload;
+
+  // Handle playlist analysis separately
+  if (checkPayload.type === 'playlist') {
+    await processPlaylistBatch(batchId, messages);
+    return;
+  }
+
+  // Extract track info from messages
+  const tracks = [];
+  const messageMap = new Map<string, any>();
+
+  for (const message of messages) {
+    try {
+      const payload = JSON.parse(message.Body) as AnalysisJobPayload;
+      const { trackId, artist, title, userId } = payload;
+
+      if (artist && title) {
+        tracks.push({ trackId: String(trackId), artist, song: title });
+      } else {
+        logger.warn(`Skipping track ${trackId} - missing artist or title`);
+      }
+      messageMap.set(String(trackId), { message, payload });
+    } catch (error) {
+      logger.error(`Failed to process message: ${error}`);
+      await deleteSqsMessage(message.ReceiptHandle);
+    }
+  }
+
+  if (tracks.length === 0) return;
+
+  // Get user preferences and batch size from first message
+  const firstPayload = messageMap.values().next().value.payload;
+  const firstUserId = firstPayload.userId;
+  const payloadBatchSize = firstPayload.batchSize;
+
+  // Use batch size from payload if available, otherwise use environment variable
+  const effectiveBatchSize = payloadBatchSize || BATCH_SIZE;
+
+
+  let providerName: LlmProviderName = 'google';
+  let apiKey = GOOGLE_API_KEY || '';
+
+  try {
+    const userProviderPref = await providerKeysRepository.getUserProviderPreference(firstUserId);
+    if (userProviderPref?.active_provider) {
+      providerName = userProviderPref.active_provider as LlmProviderName;
+      logger.info(`Using user's preferred provider: ${providerName}`);
+      // In production, get the actual API key
+      if (providerName === 'google') apiKey = GOOGLE_API_KEY || '';
+    }
+  } catch (error) {
+    logger.error(`Error fetching user preferences: ${error}. Using default provider.`);
+  }
+
+  const llmProviderManager = new LlmProviderManager(providerName, apiKey);
+  const songAnalysisService = new SongAnalysisService(lyricsService, llmProviderManager);
+
+  // Send batch notification for all tracks at once
+  const trackIds = tracks.map(t => Number(t.trackId));
+  try {
+    await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'batch_tracks_queued',
+        jobId: batchId,
+        trackIds,
+        status: 'QUEUED',
+        timestamp: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    logger.error(`Failed to send batch queued notification: ${error}`);
+  }
+
+  // Process batch with progress updates
+  const results = await songAnalysisService.analyzeBatchWithRetry(tracks, {
+    batchSize: effectiveBatchSize as 1 | 5 | 10,
+    maxRetries: 1,
+    onProgress: async (completed, total) => {
+      await notifyBatchProgress(batchId, completed, total);
+    }
+  });
+
+  // Process results
+  for (const result of results) {
+    const { message, payload } = messageMap.get(result.trackId)!;
+    const trackId = Number(result.trackId);
+
+    if (result.success && result.analysis) {
+      try {
+        // Parse analysis
+        const analysisData = JSON.parse(result.analysis);
+        const currentModel = analysisData.model || llmProviderManager.getCurrentModel();
+        const validatedAnalysis = analysisData.analysis;
+
+        // Save to database
+        const trackAnalysisData: TrackAnalysisInsert = {
           track_id: trackId,
-          model_name: model,
-          analysis,
-          version: 1
+          model_name: currentModel,
+          analysis: validatedAnalysis as Json,
+          version: ANALYSIS_VERSION.CURRENT,
         };
-        await trackAnalysisRepository.insertAnalysis(analysisData);
+
+        await trackAnalysisRepository.insertAnalysis(trackAnalysisData);
+        logger.debug(`Analysis saved for track ${trackId}`);
 
         // todo: review this
         // Cleanup: Remove the attempt record after successful analysis
         // At this point, the analysis data is already saved in the analysis table
-        try {
-          await trackAnalysisAttemptsRepository.deleteAttempt(attemptRecord.id);
-          logger.info(`Deleted attempt record ID: ${attemptRecord.id} after successful analysis`);
-        } catch (error) {
-          logger.warn(`Failed to delete attempt record ID: ${attemptRecord.id}, but analysis was successful`);
-        }
-
-        // Notify that analysis completed successfully
-        await notifyStatusChange(batchId || message.MessageId || '', trackId, 'COMPLETED', 100);
-
-        // Update job progress in database
-        if (batchId) {
+        const attemptRecord = await trackAnalysisAttemptsRepository.getLatestAttemptForTrack(trackId);
+        if (attemptRecord) {
           try {
-            const job = await analysisJobRepository.getJobByBatchId(batchId);
-            if (job) {
-              const newProcessedCount = job.tracks_processed + 1;
-              const newSucceededCount = job.tracks_succeeded + 1;
-
-              logger.info(`Updating job progress: ${batchId}, processed: ${job.tracks_processed} → ${newProcessedCount}, succeeded: ${job.tracks_succeeded} → ${newSucceededCount}`);
-
-              const updatedJob = await analysisJobRepository.updateJobProgress(
-                batchId,
-                newProcessedCount,
-                newSucceededCount,
-                job.tracks_failed
-              );
-
-              logger.info(`Job progress updated successfully. New state: processed=${updatedJob.tracks_processed}, succeeded=${updatedJob.tracks_succeeded}, failed=${updatedJob.tracks_failed}`);
-
-              // Check if job is complete
-              if (newProcessedCount >= job.track_count) {
-                logger.info(`Job ${batchId} is complete: ${newProcessedCount}/${job.track_count} tracks processed`);
-                await jobPersistenceService.markJobCompleted(batchId);
-                logger.info(`Job marked as completed successfully`);
-
-                // Send job completion notification
-                try {
-                  const completionNotification = {
-                    type: 'job_completed',
-                    jobId: batchId,
-                    status: 'completed' as const,
-                    stats: {
-                      totalTracks: job.track_count,
-                      tracksProcessed: newProcessedCount,
-                      tracksSucceeded: newSucceededCount,
-                      tracksFailed: updatedJob.tracks_failed
-                    },
-                    timestamp: new Date().toISOString()
-                  };
-
-                  logger.info(`Sending job completion notification: ${JSON.stringify(completionNotification)}`);
-
-                  const response = await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(completionNotification)
-                  });
-
-                  if (!response.ok) {
-                    logger.warn(`Failed to send job completion notification: ${response.status} ${response.statusText}`);
-                  } else {
-                    logger.info('Successfully sent job completion notification');
-                  }
-                } catch (error) {
-                  logger.error(`Error sending job completion notification: ${error}`);
-                }
-              }
-            } else {
-              logger.error(`Could not find job with batchId: ${batchId}`);
-            }
+            await trackAnalysisAttemptsRepository.deleteAttempt(attemptRecord.id);
+            logger.debug(`Cleaned up attempt record for track ${trackId}`);
           } catch (error) {
-            logger.error(`Failed to update job progress for successful track ${trackId}:`, error);
+            logger.debug(`Failed to clean up attempt record for track ${trackId}`);
           }
         }
 
-        logger.info(`Analysis completed for trackId: ${trackId}`);
-        await deleteSqsMessage(message.ReceiptHandle);
-        logger.info(`Successfully processed and deleted message for trackId: ${trackId}`);
+        // Notify success
+        await notifyStatusChange(batchId, trackId, 'COMPLETED');
 
       } catch (error) {
-        logger.error(`Error analyzing trackId ${trackId}: ${error}`);
-
-        try {
-          // Try to find an existing attempt first
-          const existingAttempt = await trackAnalysisAttemptsRepository.getLatestAttemptForTrack(trackId);
-
-          if (existingAttempt) {
-            // Update the existing attempt with failure information
-            await trackAnalysisAttemptsRepository.markAttemptAsFailed(
-              existingAttempt.id,
-              'ANALYSIS_ERROR',
-              error instanceof Error ? error.message : String(error)
-            );
-            logger.info(`Updated existing attempt record ID: ${existingAttempt.id} with failure for trackId: ${trackId}`);
-          } else {
-            // Create a new attempt record if none exists
-            await trackAnalysisAttemptsRepository.createAttempt({
-              track_id: trackId,
-              job_id: batchId || message.MessageId || '',
-              status: 'FAILED',
-              error_type: 'ANALYSIS_ERROR',
-              error_message: error instanceof Error ? error.message : String(error),
-            });
-            logger.info(`Created new failure record for trackId: ${trackId}`);
-          }
-        } catch (attemptError) {
-          logger.error(`Failed to record error for trackId ${trackId}: ${attemptError}`);
-        }
-
-        // Notify that analysis failed
-        await notifyStatusChange(batchId || message.MessageId || '', trackId, 'FAILED', undefined, error instanceof Error ? error.message : String(error));
-
-        // Update job progress in database for failed track
-        if (batchId) {
-          try {
-            const job = await analysisJobRepository.getJobByBatchId(batchId);
-            if (job) {
-              const newProcessedCount = job.tracks_processed + 1;
-              const newFailedCount = job.tracks_failed + 1;
-
-              logger.info(`Updating job progress (FAILED): ${batchId}, processed: ${job.tracks_processed} → ${newProcessedCount}, failed: ${job.tracks_failed} → ${newFailedCount}`);
-
-              const updatedJob = await analysisJobRepository.updateJobProgress(
-                batchId,
-                newProcessedCount,
-                job.tracks_succeeded,
-                newFailedCount
-              );
-
-              logger.info(`Job progress updated successfully (FAILED). New state: processed=${updatedJob.tracks_processed}, succeeded=${updatedJob.tracks_succeeded}, failed=${updatedJob.tracks_failed}`);
-
-              // Check if job is complete
-              if (newProcessedCount >= job.track_count) {
-                logger.info(`Job ${batchId} is complete: ${newProcessedCount}/${job.track_count} tracks processed`);
-                await jobPersistenceService.markJobCompleted(batchId);
-                logger.info(`Job marked as completed successfully`);
-
-                // Send job completion notification
-                try {
-                  const completionNotification = {
-                    type: 'job_completed',
-                    jobId: batchId,
-                    status: 'completed' as const,
-                    stats: {
-                      totalTracks: job.track_count,
-                      tracksProcessed: newProcessedCount,
-                      tracksSucceeded: job.tracks_succeeded,
-                      tracksFailed: newFailedCount
-                    },
-                    timestamp: new Date().toISOString()
-                  };
-
-                  logger.info(`Sending job completion notification: ${JSON.stringify(completionNotification)}`);
-
-                  const response = await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(completionNotification)
-                  });
-
-                  if (!response.ok) {
-                    logger.warn(`Failed to send job completion notification: ${response.status} ${response.statusText}`);
-                  } else {
-                    logger.info('Successfully sent job completion notification');
-                  }
-                } catch (error) {
-                  logger.error(`Error sending job completion notification: ${error}`);
-                }
-              }
-            } else {
-              logger.error(`Could not find job with batchId: ${batchId}`);
-            }
-          } catch (error) {
-            logger.error(`Failed to update job progress for failed track ${trackId}:`, error);
-          }
-        }
-
-        // Delete the message to prevent infinite retries
-        await deleteSqsMessage(message.ReceiptHandle);
-        logger.info(`Deleted failed message for trackId ${trackId} to prevent retry loop`);
+        logger.error(`Failed to save analysis for trackId ${trackId}: ${error}`);
+        await notifyStatusChange(batchId, trackId, 'FAILED', undefined, 'Failed to save analysis');
       }
-    } catch (sqsError: any) {
-      logger.error(`SQS polling error: ${sqsError.message || sqsError}. Retrying after delay...`);
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5s before retrying
-    }
-  }
-};;
+    } else {
+      // Handle failure
+      let attemptRecord = await trackAnalysisAttemptsRepository.getLatestAttemptForTrack(trackId);
 
-const deleteSqsMessage = async (receiptHandle?: string) => {
-  if (!receiptHandle) {
-    logger.warn('Attempted to delete SQS message without ReceiptHandle.');
+      // Create attempt record if it doesn't exist (backwards compatibility)
+      if (!attemptRecord) {
+        try {
+          attemptRecord = await trackAnalysisAttemptsRepository.createAttempt({
+            track_id: trackId,
+            job_id: batchId,
+            status: 'IN_PROGRESS',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          logger.debug(`Created attempt record for failed track ${trackId}`);
+        } catch (createError) {
+          logger.error(`Failed to create attempt record for track ${trackId}:`, createError);
+        }
+      }
+
+      if (attemptRecord) {
+        await trackAnalysisAttemptsRepository.markAttemptAsFailed(
+          attemptRecord.id,
+          'ANALYSIS_FAILED',
+          result.error || 'Unknown error'
+        );
+      }
+      await notifyStatusChange(batchId, trackId, 'FAILED', undefined, result.error);
+    }
+
+    // Delete processed message
+    await deleteSqsMessage(message.ReceiptHandle);
+  }
+
+  // Update job completion stats
+  try {
+    const job = await analysisJobRepository.getJobByBatchId(batchId);
+    if (job) {
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.filter(r => !r.success).length;
+
+      const newProcessedCount = job.tracks_processed + results.length;
+      const newSucceededCount = job.tracks_succeeded + successCount;
+      const newFailedCount = job.tracks_failed + failCount;
+
+      logger.debug(`Job ${batchId} progress: ${newProcessedCount}/${job.track_count}`);
+
+      const updatedJob = await analysisJobRepository.updateJobProgress(
+        batchId,
+        newProcessedCount,
+        newSucceededCount,
+        newFailedCount
+      );
+
+
+
+      // Check if job is complete
+      if (newProcessedCount >= job.track_count) {
+        logger.info(`Job ${batchId} complete: ${newSucceededCount} succeeded, ${newFailedCount} failed`);
+        await jobPersistenceService.markJobCompleted(batchId);
+
+
+        // Send job completion notification
+        try {
+          const completionNotification = {
+            type: 'job_completed',
+            jobId: batchId,
+            status: 'completed' as const,
+            stats: {
+              totalTracks: job.track_count,
+              tracksProcessed: newProcessedCount,
+              tracksSucceeded: newSucceededCount,
+              tracksFailed: newFailedCount
+            },
+            timestamp: new Date().toISOString()
+          };
+
+          logger.debug(`Sending job completion notification for ${batchId}`);
+
+          const response = await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(completionNotification)
+          });
+
+          if (!response.ok) {
+            logger.warn(`Failed to send job completion notification: ${response.status} ${response.statusText}`);
+          } else {
+
+          }
+        } catch (error) {
+          logger.error(`Error sending job completion notification: ${error}`);
+        }
+      }
+    } else {
+      logger.error(`Could not find job with batchId: ${batchId}`);
+    }
+  } catch (error) {
+    logger.error(`Failed to update job stats: ${error}`);
+  }
+}
+
+async function processPlaylistBatch(batchId: string, messages: any[]) {
+  logger.debug(`Processing playlist analysis batch ${batchId}`);
+
+  if (messages.length !== 1) {
+    logger.error(`Playlist analysis expects exactly 1 message, got ${messages.length}`);
+    for (const message of messages) {
+      await deleteSqsMessage(message.ReceiptHandle);
+    }
     return;
   }
-  try {
-    await sqsClient.send(new DeleteMessageCommand({
-      QueueUrl: AWS_SQS_QUEUE_URL!, // Already checked for existence
-      ReceiptHandle: receiptHandle,
-    }));
-  } catch (deleteError: any) {
-    logger.error(`Failed to delete SQS message (Receipt: ${receiptHandle}): ${deleteError.message || deleteError}`);
-  }
-};
 
+  const message = messages[0];
+  try {
+    const payload = JSON.parse(message.Body) as AnalysisJobPayload;
+    const { playlistId, playlistName, playlistDescription, userId } = payload;
+
+    logger.debug(`Analyzing playlist: ${playlistName}`);
+
+    // Send initial notification
+    await fetch(`${WEBSOCKET_SERVER_URL}/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'batch_tracks_queued',
+        jobId: batchId,
+        trackIds: [null], // Playlist analysis doesn't have track IDs
+        status: 'QUEUED',
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    // Get user provider preference
+    let providerName: LlmProviderName = 'google';
+    let apiKey = GOOGLE_API_KEY || '';
+
+    try {
+      const userProviderPref = await providerKeysRepository.getUserProviderPreference(userId);
+      if (userProviderPref?.active_provider) {
+        providerName = userProviderPref.active_provider as LlmProviderName;
+        logger.info(`Using user's preferred provider: ${providerName}`);
+        if (providerName === 'google') apiKey = GOOGLE_API_KEY || '';
+      }
+    } catch (error) {
+      logger.error(`Error fetching user preferences: ${error}. Using default provider.`);
+    }
+
+    const llmManager = new LlmProviderManager(providerName, apiKey);
+
+    // Notify in progress
+    await notifyStatusChange(batchId, Number(playlistId), 'IN_PROGRESS');
+
+    try {
+      // Create playlist analysis service
+      const playlistAnalysisServiceInstance = new PlaylistAnalysisService(llmManager);
+
+      // Analyze playlist using the service
+      const analysisResult = await playlistAnalysisServiceInstance.analyzePlaylist(
+        playlistName || 'Unknown Playlist',
+        playlistDescription || '',
+        [] // No tracks for initial playlist analysis
+      );
+
+      const { model, analysis } = JSON.parse(analysisResult);
+      const analysisData = analysis;
+
+      // Validate analysis data structure
+
+      // Validate required fields
+      if (!analysisData.meaning || !analysisData.emotional || !analysisData.context || !analysisData.matching_profile) {
+        throw new Error('Analysis response is missing required fields');
+      }
+
+      // Save to database
+      await playlistAnalysisStore.saveAnalysis(
+        Number(playlistId),
+        userId,
+        analysisData as Json,
+        llmManager.getCurrentModel(),
+        1
+      );
+
+      logger.debug(`Playlist analysis saved for ${playlistName}`);
+
+      // Notify success
+      await notifyStatusChange(batchId, Number(playlistId), 'COMPLETED');
+
+      // Send batch progress update
+      await notifyBatchProgress(batchId, 1, 1);
+
+      // Mark job as completed
+      await jobPersistenceService.markJobCompleted(batchId);
+
+    } catch (error) {
+      logger.error(`Failed to analyze playlist ${playlistId}: ${error}`);
+      await notifyStatusChange(batchId, Number(playlistId), 'FAILED', undefined, error instanceof Error ? error.message : String(error));
+    }
+
+    // Delete processed message
+    await deleteSqsMessage(message.ReceiptHandle);
+
+  } catch (error) {
+    logger.error(`Failed to process playlist message: ${error}`);
+    await deleteSqsMessage(message.ReceiptHandle);
+  }
+}
+
+// Add signal handlers for graceful shutdown
 process.on('SIGINT', () => {
-  logger.info('SIGINT received. Shutting down worker...');
-  // Perform any cleanup here
+  logger.info('SIGINT received. Shutting down batch worker...');
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Shutting down worker...');
-  // Perform any cleanup here
+  logger.info('SIGTERM received. Shutting down batch worker...');
   process.exit(0);
 });
 
-main().catch(err => {
-  logger.error('Worker script encountered a fatal error and crashed:', err);
+// Start the worker
+const main = async () => {
+  logger.info('Starting batch analysis worker...');
+
+  // Add warnings for missing API keys
+  if (!GENIUS_API_KEY) {
+    logger.warn('Warning: GENIUS_API_KEY is not set. Lyrics service might fail.');
+  }
+  if (!GOOGLE_API_KEY) {
+    logger.warn('Warning: GOOGLE_API_KEY is not set. LLM provider might fail.');
+  }
+
+  logger.info('Batch analysis worker configuration:', {
+    queueUrl: AWS_SQS_QUEUE_URL,
+    region: AWS_REGION,
+    batchSize: BATCH_SIZE,
+    maxMessagesPerPoll: MAX_MESSAGES_PER_POLL
+  });
+
+  await processMessages();
+};
+
+main().catch((error) => {
+  logger.error(`Fatal error in batch analysis worker: ${error}`);
   process.exit(1);
 });

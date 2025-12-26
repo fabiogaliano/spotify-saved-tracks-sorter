@@ -1,49 +1,50 @@
 {
-  "name": "spotify-auto-sort-liked-songs",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Automatically sort your Spotify liked songs into playlists using AI-powered analysis",
-  "scripts": {
-    "dev": "cd services/web && bun run dev:standard",
-    "dev:full": "cd services/web && bun run dev:full",
-    "dev:web": "cd services/web && bun dev",
-    "dev:worker": "cd services/web && bun run worker",
-    "dev:batch": "cd services/web && bun run worker:batch",
-    "dev:websocket": "cd services/web && bun run websocket",
-    "dev:vector": "cd services/vectorization && uv run python api.py",
-    "build": "cd services/web && bun run build:prod",
-    "start": "cd services/web && bun run start:prod",
-    "test": "cd services/web && bun test",
-    "lint": "cd services/web && bun run lint",
-    "typecheck": "cd services/web && bun run typecheck",
-    "setup": "./setup.sh",
-    "setup:clean": "./setup.sh --clean",
-    "setup:web": "cd services/web && bun install",
-    "setup:python": "cd services/vectorization && uv pip sync requirements.txt",
-    "clean:web": "cd services/web && bun run clean",
-    "clean:python": "cd services/vectorization && rm -rf .venv .uv uv.lock __pycache__ *.pyc",
-    "clean": "bun run clean:web && bun run clean:python",
-    "clean:logs": "rm -rf services/web/logs",
-    "clean:all": "bun run clean && bun run clean:logs"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/spotify-auto-sort-liked-songs.git"
-  },
-  "keywords": [
-    "spotify",
-    "music",
-    "playlist",
-    "ai",
-    "machine-learning",
-    "react",
-    "typescript",
-    "python"
-  ],
-  "author": "Your Name",
-  "license": "MIT",
-  "engines": {
-    "node": ">=20.0.0",
-    "bun": ">=1.0.0"
-  }
+	"name": "spotify-auto-sort-liked-songs",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Automatically sort your Spotify liked songs into playlists using AI-powered analysis",
+	"scripts": {
+		"dev": "cd services/web && bun run dev:standard",
+		"dev:full": "cd services/web && bun run dev:full",
+		"dev:web": "cd services/web && bun dev",
+		"dev:worker": "cd services/web && bun run worker",
+		"dev:batch": "cd services/web && bun run worker:batch",
+		"dev:websocket": "cd services/web && bun run websocket",
+		"dev:vector": "cd services/vectorization && uv run python api.py",
+		"build": "cd services/web && bun run build:prod",
+		"start": "cd services/web && bun run start:prod",
+		"test": "cd services/web && bun test",
+		"lint": "cd services/web && bun run lint",
+		"typecheck": "cd services/web && bun run typecheck",
+		"setup": "./setup.sh",
+		"setup:clean": "./setup.sh --clean",
+		"setup:web": "cd services/web && bun install",
+		"setup:python": "cd services/vectorization && uv pip sync requirements.txt",
+		"clean:web": "cd services/web && bun run clean",
+		"clean:python": "cd services/vectorization && rm -rf .venv .uv uv.lock __pycache__ *.pyc",
+		"clean": "bun run clean:web && bun run clean:python",
+		"clean:logs": "rm -rf services/web/logs",
+		"clean:all": "bun run clean && bun run clean:logs",
+		"clean:sqs": "bun run ./scripts/purgeSQS.ts"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/yourusername/spotify-auto-sort-liked-songs.git"
+	},
+	"keywords": [
+		"spotify",
+		"music",
+		"playlist",
+		"ai",
+		"machine-learning",
+		"react",
+		"typescript",
+		"python"
+	],
+	"author": "Your Name",
+	"license": "MIT",
+	"engines": {
+		"node": ">=20.0.0",
+		"bun": ">=1.0.0"
+	}
 }

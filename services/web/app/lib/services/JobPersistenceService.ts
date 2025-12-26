@@ -24,39 +24,28 @@ export class JobPersistenceService {
     const dbJob = await analysisJobRepository.getActiveJobForUser(userId);
     if (!dbJob) return null;
 
-    console.log('Raw dbJob from database:', dbJob);
-    
     // Only return active jobs to client - filter out old completed jobs
     // This prevents old completed jobs from showing up after reload
     if (dbJob.status === 'completed' || dbJob.status === 'failed') {
-      console.log(`Job ${dbJob.batch_id} is completed/failed, not returning to client`);
       return null;
     }
 
     // Get the original track IDs from the job
     const trackIds = (dbJob.track_ids as number[]) || [];
 
-    console.log('Extracted track_ids:', trackIds, 'Type:', typeof dbJob.track_ids, 'Raw value:', dbJob.track_ids);
-
     if (trackIds.length === 0) {
       console.warn(`Job ${dbJob.batch_id} has no track_ids stored. This might be an old job created before track_ids were implemented.`);
       return null; // Cannot recover job without track IDs
     }
 
-    console.log(`Recovering job ${dbJob.batch_id} with ${trackIds.length} track IDs:`, trackIds);
-
     // Reconstruct the trackStates map from track_analysis_attempts and track_analyses
     const attempts = await trackAnalysisAttemptsRepository.getAttemptsByJobId(dbJob.batch_id);
-
-    console.log(`Found ${attempts.length} attempts for job ${dbJob.batch_id}:`, attempts);
 
     // Create a map of track_id -> attempt status
     const attemptStatusMap = new Map<number, string>();
     attempts.forEach(attempt => {
       attemptStatusMap.set(attempt.track_id, attempt.status || '');
     });
-
-    console.log('Attempt status map:', Array.from(attemptStatusMap.entries()));
 
     // For tracks with no attempt record, check if they have completed analyses
     const trackIdsWithoutAttempts = trackIds.filter(trackId => !attemptStatusMap.has(trackId));
@@ -109,11 +98,6 @@ export class JobPersistenceService {
       trackStates.set(trackId, state);
     });
 
-    console.log(`Recovered trackStates for job ${dbJob.batch_id}:`, Array.from(trackStates.entries()));
-    console.log(`TrackStates breakdown - Queued: ${Array.from(trackStates.values()).filter(s => s === 'queued').length}, ` +
-                `In Progress: ${Array.from(trackStates.values()).filter(s => s === 'in_progress').length}, ` +
-                `Completed: ${Array.from(trackStates.values()).filter(s => s === 'completed').length}, ` +
-                `Failed: ${Array.from(trackStates.values()).filter(s => s === 'failed').length}`);
 
     // Check if job should be marked as completed or is stale
     let finalStatus = dbJob.status;
@@ -127,15 +111,6 @@ export class JobPersistenceService {
     const isCompleteByStates = completedTracksFromStates >= expectedTotal;
     const isCompleteByDB = totalProcessed >= expectedTotal;
     
-    console.log('Job completion analysis:', {
-      finalStatus,
-      totalProcessed,
-      expectedTotal,
-      completedTracksFromStates,
-      isCompleteByStates,
-      isCompleteByDB,
-      jobAgeMinutes: jobAgeMinutes.toFixed(1)
-    });
     
     if (finalStatus === 'in_progress' || finalStatus === 'pending') {
       if (isCompleteByDB || isCompleteByStates) {

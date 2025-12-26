@@ -20,10 +20,6 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
   const updateTrackAnalysis = useUpdateTrackAnalysis();
   
   // Computed values
-  const selectedTracks = useCallback(() => {
-    return likedSongs.filter((_: TrackWithAnalysis, index: number) => rowSelection[index]);
-  }, [likedSongs, rowSelection]);
-  
   const filteredTracks = useMemo(() => {
     return likedSongs.filter((track: TrackWithAnalysis) => {
       // Search filter
@@ -47,6 +43,13 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
       return true;
     });
   }, [likedSongs, searchQuery, statusFilter]);
+  
+  // Selected tracks based on filtered data
+  const selectedTracks = useCallback(() => {
+    // IMPORTANT: rowSelection indices are based on the filtered/displayed data,
+    // not the full likedSongs array. We need to map through filteredTracks.
+    return filteredTracks.filter((_: TrackWithAnalysis, index: number) => rowSelection[index]);
+  }, [filteredTracks, rowSelection]);
   
   // Statistics
   const stats = useMemo(() => {

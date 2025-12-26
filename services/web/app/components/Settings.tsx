@@ -22,6 +22,7 @@ import { DashboardLoaderData } from '~/features/dashboard/dashboard.loader.serve
 import { useTheme } from 'next-themes';
 import type { Enums } from '~/types/database.types';
 import { useNotificationStore } from '~/lib/stores/notificationStore';
+import { apiRoutes } from '~/lib/config/routes';
 
 const SettingsTab = () => {
   const { user } = useLoaderData<DashboardLoaderData>();
@@ -54,7 +55,7 @@ const SettingsTab = () => {
       if (!user?.id) return;
 
       try {
-        const response = await fetch('/api/user-preferences');
+        const response = await fetch(apiRoutes.user.preferences);
         if (response.ok) {
           const data = await response.json();
           const preferences = data.preferences;
@@ -110,7 +111,7 @@ const SettingsTab = () => {
     saveTimeoutRef.current = setTimeout(async () => {
       // Double-check if anything has actually changed before saving
       if (!initialStateRef.current) return;
-      
+
       const currentTheme = darkMode ? 'dark' : 'light';
       const hasChanges =
         batchSize !== initialStateRef.current.batchSize ||
@@ -130,7 +131,7 @@ const SettingsTab = () => {
       };
 
       try {
-        const response = await fetch('/actions/update-preferences', {
+        const response = await fetch(apiRoutes.user.updatePreferences, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

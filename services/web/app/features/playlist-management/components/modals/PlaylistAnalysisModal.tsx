@@ -108,7 +108,7 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
                   </>
                 ) : (
                   <>
-                    {analysis?.meaning?.themes?.map((theme: any, index: number) => (
+                    {analysis?.meaning?.core_themes?.map((theme: any, index: number) => (
                       <div key={index} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">{theme.name}</h4>
@@ -193,7 +193,7 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                      {['Morning', 'Working', 'Relaxation'].map((label) => (
+                      {['Solo Listening', 'Intimate', 'Passive'].map((label) => (
                         <div key={label} className="text-center space-y-1">
                           <p className="text-xs text-muted-foreground">{label}</p>
                           <Skeleton className="h-6 w-12 mx-auto" />
@@ -221,21 +221,21 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
 
                     <div className="grid grid-cols-3 gap-3">
                       <div className="text-center space-y-1">
-                        <p className="text-xs text-muted-foreground">Morning</p>
+                        <p className="text-xs text-muted-foreground">Solo Listening</p>
                         <div className="text-lg font-semibold">
-                          {formatScore(analysis?.context?.fit_scores?.morning || 0)}%
+                          {formatScore(1 - (analysis?.context?.social_context?.alone_vs_group || 0.5))}%
                         </div>
                       </div>
                       <div className="text-center space-y-1">
-                        <p className="text-xs text-muted-foreground">Working</p>
+                        <p className="text-xs text-muted-foreground">Intimate</p>
                         <div className="text-lg font-semibold">
-                          {formatScore(analysis?.context?.fit_scores?.working || 0)}%
+                          {formatScore(1 - (analysis?.context?.social_context?.intimate_vs_public || 0.5))}%
                         </div>
                       </div>
                       <div className="text-center space-y-1">
-                        <p className="text-xs text-muted-foreground">Relaxation</p>
+                        <p className="text-xs text-muted-foreground">Passive</p>
                         <div className="text-lg font-semibold">
-                          {formatScore(analysis?.context?.fit_scores?.relaxation || 0)}%
+                          {formatScore(1 - (analysis?.context?.social_context?.active_vs_passive || 0.5))}%
                         </div>
                       </div>
                     </div>
@@ -263,8 +263,8 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
               <Card className="p-4">
                 {isLoading && analysis ? (
                   // Skeleton state for re-analysis
-                  <div className="grid grid-cols-3 gap-4">
-                    {['Versatility', 'Distinctiveness', 'Adaptability'].map((label) => (
+                  <div className="grid grid-cols-4 gap-4">
+                    {['Genre Flex', 'Mood Focus', 'Cultural', 'Era Range'].map((label) => (
                       <div key={label} className="text-center">
                         <Skeleton className="h-8 w-16 mx-auto mb-1" />
                         <p className="text-xs text-muted-foreground mt-1">{label}</p>
@@ -272,24 +272,30 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary">
-                        {formatScore(analysis?.matchability?.versatility_score || 0)}%
+                        {formatScore(analysis?.curation?.target_matching?.genre_flexibility || 0)}%
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Versatility</p>
+                      <p className="text-xs text-muted-foreground mt-1">Genre Flex</p>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary">
-                        {formatScore(analysis?.matchability?.distinctiveness || 0)}%
+                        {formatScore(analysis?.curation?.target_matching?.mood_rigidity || 0)}%
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Distinctiveness</p>
+                      <p className="text-xs text-muted-foreground mt-1">Mood Focus</p>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary">
-                        {formatScore(analysis?.matchability?.adaptability || 0)}%
+                        {formatScore(analysis?.curation?.target_matching?.cultural_specificity || 0)}%
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Adaptability</p>
+                      <p className="text-xs text-muted-foreground mt-1">Cultural</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">
+                        {formatScore(1 - (analysis?.curation?.target_matching?.era_constraints || 0))}%
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Era Range</p>
                     </div>
                   </div>
                 )}

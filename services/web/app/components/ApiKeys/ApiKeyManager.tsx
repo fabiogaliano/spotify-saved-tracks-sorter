@@ -1,4 +1,5 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { apiRoutes } from '~/lib/config/routes';
 import { EyeIcon, EyeOffIcon, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import Anthropic from '~/shared/components/svgs/providers/Anthropic';
 import Google from '~/shared/components/svgs/providers/Google';
@@ -90,7 +91,7 @@ export const ApiKeyManager = forwardRef<ApiKeyManagerHandle, ApiKeyManagerProps>
     formData.append('apiKey', key);
 
     try {
-      const response = await fetch('/api/provider-keys/validate', {
+      const response = await fetch(apiRoutes.llmProvider.validate, {
         method: 'POST',
         body: formData,
       });
@@ -123,7 +124,7 @@ export const ApiKeyManager = forwardRef<ApiKeyManagerHandle, ApiKeyManagerProps>
       saveFormData.append('provider', activeProvider);
       saveFormData.append('apiKey', apiKey);
 
-      const saveResponse = await fetch('/api/llm-provider', {
+      const saveResponse = await fetch(apiRoutes.llmProvider.base, {
         method: 'POST',
         body: saveFormData,
       });
@@ -140,7 +141,7 @@ export const ApiKeyManager = forwardRef<ApiKeyManagerHandle, ApiKeyManagerProps>
           activeFormData.append('provider', activeProvider);
 
           try {
-            const activeResponse = await fetch('/api/llm-provider', {
+            const activeResponse = await fetch(apiRoutes.llmProvider.base, {
               method: 'POST',
               body: activeFormData,
             });

@@ -5,8 +5,8 @@ import type { ProviderInterface } from '~/lib/models/LlmProvider'
 export class GoogleProvider implements ProviderInterface {
   name = 'google'
   private client
-  private activeModel = 'gemini-2.0-flash'
-  private availableModels = ['gemini-2.0-flash']
+  private activeModel = 'gemini-2.5-flash-lite'
+  private availableModels = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
 
   constructor(apiKey: string) {
     this.client = createGoogleGenerativeAI({ apiKey })
@@ -34,7 +34,8 @@ export class GoogleProvider implements ProviderInterface {
     const { text, usage } = await generateText({
       model: this.client(selectedModel),
       prompt,
-      temperature: 0.3,
+      temperature: 0.5,
+      maxTokens: 8192,
     })
     return { text, usage }
   }

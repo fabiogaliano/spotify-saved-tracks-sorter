@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '~/shared/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useSyncPlaylists, useCreatePlaylist } from '../../queries/playlist-queries';
-import CreateAIPlaylistModal from '../modals/CreateAIPlaylistModal';
+import CreateSmartPlaylistModal from '../modals/CreateSmartPlaylistModal';
 
 interface ManagementToolbarProps {
   isSyncing: boolean;
@@ -47,7 +47,7 @@ const ManagementToolbar: React.FC<ManagementToolbarProps> = ({ isSyncing, onPlay
           {syncPlaylistsMutation.isPending ? 'Syncing...' : 'Sync Playlists'}
         </Button>
 
-        <CreateAIPlaylistModal
+        <CreateSmartPlaylistModal
           onCreatePlaylist={handleCreatePlaylist}
           isCreating={createPlaylistMutation.isPending}
         />

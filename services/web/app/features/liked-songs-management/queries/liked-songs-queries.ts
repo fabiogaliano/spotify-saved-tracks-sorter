@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRoutes } from '~/lib/config/routes';
 import { TrackWithAnalysis } from '~/lib/models/Track';
 import { useNotificationStore } from '~/lib/stores/notificationStore';
 
@@ -70,7 +71,7 @@ export function useLikedSongs(initialData?: TrackWithAnalysis[]) {
   return useQuery({
     queryKey: likedSongsKeys.lists(),
     queryFn: async () => {
-      const response = await fetch('/api/liked-songs');
+      const response = await fetch(apiRoutes.likedSongs.base);
       if (!response.ok) {
         throw new Error('Failed to fetch liked songs');
       }
@@ -132,7 +133,7 @@ export function useAnalysisStatus() {
   return useQuery<AnalysisStatusResponse>({
     queryKey: likedSongsKeys.analysisStatus(),
     queryFn: async (): Promise<AnalysisStatusResponse> => {
-      const response = await fetch('/api/analysis/active-job');
+      const response = await fetch(apiRoutes.analysis.activeJob);
       const data = await response.json();
 
       if (!response.ok) {
@@ -179,7 +180,7 @@ export function useSyncLikedSongs() {
   return useMutation({
     mutationFn: async (): Promise<SyncLikedSongsResult> => {
       const syncPromise = async () => {
-        const response = await fetch('/actions/sync-liked-songs', {
+        const response = await fetch(apiRoutes.likedSongs.sync, {
           method: 'POST',
         });
 
@@ -222,7 +223,7 @@ export function useAnalyzeTracks() {
 
   return useMutation({
     mutationFn: async (params: AnalyzeTracksParams): Promise<AnalysisJobResponse> => {
-      const response = await fetch('/actions/analyze-liked-songs', {
+      const response = await fetch(apiRoutes.likedSongs.analyze, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

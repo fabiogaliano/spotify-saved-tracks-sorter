@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useCallback, ReactNode, use
 import { TrackWithAnalysis, UIAnalysisStatus, TrackAnalysis } from '~/lib/models/Track';
 import { useWebSocket } from '~/lib/hooks/useWebSocket';
 import { jobSubscriptionManager, JobStatusUpdate } from '~/lib/services/JobSubscriptionManager';
+import { apiRoutes } from '~/lib/config/routes';
 
 // Define AnalysisJob type for batch job tracking
 export interface AnalysisJob {
@@ -450,7 +451,7 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
     setIsAnalyzing(true);
 
     // Use fetch to send a JSON request instead of form data
-    return fetch('/actions/analyze-liked-songs', {
+    return fetch(apiRoutes.likedSongs.analyze, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
