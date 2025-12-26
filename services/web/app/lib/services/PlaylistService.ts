@@ -375,7 +375,28 @@ export class PlaylistService {
     dbPlaylist: Playlist,
     userId: number
   ): Promise<PlaylistTracksSyncResult> {
-    const spotifyPlaylistTracks = await this.spotifyService.getPlaylistTracks(spotifyPlaylist.id);
+    const rawSpotifyPlaylistTracks = await this.spotifyService.getPlaylistTracks(spotifyPlaylist.id);
+
+    // Filter out:
+    // - null tracks (removed from Spotify)
+    // - tracks with null id (local files, etc.)
+    // - episodes/podcasts (no artists or empty artists array)
+    const validTracks = rawSpotifyPlaylistTracks.filter(t =>
+      t.track != null &&
+      t.track.id != null &&
+      Array.isArray(t.track.artists) &&
+      t.track.artists.length > 0 &&
+      t.track.artists[0]?.name // ensure first artist has a name
+    );
+
+    // Dedupe by spotify_track_id (keep first occurrence)
+    const seenTrackIds = new Set<string>();
+    const spotifyPlaylistTracks = validTracks.filter(t => {
+      if (seenTrackIds.has(t.track.id)) return false;
+      seenTrackIds.add(t.track.id);
+      return true;
+    });
+
     const existingPlaylistTracks = await playlistRepository.getPlaylistTracks(dbPlaylist.id);
     const existingTrackSpotifyIds = new Map(existingPlaylistTracks.map(t => [t.spotify_track_id, t]));
 
@@ -390,25 +411,36 @@ export class PlaylistService {
       }));
 
     if (newPlaylistTrackLinks.length > 0) {
-      // first insert any new tracks into the tracks table
+      // First create track records to insert
       const newTrackRecords = spotifyPlaylistTracks
         .filter(spotifyTrack => !existingTrackSpotifyIds.has(spotifyTrack.track.id))
         .map(spotifyTrack => mapPlaylistTrackToTrackInsert(spotifyTrack.track));
 
-      // then get all track IDs to create playlist-track associations
+      // Insert tracks first (upsert handles duplicates)
+      await trackRepository.insertTracks(newTrackRecords);
+
+      // Now get all track IDs to create playlist-track associations
       const dbTrackRecords = await trackRepository.getTracksBySpotifyIds(
         newTrackRecords.map(track => track.spotify_track_id)
       );
 
-      // create the playlist-track links with proper track IDs
-      const playlistTrackAssociations = newPlaylistTrackLinks.map(linkRecord => ({
-        playlist_id: dbPlaylist.id,
-        track_id: dbTrackRecords.find(dbTrack => dbTrack.spotify_track_id === linkRecord.spotify_track_id)?.id || 0,
-        user_id: userId,
-        added_at: linkRecord.added_at
-      }));
+      // Create the playlist-track links, filtering out any that couldn't be matched
+      const playlistTrackAssociations = newPlaylistTrackLinks
+        .map(linkRecord => {
+          const dbTrack = dbTrackRecords.find(t => t.spotify_track_id === linkRecord.spotify_track_id);
+          if (!dbTrack) return null;
+          return {
+            playlist_id: dbPlaylist.id,
+            track_id: dbTrack.id,
+            user_id: userId,
+            added_at: linkRecord.added_at
+          };
+        })
+        .filter((assoc): assoc is NonNullable<typeof assoc> => assoc !== null);
 
-      await playlistRepository.savePlaylistTracks(playlistTrackAssociations);
+      if (playlistTrackAssociations.length > 0) {
+        await playlistRepository.savePlaylistTracks(playlistTrackAssociations);
+      }
     }
 
     // Remove tracks that are no longer in the playlist

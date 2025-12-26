@@ -115,12 +115,18 @@ export class LlmProviderManager implements ILlmProviderManager {
       const activeModel = model || this.provider.getActiveModel()
       const response = await this.provider.generateText(prompt, activeModel)
       return response
-    } catch (error) {
+    } catch (error: any) {
+      // Extract useful error info instead of dumping entire error object
+      const statusCode = error?.statusCode || error?.status || 500
+      const apiError = error?.data?.error || error?.lastError?.data?.error
+      const message = apiError?.message || error?.message || 'Unknown error'
+      const retryDelay = apiError?.details?.find((d: any) => d.retryDelay)?.retryDelay
+
       throw new logger.AppError(
-        'Failed to generate text',
-        'LLM_PROVIDER_ERROR',
-        500,
-        { cause: error }
+        message,
+        statusCode === 429 ? 'RATE_LIMIT_ERROR' : 'LLM_PROVIDER_ERROR',
+        statusCode,
+        { retryDelay, provider: this.provider?.name }
       )
     }
   }

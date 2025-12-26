@@ -4,6 +4,7 @@ import { Playlist } from '~/lib/models/Playlist';
 import { useNotificationStore } from '~/lib/stores/notificationStore';
 import { toast } from 'sonner';
 import { PLAYLIST_AI_PREFIX } from '~/lib/constants/playlist.constants';
+import { apiRoutes } from '~/lib/config/routes';
 
 // Query keys factory for better organization
 export const playlistKeys = {
@@ -55,7 +56,7 @@ export function usePlaylistTracks(playlistId: string | null) {
       const formData = new FormData();
       formData.append('playlistId', playlistId);
 
-      const response = await fetch('/actions/load-playlist-tracks', {
+      const response = await fetch(apiRoutes.playlists.loadTracks, {
         method: 'POST',
         body: formData,
       });
@@ -89,7 +90,7 @@ export function useCreatePlaylist() {
       formData.append('name', name);
       formData.append('description', description);
 
-      const response = await fetch('/actions/create-ai-playlist', {
+      const response = await fetch(apiRoutes.playlists.create, {
         method: 'POST',
         body: formData,
       });
@@ -126,7 +127,7 @@ export function useSyncPlaylists() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch('/actions/sync-playlists', {
+      const response = await fetch(apiRoutes.playlists.sync, {
         method: 'POST',
       });
 
@@ -182,7 +183,7 @@ export function useSyncPlaylistTracks() {
       const formData = new FormData();
       formData.append('playlistId', playlistId);
 
-      const response = await fetch('/actions/sync-playlist-tracks', {
+      const response = await fetch(apiRoutes.playlists.syncTracks, {
         method: 'POST',
         body: formData,
       });
@@ -249,7 +250,7 @@ export function useUpdatePlaylistInfo() {
           formData.append('is_flagged', smartSortingEnabled.toString());
         }
 
-        const response = await fetch('/actions/update-playlist-description', {
+        const response = await fetch(apiRoutes.playlists.updateDescription, {
           method: 'POST',
           body: formData,
         });
@@ -352,7 +353,7 @@ export function usePrefetchPlaylistTracks() {
         const formData = new FormData();
         formData.append('playlistId', playlistId);
 
-        const response = await fetch('/actions/load-playlist-tracks', {
+        const response = await fetch(apiRoutes.playlists.loadTracks, {
           method: 'POST',
           body: formData,
         });

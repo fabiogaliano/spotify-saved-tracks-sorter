@@ -27,24 +27,45 @@ class SupabaseTrackRepository implements TrackRepository {
   }
 
   async getTracksBySpotifyIds(spotifyTrackIds: string[]): Promise<Track[]> {
-    const { data, error } = await getSupabase()
-      .from('tracks')
-      .select('*')
-      .in('spotify_track_id', spotifyTrackIds)
+    if (spotifyTrackIds.length === 0) return [];
 
-    if (error) throw error
-    return data || []
+    // Batch into chunks of 300 to avoid URI too long errors
+    const BATCH_SIZE = 300;
+    const allTracks: Track[] = [];
+
+    for (let i = 0; i < spotifyTrackIds.length; i += BATCH_SIZE) {
+      const batch = spotifyTrackIds.slice(i, i + BATCH_SIZE);
+      const { data, error } = await getSupabase()
+        .from('tracks')
+        .select('*')
+        .in('spotify_track_id', batch);
+
+      if (error) throw error;
+      if (data) allTracks.push(...data);
+    }
+
+    return allTracks;
   }
 
   async insertTracks(tracks: TrackInsert[]): Promise<Track[]> {
-    const { data, error } = await getSupabase()
-      .from('tracks')
-      .upsert(tracks, { onConflict: 'spotify_track_id' })
-      .select()
+    if (tracks.length === 0) return [];
 
-    if (error) throw error
-    if (!data) throw new Error('Failed to insert tracks')
-    return data
+    // Batch into chunks of 300 to avoid payload size limits
+    const BATCH_SIZE = 300;
+    const allInserted: Track[] = [];
+
+    for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
+      const batch = tracks.slice(i, i + BATCH_SIZE);
+      const { data, error } = await getSupabase()
+        .from('tracks')
+        .upsert(batch, { onConflict: 'spotify_track_id' })
+        .select();
+
+      if (error) throw error;
+      if (data) allInserted.push(...data);
+    }
+
+    return allInserted;
   }
 
   async getSavedTracks(userId: number): Promise<SavedTrackRow[]> {
@@ -84,7 +105,7 @@ class SupabaseTrackRepository implements TrackRepository {
 
   async saveSavedTracks(savedTracks: SavedTrackInsert[]): Promise<SavedTrackRow[]> {
     if (savedTracks.length === 0) return []
-    
+
     // Trust Spotify API filtering - just insert all tracks and return them
     const { data: insertedTracks, error } = await getSupabase()
       .from('saved_tracks')
@@ -103,7 +124,6 @@ class SupabaseTrackRepository implements TrackRepository {
       .order('liked_at', { ascending: false })
 
     if (error) throw error
-    
     return insertedTracks || []
   }
 

@@ -111,6 +111,56 @@ class SavedTrackRepository {
 
     await Promise.all(promises)
   }
+
+  /**
+   * Remove unliked tracks - delete saved_tracks entries by track_id for a user
+   */
+  async removeUnlikedTracks(userId: number, trackIds: number[]): Promise<number> {
+    if (trackIds.length === 0) return 0
+
+    // Batch deletes to avoid URI too long
+    const BATCH_SIZE = 300
+    let totalDeleted = 0
+
+    for (let i = 0; i < trackIds.length; i += BATCH_SIZE) {
+      const batch = trackIds.slice(i, i + BATCH_SIZE)
+      const { error, count } = await getSupabase()
+        .from('saved_tracks')
+        .delete({ count: 'exact' })
+        .eq('user_id', userId)
+        .in('track_id', batch)
+
+      if (error) {
+        console.error('Error removing unliked tracks:', error)
+        throw error
+      }
+      totalDeleted += count || 0
+    }
+
+    return totalDeleted
+  }
+
+  /**
+   * Get all spotify_track_ids for a user's saved tracks
+   */
+  async getSavedTrackSpotifyIds(userId: number): Promise<{ trackId: number; spotifyTrackId: string }[]> {
+    const { data, error } = await getSupabase()
+      .from('saved_tracks')
+      .select('track_id, track:track_id(spotify_track_id)')
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Error fetching saved track spotify IDs:', error)
+      throw error
+    }
+
+    return (data || [])
+      .filter((row: any) => row.track?.spotify_track_id != null)
+      .map((row: any) => ({
+        trackId: row.track_id,
+        spotifyTrackId: row.track.spotify_track_id
+      }))
+  }
 }
 
 export const savedTrackRepository = new SavedTrackRepository() 

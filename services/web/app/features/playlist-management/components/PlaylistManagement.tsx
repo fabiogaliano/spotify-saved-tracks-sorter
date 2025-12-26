@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Sparkles } from 'lucide-react';
 import { Playlist } from '~/lib/models/Playlist';
 import PlaylistDetailsView from './content/PlaylistOverview';
 import TracksList from './content/TracksList';
@@ -23,6 +23,7 @@ import { PlaylistTrackUI } from '../types';
 import { prefetchPlaylistImages } from '../queries/playlist-image-queries';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUpdatePlaylistInfo } from '../queries/playlist-queries';
+import { apiRoutes } from '~/lib/config/routes';
 
 type PlaylistManagementProps = {
   playlists: Playlist[]
@@ -39,7 +40,9 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
   const [hasExistingAnalysis, setHasExistingAnalysis] = useState(false);
 
   const analysisFetcher = useFetcher();
+  const trackAnalysisFetcher = useFetcher();
   const queryClient = useQueryClient();
+  const [isAnalyzingTracks, setIsAnalyzingTracks] = useState(false);
 
   // WebSocket connection
   const wsUrl = `ws://localhost:3001/ws`;
@@ -92,7 +95,7 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
       if (update.status === 'COMPLETED') {
         // Small delay to ensure data is saved
         setTimeout(() => {
-          fetch(`/api/playlist-analysis/${selectedPlaylist}`)
+          fetch(apiRoutes.playlists.analysis(selectedPlaylist!))
             .then(res => res.json())
             .then((data: any) => {
               if (data.success && data.analysis) {
@@ -208,6 +211,32 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
     showInfo('Rescanning playlist tracks...');
   };
 
+  const handleAnalyzePlaylistTracks = () => {
+    if (!rawPlaylistTracks || rawPlaylistTracks.length === 0) {
+      toast.info('No tracks to analyze');
+      return;
+    }
+
+    setIsAnalyzingTracks(true);
+
+    // Format tracks for the API using raw data (has id, name, artist, spotify_track_id)
+    const tracksForAnalysis = rawPlaylistTracks.map((t: any) => ({
+      id: t.id,
+      spotifyTrackId: t.spotify_track_id,
+      artist: t.artist,
+      name: t.name
+    }));
+
+    trackAnalysisFetcher.submit(
+      { tracks: tracksForAnalysis, batchSize: 5 },
+      {
+        method: 'post',
+        action: '/actions/track-analysis',
+        encType: 'application/json'
+      }
+    );
+  };
+
   const handleAnalyzePlaylist = () => {
     if (!selectedPlaylist) return;
 
@@ -221,7 +250,7 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
     // Submit analysis job to queue
     analysisFetcher.submit(
       { playlistId: selectedPlaylist },
-      { method: 'post', action: '/actions/analyze-playlist' }
+      { method: 'post', action: '/actions/playlist-analysis' }
     );
   };
 
@@ -237,7 +266,7 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
     }
 
     try {
-      const response = await fetch(`/api/playlist-analysis/${selectedPlaylist}`);
+      const response = await fetch(apiRoutes.playlists.analysis(selectedPlaylist));
       const data = await response.json();
 
       if (data.success && data.analysis) {
@@ -277,10 +306,23 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
   }, [analysisFetcher.data, analysisFetcher.state]);
 
 
+  // Handle track analysis fetcher response
+  useEffect(() => {
+    if (trackAnalysisFetcher.data && trackAnalysisFetcher.state === 'idle') {
+      const data = trackAnalysisFetcher.data as any;
+      if (data.success) {
+        toast.success(`${data.message || 'Tracks queued for analysis'}`);
+      } else {
+        toast.error(data.error || 'Failed to start track analysis');
+      }
+      setIsAnalyzingTracks(false);
+    }
+  }, [trackAnalysisFetcher.data, trackAnalysisFetcher.state]);
+
   // Check for existing analysis when playlist changes (only for AI-enabled playlists)
   useEffect(() => {
     if (selectedPlaylist && currentPlaylist?.smartSortingEnabled) {
-      fetch(`/api/playlist-analysis/${selectedPlaylist}`)
+      fetch(apiRoutes.playlists.analysis(selectedPlaylist))
         .then(res => res.json())
         .then(data => {
           setHasExistingAnalysis(data.success && data.analysis);
@@ -337,14 +379,25 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
                 playlistTracks={playlistTracks}
                 isLoading={isLoadingTracks}
                 rescanAction={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRescanPlaylist}
-                  >
-                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                    Rescan Playlist
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRescanPlaylist}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                      Rescan Playlist
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAnalyzePlaylistTracks}
+                      disabled={isAnalyzingTracks || !rawPlaylistTracks?.length}
+                    >
+                      <Sparkles className={`h-3.5 w-3.5 mr-1.5 ${isAnalyzingTracks ? 'animate-pulse' : ''}`} />
+                      {isAnalyzingTracks ? 'Analyzing...' : `Analyze Tracks (${rawPlaylistTracks?.length || 0})`}
+                    </Button>
+                  </div>
                 }
               />
             </>

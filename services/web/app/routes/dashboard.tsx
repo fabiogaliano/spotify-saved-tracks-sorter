@@ -1,7 +1,8 @@
 import { ComponentProps, Suspense, useState } from 'react';
+import { apiRoutes } from '~/lib/config/routes';
 import { Await, useLoaderData, useNavigation } from 'react-router';
 import { LikedSongsTable } from '~/features/liked-songs-management/LikedSongsTable';
-import MatchingInterface from '~/components/MatchingInterface';
+import MatchingPage from '~/features/matching/MatchingPage';
 import SettingsTab from '~/components/Settings';
 import { AnalysisStats, LibraryStatus, QuickActions, RecentActivity } from '~/features/dashboard';
 import { DashboardLoaderData, loader } from '~/features/dashboard/dashboard.loader.server';
@@ -10,6 +11,7 @@ import { Header } from '~/shared/components/Header';
 import { Card, CardContent } from '~/shared/components/ui/Card';
 import { LoadingSpinner } from '~/shared/components/ui/LoadingSpinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
 
 export { loader };
 type LoadedTabs = {
@@ -40,6 +42,42 @@ const LoadingFallback = () => (
     <span className="ml-2 text-muted-foreground">Loading data...</span>
   </div>
 );
+
+const MatchingWrapper = ({ userId }: { userId: number }) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['dashboard-matching-data', userId],
+    queryFn: async () => {
+      const response = await fetch(apiRoutes.matching.data(userId.toString()));
+      if (!response.ok) {
+        throw new Error('Failed to fetch matching data');
+      }
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  if (isLoading) {
+    return <LoadingFallback />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-muted-foreground">Failed to load matching data</p>
+          <p className="text-sm text-muted-foreground mt-1">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <MatchingPage 
+      playlists={data?.playlists || []} 
+      tracks={data?.tracks || []} 
+    />
+  );
+};
 
 const Dashboard = () => {
   const { user, likedSongs, playlists } = useLoaderData<DashboardLoaderData>()
@@ -142,11 +180,7 @@ const Dashboard = () => {
 
             <TabsContent value="matching" className="mt-6">
               {loadedTabs.matching && (
-                <Card className="bg-card border-border">
-                  <CardContent className="p-6">
-                    <MatchingInterface />
-                  </CardContent>
-                </Card>
+                <MatchingWrapper userId={user.id} />
               )}
             </TabsContent>
 

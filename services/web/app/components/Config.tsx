@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { apiRoutes } from '~/lib/config/routes'
 import { useLoaderData } from 'react-router';
 import { ProviderKeysManager } from '~/components/ApiKeys/ProviderKeysManager'
 import { ApiKeyNotification } from '~/components/ApiKeys/ApiKeyNotification'
@@ -18,7 +19,7 @@ export function Config() {
 
 	const fetchProviderStatuses = async (userId: string) => {
 		try {
-			const response = await fetch(`/api/provider-keys/statuses?userId=${userId}`)
+			const response = await fetch(`${apiRoutes.llmProvider.statuses}?userId=${userId}`)
 			const data = await response.json()
 			setProviderStatuses(data.providerStatuses)
 			setHasApiKeys(data.providerStatuses.some(status => status.hasKey))

@@ -3,6 +3,7 @@ import { TrackService } from './TrackService'
 import { logger } from '~/lib/logging/Logger'
 import { SYNC_STATUS } from '~/lib/repositories/TrackRepository'
 import { PlaylistService } from './PlaylistService'
+import { savedTrackRepository } from '~/lib/repositories/SavedTrackRepository'
 import type { Playlist, SpotifyPlaylistDTO } from '~/lib/models/Playlist'
 import type { TrackWithAnalysis } from '~/lib/models/Track'
 
@@ -63,31 +64,64 @@ export class SyncService {
   async syncSavedTracks(userId: number): Promise<SyncResult> {
     try {
       await this.trackService.updateSyncStatus(userId, SYNC_STATUS.IN_PROGRESS)
-      const lastSyncTime = await this.trackService.getLastSyncTime(userId)
-      const spotifyTracks = await this.spotifyService.getLikedTracks(lastSyncTime)
-      if (!spotifyTracks.length) {
+
+      // Fetch ALL liked tracks from Spotify (no filter) to enable removal detection
+      const spotifyTracks = await this.spotifyService.getLikedTracks()
+      const spotifyTrackIds = new Set(spotifyTracks.map(t => t.track.id))
+
+      // Get existing saved tracks from DB
+      const dbSavedTracks = await savedTrackRepository.getSavedTrackSpotifyIds(userId)
+      const dbSpotifyIds = new Set(dbSavedTracks.map(t => t.spotifyTrackId))
+
+      // Find tracks to remove (in DB but not in Spotify)
+      const tracksToRemove = dbSavedTracks.filter(t => !spotifyTrackIds.has(t.spotifyTrackId))
+      let removedCount = 0
+      if (tracksToRemove.length > 0) {
+        removedCount = await savedTrackRepository.removeUnlikedTracks(
+          userId,
+          tracksToRemove.map(t => t.trackId)
+        )
+        logger.info('removed unliked tracks', { userId, count: removedCount })
+      }
+
+      // Find new tracks to add (in Spotify but not in DB)
+      const newSpotifyTracks = spotifyTracks.filter(t => !dbSpotifyIds.has(t.track.id))
+
+      if (newSpotifyTracks.length === 0 && removedCount === 0) {
         await this.trackService.updateSyncStatus(userId, SYNC_STATUS.COMPLETED)
         return {
           type: 'tracks',
-          totalProcessed: 0,
+          totalProcessed: spotifyTracks.length,
           newItems: 0,
           success: true,
-          message: 'No new tracks to sync',
+          message: 'Library is up to date',
           newTracks: []
         }
       }
 
-      const { totalProcessed, newTracks, processedTracks } = await this.trackService.processSpotifyTracks(spotifyTracks)
-      const newSavedTracks = await this.trackService.saveSavedTracksForUser(userId, spotifyTracks, processedTracks)
+      // Process and save new tracks
+      let newSavedTracks: TrackWithAnalysis[] = []
+      if (newSpotifyTracks.length > 0) {
+        const { totalProcessed, newTracks, processedTracks } = await this.trackService.processSpotifyTracks(newSpotifyTracks)
+        newSavedTracks = await this.trackService.saveSavedTracksForUser(userId, newSpotifyTracks, processedTracks)
+      }
 
       await this.trackService.updateSyncStatus(userId, SYNC_STATUS.COMPLETED)
 
+      const messages: string[] = []
+      if (newSavedTracks.length > 0) {
+        messages.push(`added ${newSavedTracks.length} new song${newSavedTracks.length === 1 ? '' : 's'}`)
+      }
+      if (removedCount > 0) {
+        messages.push(`removed ${removedCount} unliked song${removedCount === 1 ? '' : 's'}`)
+      }
+
       return {
         type: 'tracks',
-        totalProcessed,
+        totalProcessed: spotifyTracks.length,
         newItems: newSavedTracks.length,
         success: true,
-        message: `Successfully synced ${newSavedTracks.length} new liked song${newSavedTracks.length === 1 ? '' : 's'}`,
+        message: messages.length > 0 ? `Successfully ${messages.join(', ')}` : 'Library is up to date',
         newTracks: newSavedTracks
       }
     } catch (error) {
@@ -268,17 +302,23 @@ export class SyncService {
             syncedTracksCount++;
             await this.playlistService.updatePlaylistTracksStatus(dbPlaylist.id, 'COMPLETED');
           } catch (error) {
-            const errorDetails = {
-              message: error instanceof Error ? error.message : String(error),
-              stack: error instanceof Error ? error.stack : undefined,
-              name: error instanceof Error ? error.name : undefined,
+            // Extract error message safely - handle non-Error objects from Spotify SDK
+            const errorMessage = error instanceof Error
+              ? error.message
+              : (typeof error === 'object' && error !== null && 'message' in error)
+                ? String((error as { message: unknown }).message)
+                : 'Unknown error';
+
+            const errorContext = {
+              errorMessage,
+              errorName: error instanceof Error ? error.name : typeof error,
               playlistName: dbPlaylist.name,
               playlistId: dbPlaylist.id,
               spotifyPlaylistId: dbPlaylist.spotify_playlist_id,
               userId
             };
 
-            logger.error('Playlist track sync failed', error as Error, errorDetails);
+            logger.error('Playlist track sync failed', error instanceof Error ? error : undefined, errorContext);
             await this.playlistService.updatePlaylistTracksStatus(dbPlaylist.id, 'FAILED');
             // Continue with other playlists instead of failing the entire sync
           }
@@ -304,12 +344,15 @@ export class SyncService {
         totalTracksRemoved
       };
 
+      // Log summary only (without individual track names to avoid verbose logs)
       logger.info('sync playlist tracks success', {
         userId,
         syncedPlaylists: syncedTracksCount,
         tracksAdded: totalTracksAdded,
         tracksRemoved: totalTracksRemoved,
-        details: syncDetails
+        playlistsWithChanges: playlistTrackChanges
+          .filter(c => c.addedCount > 0 || c.removedCount > 0)
+          .map(c => ({ id: c.playlistId, name: c.playlistName, added: c.addedCount, removed: c.removedCount }))
       });
 
       // Build a more accurate message

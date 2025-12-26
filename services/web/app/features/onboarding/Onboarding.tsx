@@ -28,7 +28,7 @@ interface InitialSetupProps {
   userId?: number;
 }
 
-const InitialSetup = ({ userId }: InitialSetupProps) => {
+const Onboarding = ({ userId }: InitialSetupProps) => {
   // Setup state
   const [activeStep, setActiveStep] = useState<SetupStep>('welcome');
   const [formData, setFormData] = useState<SetupFormData>({
@@ -288,4 +288,4 @@ const InitialSetup = ({ userId }: InitialSetupProps) => {
   );
 };
 
-export default InitialSetup;
+export default Onboarding;

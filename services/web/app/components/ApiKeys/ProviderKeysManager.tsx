@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Form, useActionData, useNavigation, useSubmit } from 'react-router';
 import { Notification, type NotificationType } from '~/components/common/Notification'
+import { apiRoutes } from '~/lib/config/routes'
 
 type ProviderStatus = {
 	provider: string
@@ -128,7 +129,7 @@ export function ProviderKeysManager({
 		try {
 			setLoading('saving')
 
-			const response = await fetch('/api/llm-provider', {
+			const response = await fetch(apiRoutes.llmProvider.base, {
 				method: 'POST',
 				body: formData,
 			})
@@ -169,7 +170,7 @@ export function ProviderKeysManager({
 					activeFormData.append('action', 'setActiveProvider')
 					activeFormData.append('provider', activeProvider)
 
-					fetch('/api/llm-provider', {
+					fetch(apiRoutes.llmProvider.base, {
 						method: 'POST',
 						body: activeFormData,
 					}).catch(error => {
@@ -220,7 +221,7 @@ export function ProviderKeysManager({
 		try {
 			setLoading('setting')
 
-			const response = await fetch('/api/llm-provider', {
+			const response = await fetch(apiRoutes.llmProvider.base, {
 				method: 'POST',
 				body: formData,
 			})
@@ -277,7 +278,7 @@ export function ProviderKeysManager({
 		try {
 			setLoading('removing')
 
-			const response = await fetch('/api/llm-provider', {
+			const response = await fetch(apiRoutes.llmProvider.base, {
 				method: 'POST',
 				body: formData,
 			})
@@ -329,7 +330,7 @@ export function ProviderKeysManager({
 						formData.append('action', 'setActiveProvider')
 						formData.append('provider', newActiveProvider)
 
-						fetch('/api/llm-provider', {
+						fetch(apiRoutes.llmProvider.base, {
 							method: 'POST',
 							body: formData,
 						})
@@ -395,7 +396,7 @@ export function ProviderKeysManager({
 		formData.append('apiKey', key)
 
 		try {
-			const response = await fetch('/api/provider-keys/validate', {
+			const response = await fetch(apiRoutes.llmProvider.validate, {
 				method: 'POST',
 				body: formData,
 			})
@@ -441,10 +442,9 @@ export function ProviderKeysManager({
 							<div
 								className={`
                   p-3 transition-all border
-                  ${
-										status.hasKey
-											? 'bg-blue-50/50 border-blue-200'
-											: 'bg-muted border-border hover:border-gray-300'
+                  ${status.hasKey
+										? 'bg-blue-50/50 border-blue-200'
+										: 'bg-muted border-border hover:border-gray-300'
 									}
                   ${activeProvider === status.provider ? 'rounded-t-xl' : 'rounded-xl'}
                   cursor-pointer
@@ -634,7 +634,7 @@ export function ProviderKeysManager({
 														}}
 													>
 														{loading === 'removing' &&
-														status.provider === activeProvider ? (
+															status.provider === activeProvider ? (
 															<span className="flex items-center">
 																<svg
 																	className="animate-spin -ml-1 mr-1 h-3 w-3 text-rose-600"
@@ -670,18 +670,17 @@ export function ProviderKeysManager({
 														className={`
                               inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
                               text-foreground bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                              ${
-																navigation.state === 'submitting' ||
+                              ${navigation.state === 'submitting' ||
 																!apiKey.trim() ||
 																loading !== null
-																	? 'opacity-75 cursor-not-allowed'
-																	: ''
+																? 'opacity-75 cursor-not-allowed'
+																: ''
 															}
                             `}
 													>
 														{navigation.state === 'submitting' ||
-														loading === 'saving' ||
-														loading === 'validating' ? (
+															loading === 'saving' ||
+															loading === 'validating' ? (
 															<span className="flex items-center">
 																<svg
 																	className="animate-spin -ml-1 mr-2 h-4 w-4 text-foreground"

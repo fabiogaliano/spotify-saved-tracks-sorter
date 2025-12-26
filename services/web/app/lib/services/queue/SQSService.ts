@@ -1,12 +1,9 @@
 // app/lib/services/queue/SQSService.ts
 import {
   SQSClient,
-  SendMessageCommand,
-  SendMessageCommandInput,
-  ReceiveMessageCommand,
+  SendMessageBatchCommand,
   CreateQueueCommand,
   GetQueueAttributesCommand,
-  DeleteMessageCommand,
   GetQueueUrlCommand
 } from "@aws-sdk/client-sqs";
 import crypto from "crypto";
@@ -26,12 +23,13 @@ export interface AnalysisJobPayload {
   userId: number; // User ID to fetch provider preferences
   batchId: string; // Shared ID for all items in the same batch analysis
   batchSize?: 1 | 5 | 10; // Batch size for parallel processing
-  
+
   // Track-specific fields
+  spotifyTrackId?: string; // Spotify track ID
   trackId?: string; // Your internal DB track ID
   artist?: string;
   title?: string;
-  
+
   // Playlist-specific fields
   playlistId?: string; // Your internal DB playlist ID
   playlistName?: string;
@@ -42,9 +40,8 @@ class SQSService {
   private queueUrl: string | null = null;
 
   constructor() {
-    // Initialize queues when service is created
-    this.setupQueues().catch(error => {
-      console.error('Failed to set up queues:', error);
+    this.setupQueues().catch(() => {
+      // Silently fail - setup will be retried on first use
     });
   }
   private dlqUrl: string | null = null;
@@ -72,7 +69,6 @@ class SQSService {
 
   async setupQueues() {
     try {
-      // Get or create DLQ
       const dlqUrl = await this.getOrCreateQueue('MusicAnalysisDLQ.fifo', {
         FifoQueue: 'true',
         ContentBasedDeduplication: 'true'
@@ -82,7 +78,6 @@ class SQSService {
       }
       this.dlqUrl = dlqUrl;
 
-      // Get DLQ ARN
       const getQueueAttributesCommand = new GetQueueAttributesCommand({
         QueueUrl: this.dlqUrl,
         AttributeNames: ['QueueArn']
@@ -94,7 +89,6 @@ class SQSService {
         throw new Error('Failed to get DLQ ARN');
       }
 
-      // Get or create main queue
       const mainQueueUrl = await this.getOrCreateQueue('MusicAnalysis.fifo', {
         FifoQueue: 'true',
         ContentBasedDeduplication: 'true',
@@ -113,12 +107,8 @@ class SQSService {
         throw new Error('Failed to get/create main queue');
       }
 
-      console.log('Successfully set up queues:', {
-        mainQueueUrl: this.queueUrl,
-        dlqUrl: this.dlqUrl
-      });
     } catch (error) {
-      console.error('Error setting up queues:', error);
+      logger.error('Error setting up queues:', error);
       throw error;
     }
   }
@@ -135,139 +125,69 @@ class SQSService {
     return queueUrl;
   }
 
-  async enqueueAnalysisJob(payload: AnalysisJobPayload) {
+  async enqueueAnalysisJob(payload: Omit<AnalysisJobPayload, 'batchId'>) {
+    const results = await this.enqueueBatchAnalysisJobs([payload]);
+    return results[0];
+  }
+
+  async enqueueBatchAnalysisJobs(payloads: Omit<AnalysisJobPayload, 'batchId'>[]) {
+    if (payloads.length === 0) return [];
+
     const queueUrl = await this.getQueueUrl();
+    const results: any[] = [];
 
-    const params: SendMessageCommandInput = {
-      QueueUrl: queueUrl,
-      MessageBody: JSON.stringify(payload),
-    };
+    const MAX_BATCH_SIZE = 10;
 
-    if (queueUrl.endsWith(".fifo")) {
-      params.MessageGroupId = "song-analysis-group";
-      
-      // Generate deduplication ID based on job type
-      let deduplicationString: string;
-      if (payload.type === 'track') {
-        deduplicationString = `track-${payload.trackId}-${payload.artist}-${payload.title}-${Date.now()}`;
-      } else if (payload.type === 'playlist') {
-        deduplicationString = `playlist-${payload.playlistId}-${Date.now()}`;
-      } else {
-        throw new Error(`Invalid analysis job type: ${payload.type}`);
-      }
-      
-      params.MessageDeduplicationId = crypto
-        .createHash('sha256')
-        .update(deduplicationString)
-        .digest('hex');
-    }
+    for (let i = 0; i < payloads.length; i += MAX_BATCH_SIZE) {
+      const batch = payloads.slice(i, i + MAX_BATCH_SIZE);
+      const entries = batch.map((payload, index) => {
+        const entry: any = {
+          Id: `${i + index}`,
+          MessageBody: JSON.stringify(payload),
+        };
 
-    try {
-      const command = new SendMessageCommand(params);
-      const data = await sqsClient.send(command);
-      logger.info('Successfully added message to SQS queue:', {
-        messageId: data.MessageId,
-        queueUrl,
-        payload
-      });
+        if (queueUrl.endsWith(".fifo")) {
+          entry.MessageGroupId = "song-analysis-group";
 
-      return data;
-    } catch (error) {
-      console.error("Error sending message to SQS:", error);
-      throw error;
-    }
-  }
+          let deduplicationString: string;
+          if (payload.type === 'track') {
+            deduplicationString = `track-${payload.trackId}-${payload.artist}-${payload.title}-${Date.now()}`;
+          } else if (payload.type === 'playlist') {
+            deduplicationString = `playlist-${payload.playlistId}-${Date.now()}`;
+          } else {
+            throw new Error(`Invalid analysis job type: ${payload.type}`);
+          }
 
-  async getDLQMessages() {
-    if (!this.dlqUrl) {
-      throw new Error('DLQ not initialized');
-    }
-
-    const command = new ReceiveMessageCommand({
-      QueueUrl: this.dlqUrl,
-      MaxNumberOfMessages: 10,
-      AttributeNames: ['All'],
-      MessageAttributeNames: ['All'],
-      VisibilityTimeout: 30 // Hide messages for 30 seconds while we process them
-    });
-
-    try {
-      const response = await sqsClient.send(command);
-      return response.Messages || [];
-    } catch (error) {
-      console.error('Error getting DLQ messages:', error);
-      throw error;
-    }
-  }
-
-  async reprocessDLQMessage(messageId: string) {
-    if (!this.dlqUrl || !this.queueUrl) {
-      throw new Error('Queues not initialized');
-    }
-
-    // Get the specific message from DLQ
-    const command = new ReceiveMessageCommand({
-      QueueUrl: this.dlqUrl,
-      MaxNumberOfMessages: 1,
-      VisibilityTimeout: 30,
-      MessageAttributeNames: ['All'],
-      AttributeNames: ['All'],
-      ReceiveRequestAttemptId: messageId
-    });
-
-    try {
-      const response = await sqsClient.send(command);
-      const message = response.Messages?.[0];
-
-      if (!message) {
-        throw new Error('Message not found in DLQ');
-      }
-
-      // Send message back to main queue
-      await this.enqueueAnalysisJob(JSON.parse(message.Body || '{}'));
-
-      // Delete message from DLQ
-      const deleteCommand = new DeleteMessageCommand({
-        QueueUrl: this.dlqUrl,
-        ReceiptHandle: message.ReceiptHandle!
-      });
-
-      await sqsClient.send(deleteCommand);
-      console.log('Successfully reprocessed message:', messageId);
-    } catch (error) {
-      console.error('Error reprocessing DLQ message:', error);
-      throw error;
-    }
-  }
-
-  async isTrackInQueue(trackId: number): Promise<boolean> {
-    try {
-      const queueUrl = await this.getQueueUrl();
-
-      // Get messages from the queue without removing them
-      const command = new ReceiveMessageCommand({
-        QueueUrl: queueUrl,
-        MaxNumberOfMessages: 10,
-        VisibilityTimeout: 0, // Don't hide the messages
-        WaitTimeSeconds: 0, // Don't wait for new messages
-      });
-
-      const response = await sqsClient.send(command);
-      const messages = response.Messages || [];
-
-      // Check if any message contains our trackId
-      return messages.some(message => {
-        try {
-          const payload = JSON.parse(message.Body!) as AnalysisJobPayload;
-          return payload.trackId === String(trackId);
-        } catch {
-          return false;
+          entry.MessageDeduplicationId = crypto
+            .createHash('sha256')
+            .update(deduplicationString)
+            .digest('hex');
         }
+        return entry;
       });
-    } catch (error) {
-      console.error(`Error checking queue for track ${trackId}:`, error);
-      return false; // Assume not in queue on error
+
+      try {
+        const command = new SendMessageBatchCommand({
+          QueueUrl: queueUrl,
+          Entries: entries
+        });
+
+        const result = await sqsClient.send(command);
+
+        if (result.Successful) {
+          results.push(...result.Successful);
+        }
+
+        if (result.Failed?.length) {
+          logger.error(`Failed to enqueue ${result.Failed.length} tracks`);
+        }
+      } catch (error) {
+        logger.error("Error sending to SQS");
+        throw error;
+      }
     }
+
+    return results;
   }
 }
 

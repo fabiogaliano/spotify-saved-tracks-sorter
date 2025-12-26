@@ -1,72 +1,91 @@
-import type { Analysis, Emotional, Meaning, Mood, Playlist, Song, SentimentScore, Context, Theme } from '~/lib/models/Matching'
-import { logger } from '~/lib/logging/Logger'
+/**
+ * Vectorization Service
+ *
+ * Orchestrates text extraction and embedding generation.
+ * TypeScript handles schema knowledge, Python handles ML embedding.
+ */
 
-export interface VectorizationService {
-  vectorizeText(text: string): Promise<number[]>
-  vectorizeSong(song: Song): Promise<number[]>
-  vectorizePlaylist(playlist: Playlist): Promise<number[]>
-  getSentimentScores(text: string): Promise<SentimentScore>
-  extractFeatureVector(embedding: number[], featureType: 'theme' | 'mood' | 'activity' | 'intensity', dimensions?: number): number[]
-  extractThemesText(data: Song | Playlist): string
-  extractMoodText(data: Song | Playlist): string
-  extractActivities(context?: Context): string[]
+import type { Song, Playlist, SentimentScore } from '~/lib/models/Matching'
+import { logger } from '~/lib/logging/Logger'
+import { vectorCache } from './VectorCache'
+import { vectorizationConfig, type ModelType } from '~/lib/config/vectorization'
+import {
+  extractSongText,
+  extractPlaylistText,
+  combineVectorizationText,
+  type VectorizationText,
+} from './analysis-extractors'
+
+/**
+ * Weights for hybrid embedding combination
+ */
+export interface EmbeddingWeights {
+  metadata: number
+  analysis: number
+  context: number
 }
 
-// Default API URL, can be overridden in constructor
-const DEFAULT_API_URL = 'http://localhost:8000'
+const DEFAULT_WEIGHTS: EmbeddingWeights = {
+  metadata: 0.3,
+  analysis: 0.5,
+  context: 0.2,
+}
 
+/**
+ * Service interface for vectorization operations
+ */
+export interface VectorizationService {
+  // High-level methods for domain objects
+  vectorizeSong(song: Song): Promise<number[]>
+  vectorizePlaylist(playlist: Playlist): Promise<number[]>
+
+  // Generic text embedding
+  embed(text: string, model?: ModelType): Promise<number[]>
+  embedBatch(texts: string[], model?: ModelType): Promise<number[][]>
+  embedHybrid(text: VectorizationText, weights?: EmbeddingWeights): Promise<number[]>
+
+  // Sentiment analysis
+  getSentimentScores(text: string): Promise<SentimentScore>
+}
+
+/**
+ * Default implementation using Python vectorization API
+ */
 export class DefaultVectorizationService implements VectorizationService {
-  private apiUrl: string
+  private readonly apiUrl: string
 
-  constructor(apiUrl = DEFAULT_API_URL) {
-    this.apiUrl = apiUrl
+  constructor(apiUrl?: string) {
+    this.apiUrl = apiUrl || vectorizationConfig.apiUrl
   }
 
-  async vectorizeText(text: string): Promise<number[]> {
-    try {
-      logger.debug('Vectorizing text', { textLength: text.length })
-
-      const response = await fetch(`${this.apiUrl}/vectorize/text`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
-      })
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`)
-      }
-
-      const result = await response.json()
-      return result.embedding
-    } catch (error) {
-      throw new logger.AppError(
-        'Failed to vectorize text',
-        'VECTORIZATION_ERROR',
-        500,
-        { cause: error, textLength: text.length }
-      )
-    }
-  }
-
+  /**
+   * Generate embedding for a Song using extraction + hybrid embedding
+   */
   async vectorizeSong(song: Song): Promise<number[]> {
+    const songId = `${song.track.artist}-${song.track.title}`
+
+    // Check cache first
+    const cached = vectorCache.getTrackEmbedding(songId, song.analysis)
+    if (cached) {
+      return cached
+    }
+
     try {
       logger.debug('Vectorizing song', {
         title: song.track.title,
-        artist: song.track.artist
+        artist: song.track.artist,
       })
 
-      const response = await fetch(`${this.apiUrl}/vectorize/song`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analyses: [song] })
-      })
+      // Extract text from song analysis
+      const text = extractSongText(song)
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`)
-      }
+      // Get hybrid embedding
+      const embedding = await this.embedHybrid(text)
 
-      const result = await response.json()
-      return result.results[0].embedding
+      // Cache result
+      vectorCache.setTrackEmbedding(songId, song.analysis, embedding)
+
+      return embedding
     } catch (error) {
       throw new logger.AppError(
         'Failed to vectorize song',
@@ -77,155 +96,172 @@ export class DefaultVectorizationService implements VectorizationService {
     }
   }
 
+  /**
+   * Generate embedding for a Playlist using extraction + hybrid embedding
+   */
   async vectorizePlaylist(playlist: Playlist): Promise<number[]> {
-    try {
-      logger.debug('Vectorizing playlist', { playlistId: playlist.id })
+    const playlistId = String(playlist.id)
 
-      const response = await fetch(`${this.apiUrl}/vectorize/playlist`, {
+    // Check cache first
+    const cached = vectorCache.getPlaylistEmbedding(playlistId, playlist)
+    if (cached) {
+      return cached
+    }
+
+    try {
+      logger.debug('Vectorizing playlist', { playlistId })
+
+      // Extract text from playlist analysis
+      const text = extractPlaylistText(playlist)
+
+      // Get hybrid embedding
+      const embedding = await this.embedHybrid(text)
+
+      // Cache result
+      vectorCache.setPlaylistEmbedding(playlistId, playlist, embedding)
+
+      return embedding
+    } catch (error) {
+      throw new logger.AppError(
+        'Failed to vectorize playlist',
+        'VECTORIZATION_ERROR',
+        500,
+        { cause: error, playlistId }
+      )
+    }
+  }
+
+  /**
+   * Generate embedding for plain text
+   */
+  async embed(text: string, model: ModelType = 'general'): Promise<number[]> {
+    try {
+      logger.debug('Embedding text', { textLength: text.length, model })
+
+      const response = await fetch(`${this.apiUrl}/embed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playlist })
+        body: JSON.stringify({ text, model_type: model }),
       })
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`)
+        throw new Error(`API error: ${response.status} ${response.statusText}`)
       }
 
       const result = await response.json()
       return result.embedding
     } catch (error) {
       throw new logger.AppError(
-        'Failed to vectorize playlist',
+        'Failed to embed text',
         'VECTORIZATION_ERROR',
         500,
-        { cause: error, playlistId: playlist.id }
+        { cause: error, textLength: text.length }
       )
     }
   }
 
-  async getSentimentScores(text: string): Promise<SentimentScore> {
+  /**
+   * Batch embed multiple texts
+   */
+  async embedBatch(texts: string[], model: ModelType = 'general'): Promise<number[][]> {
     try {
-      if (!text || text.trim().length === 0) {
-        return { positive: 0.33, negative: 0.33, neutral: 0.34 }
-      }
+      logger.debug('Batch embedding', { count: texts.length, model })
 
-      logger.debug('Getting sentiment scores', { textLength: text.length })
-
-      const response = await fetch(`${this.apiUrl}/analyze/sentiment`, {
+      const response = await fetch(`${this.apiUrl}/embed/batch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ texts, model_type: model }),
       })
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`)
+        throw new Error(`API error: ${response.status} ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      return result.embeddings
+    } catch (error) {
+      throw new logger.AppError(
+        'Failed to batch embed',
+        'VECTORIZATION_ERROR',
+        500,
+        { cause: error, count: texts.length }
+      )
+    }
+  }
+
+  /**
+   * Generate hybrid embedding from categorized text with weights
+   */
+  async embedHybrid(
+    text: VectorizationText,
+    weights: EmbeddingWeights = DEFAULT_WEIGHTS
+  ): Promise<number[]> {
+    try {
+      logger.debug('Hybrid embedding', {
+        metadataLen: text.metadata.length,
+        analysisLen: text.analysis.length,
+        contextLen: text.context.length,
+      })
+
+      const response = await fetch(`${this.apiUrl}/embed/hybrid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: {
+            metadata: text.metadata,
+            analysis: text.analysis,
+            context: text.context,
+          },
+          weights,
+        }),
+      })
+
+      if (!response.ok) {
+        // Fallback to simple embed if hybrid fails
+        logger.warn('Hybrid embed failed, falling back to simple embed')
+        const combined = combineVectorizationText(text)
+        return this.embed(combined, 'creative')
+      }
+
+      const result = await response.json()
+      return result.embedding
+    } catch (error) {
+      // Fallback to simple embed
+      logger.warn('Hybrid embed error, falling back to simple embed', { error })
+      const combined = combineVectorizationText(text)
+      return this.embed(combined, 'creative')
+    }
+  }
+
+  /**
+   * Analyze sentiment of text
+   */
+  async getSentimentScores(text: string): Promise<SentimentScore> {
+    try {
+      if (!text?.trim()) {
+        return { positive: 0.33, negative: 0.33, neutral: 0.34 }
+      }
+
+      logger.debug('Analyzing sentiment', { textLength: text.length })
+
+      const response = await fetch(`${this.apiUrl}/sentiment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`)
       }
 
       return await response.json()
     } catch (error) {
-      logger.warn('Error getting sentiment scores, returning default', { cause: error })
-      // Return default values instead of failing
+      logger.warn('Sentiment analysis failed, returning defaults', { error })
       return { positive: 0.33, negative: 0.33, neutral: 0.34 }
     }
   }
-
-  extractFeatureVector(
-    embedding: number[],
-    featureType: 'theme' | 'mood' | 'activity' | 'intensity',
-    dimensions?: number
-  ): number[] {
-    if (!embedding || embedding.length === 0) {
-      return []
-    }
-
-    // Determine vector slicing based on feature type
-    const dim = dimensions || Math.floor(embedding.length / 5)
-
-    switch (featureType) {
-      case 'theme':
-        // First segment for themes (concepts, topics)
-        return embedding.slice(0, dim)
-      case 'mood':
-        // Middle segment for emotional content
-        const moodStart = Math.floor(embedding.length * 0.4)
-        return embedding.slice(moodStart, moodStart + dim)
-      case 'activity':
-        // Last segment for activities and contexts
-        return embedding.slice(embedding.length - dim)
-      case 'intensity':
-        // Small segment focused on intensity
-        const intensityStart = Math.floor(embedding.length * 0.7)
-        return embedding.slice(intensityStart, intensityStart + Math.floor(dim / 2))
-      default:
-        return embedding
-    }
-  }
-
-  extractThemesText(data: Song | Playlist): string {
-    const meaning = 'analysis' in data ? data.analysis.meaning : data.meaning
-
-    // Extract theme names and descriptions with confidence weighting
-    const themes = meaning.themes || []
-
-    // Prioritize higher confidence themes
-    const themeTexts = themes.map(t => {
-      const confidence = t.confidence || 0.5
-      const name = t.name || ''
-      const description = t.description || ''
-
-      // Repeat high confidence themes more for emphasis
-      const repetitions = Math.max(1, Math.round(confidence * 3))
-      return Array(repetitions).fill(`${name} ${description}`).join(' ')
-    }).filter(Boolean)
-
-    // Get main message
-    let mainMessage = meaning.main_message || ''
-    if (!mainMessage && meaning.interpretation) {
-      mainMessage = meaning.interpretation.main_message || ''
-    }
-
-    // Combine all theme information
-    return [...themeTexts, mainMessage].join(' ')
-  }
-
-  extractMoodText(data: Song | Playlist): string {
-    const emotional = 'analysis' in data ? data.analysis.emotional : data.emotional
-
-    // Extract mood and description
-    const dominantMood = emotional.dominantMood?.mood || ''
-    const moodDescription = emotional.dominantMood?.description || ''
-
-    // Add intensity descriptor if available
-    const intensity = emotional.intensity_score
-    let intensityText = ''
-
-    if (intensity !== undefined) {
-      if (intensity > 0.8) intensityText = 'very intense'
-      else if (intensity > 0.6) intensityText = 'intense'
-      else if (intensity > 0.4) intensityText = 'moderate'
-      else if (intensity > 0.2) intensityText = 'mild'
-      else intensityText = 'subtle'
-    }
-
-    // Combine mood information
-    return [dominantMood, moodDescription, intensityText].filter(Boolean).join(' ')
-  }
-
-  extractActivities(context?: Context): string[] {
-    if (!context) return []
-
-    const activities: string[] = []
-
-    // Add setting as an activity
-    if (context.primary_setting) {
-      activities.push(context.primary_setting)
-    }
-
-    // Add perfect_for activities
-    if (context.situations?.perfect_for) {
-      activities.push(...context.situations.perfect_for)
-    }
-
-    return activities
-  }
 }
+
+// Re-export extractor functions and types for convenience
+export type { VectorizationText }
+export { extractSongText, extractPlaylistText, combineVectorizationText }

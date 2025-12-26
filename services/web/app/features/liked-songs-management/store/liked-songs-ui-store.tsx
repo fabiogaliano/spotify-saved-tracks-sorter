@@ -7,11 +7,11 @@ interface LikedSongsUIState {
   pageSize: number;
   sortBy: string | null;
   sortOrder: 'asc' | 'desc';
-  
+
   // Modal state
   selectedTrackForModal: number | null;
   isAnalysisModalOpen: boolean;
-  
+
   // Column visibility
   columnVisibility: Record<string, boolean>;
 }
@@ -21,11 +21,11 @@ interface LikedSongsUIContextType extends LikedSongsUIState {
   setCurrentPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setSorting: (column: string | null, order: 'asc' | 'desc') => void;
-  
+
   // Modal actions
   openAnalysisModal: (trackId: number) => void;
   closeAnalysisModal: () => void;
-  
+
   // Column visibility actions
   setColumnVisibility: (visibility: Record<string, boolean>) => void;
   toggleColumn: (columnId: string) => void;
@@ -42,11 +42,11 @@ export const LikedSongsUIProvider: React.FC<{ children: ReactNode }> = ({ childr
   });
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  
+
   // Modal state
   const [selectedTrackForModal, setSelectedTrackForModal] = useState<number | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
-  
+
   // Column visibility
   const [columnVisibility, setColumnVisibilityState] = useState<Record<string, boolean>>(() => {
     if (typeof window === 'undefined') {
@@ -58,7 +58,7 @@ export const LikedSongsUIProvider: React.FC<{ children: ReactNode }> = ({ childr
         analysisStatus: true,
       };
     }
-    
+
     const saved = localStorage.getItem('likedSongs_columnVisibility');
     return saved ? JSON.parse(saved) : {
       select: true,
@@ -68,41 +68,41 @@ export const LikedSongsUIProvider: React.FC<{ children: ReactNode }> = ({ childr
       analysisStatus: true,
     };
   });
-  
+
   // Actions
   const handleSetPageSize = useCallback((size: number) => {
     setPageSize(size);
     setCurrentPage(0); // Reset to first page
     localStorage.setItem('likedSongs_pageSize', size.toString());
   }, []);
-  
+
   const setSorting = useCallback((column: string | null, order: 'asc' | 'desc') => {
     setSortBy(column);
     setSortOrder(order);
   }, []);
-  
+
   const openAnalysisModal = useCallback((trackId: number) => {
     setSelectedTrackForModal(trackId);
     setIsAnalysisModalOpen(true);
   }, []);
-  
+
   const closeAnalysisModal = useCallback(() => {
     setSelectedTrackForModal(null);
     setIsAnalysisModalOpen(false);
   }, []);
-  
+
   const setColumnVisibility = useCallback((visibility: Record<string, boolean>) => {
     setColumnVisibilityState(visibility);
     localStorage.setItem('likedSongs_columnVisibility', JSON.stringify(visibility));
   }, []);
-  
+
   const toggleColumn = useCallback((columnId: string) => {
     setColumnVisibility(prev => ({
       ...prev,
       [columnId]: !prev[columnId],
     }));
   }, [setColumnVisibility]);
-  
+
   const value = {
     // State
     currentPage,
@@ -112,7 +112,7 @@ export const LikedSongsUIProvider: React.FC<{ children: ReactNode }> = ({ childr
     selectedTrackForModal,
     isAnalysisModalOpen,
     columnVisibility,
-    
+
     // Actions
     setCurrentPage,
     setPageSize: handleSetPageSize,
@@ -122,7 +122,7 @@ export const LikedSongsUIProvider: React.FC<{ children: ReactNode }> = ({ childr
     setColumnVisibility,
     toggleColumn,
   };
-  
+
   return (
     <LikedSongsUIContext.Provider value={value}>
       {children}

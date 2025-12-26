@@ -1,52 +1,7 @@
-export interface Theme {
-  name: string;
-  confidence?: number;
-  description: string;
-  related_themes?: string[];
-  connection?: string;
-}
+import type { SongAnalysis, PlaylistAnalysis } from '../services/analysis/analysis-schemas'
 
-export interface Mood {
-  mood: string;
-  description: string;
-}
-
-export interface Context {
-  primary_setting?: string;
-  situations?: {
-    perfect_for?: string[];
-    why?: string;
-  };
-  fit_scores?: {
-    morning?: number;
-    working?: number;
-    relaxation?: number;
-    [key: string]: number | undefined;
-  };
-}
-
-export interface Meaning {
-  themes: Theme[];
-  main_message?: string;
-  interpretation?: {
-    main_message?: string;
-    verified?: string[];
-    derived?: string[];
-  };
-}
-
-export interface Emotional {
-  dominantMood: Mood;
-  progression?: any[];
-  intensity_score?: number;
-}
-
-export interface Analysis {
-  meaning: Meaning;
-  emotional: Emotional;
-  context: Context;
-  matchability?: any;
-}
+// Re-export the analysis types
+export type { SongAnalysis, PlaylistAnalysis }
 
 export interface Track {
   id?: string | number;
@@ -57,21 +12,26 @@ export interface Track {
 }
 
 export interface Song {
+  id: number;  // Internal database ID
+  spotifyTrackId?: string;  // Spotify/ReccoBeats ID
   track: Track;
-  analysis: Analysis;
+  analysis: SongAnalysis;
   timestamp?: string;
 }
 
 export interface Playlist {
   id: string | number;
   name?: string;
+  title?: string;  // Alias used in api.matching.tsx
   description?: string;
   spotify_playlist_id?: string;
   track_ids?: (string | number)[];
-  meaning: Meaning;
-  emotional: Emotional;
-  context: Context;
-  matchability?: any;
+  // Playlist analysis fields (typed from PlaylistAnalysis)
+  meaning?: PlaylistAnalysis['meaning'];
+  emotional?: PlaylistAnalysis['emotional'];
+  context?: PlaylistAnalysis['context'];
+  curation?: PlaylistAnalysis['curation'];
+  matching_profile?: PlaylistAnalysis['matching_profile'];
 }
 
 export interface SentimentScore {

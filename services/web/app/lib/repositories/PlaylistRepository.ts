@@ -121,11 +121,19 @@ class SupabasePlaylistRepository implements IPlaylistRepository {
   }
 
   async savePlaylistTracks(playlistTracks: PlaylistTrackInsert[]): Promise<void> {
-    const { error } = await getSupabase()
-      .from('playlist_tracks')
-      .insert(playlistTracks)
+    if (playlistTracks.length === 0) return;
 
-    if (error) throw error
+    // Batch into chunks of 300 to avoid payload size limits
+    const BATCH_SIZE = 300;
+
+    for (let i = 0; i < playlistTracks.length; i += BATCH_SIZE) {
+      const batch = playlistTracks.slice(i, i + BATCH_SIZE);
+      const { error } = await getSupabase()
+        .from('playlist_tracks')
+        .insert(batch);
+
+      if (error) throw error;
+    }
   }
 
   async getPlaylistTracks(playlistId: number): Promise<Array<{ track_id: number, spotify_track_id: string }>> {

@@ -1,13 +1,14 @@
 import { SpotifyService } from './SpotifyService'
 import { SyncService } from './SyncService'
-import { DefaultSongAnalysisService } from './analysis/SongAnalysisService'
-import { DefaultPlaylistAnalysisService } from './analysis/PlaylistAnalysisService'
+import { SongAnalysisService } from './analysis/SongAnalysisService'
+import { PlaylistAnalysisService } from './analysis/PlaylistAnalysisService'
 import { LlmProviderManager } from './llm/LlmProviderManager'
 import { DefaultLyricsService } from './lyrics/LyricsService'
 import { DefaultVectorizationService } from './vectorization/VectorizationService'
 import { MatchingService } from './matching/MatchingService'
 import { SupabaseMatchRepository } from '~/lib/repositories/MatchRepository'
 import { getAnalysisJobService, AnalysisJobService } from './AnalysisJobService'
+import { SemanticMatcher } from './semantic/SemanticMatcher'
 
 // todo: need to at runtime with user keys
 const googleApiKey = process.env.GOOGLE_API_KEY || ''
@@ -18,10 +19,22 @@ const lyricsService = new DefaultLyricsService({
 })
 const matchRepository = new SupabaseMatchRepository()
 
-const songAnalysisService = new DefaultSongAnalysisService(lyricsService, llmProviderManager)
-const playlistAnalysisService = new DefaultPlaylistAnalysisService(llmProviderManager)
+// Vectorization service (uses env var for API URL)
 const vectorizationService = new DefaultVectorizationService()
-const matchingService = new MatchingService(vectorizationService, matchRepository)
+
+// Semantic matcher for theme/mood/string similarity
+const semanticMatcher = new SemanticMatcher(vectorizationService, {
+  defaultThreshold: 0.65,
+  cacheTtlMs: 60 * 60 * 1000, // 1 hour
+  maxCacheSize: 500,
+})
+
+// Analysis services
+const songAnalysisService = new SongAnalysisService(lyricsService, llmProviderManager)
+const playlistAnalysisService = new PlaylistAnalysisService(llmProviderManager)
+
+// Matching service (uses vectorization and semantic matcher)
+const matchingService = new MatchingService(matchRepository, vectorizationService, semanticMatcher)
 
 // Export all services
 export {
@@ -30,6 +43,7 @@ export {
   songAnalysisService,
   playlistAnalysisService,
   vectorizationService,
+  semanticMatcher,
   matchRepository,
   matchingService,
   SyncService,
@@ -41,8 +55,8 @@ export {
 export type {
   LlmProviderManager,
   DefaultLyricsService as LyricsService,
-  DefaultSongAnalysisService as SongAnalysisService,
-  DefaultPlaylistAnalysisService as PlaylistAnalysisService,
+  SongAnalysisService,
+  PlaylistAnalysisService,
   DefaultVectorizationService as VectorizationService,
   MatchingService,
   AnalysisJobService

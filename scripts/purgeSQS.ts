@@ -1,7 +1,4 @@
 import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand, ListQueuesCommand } from "@aws-sdk/client-sqs";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const sqsClient = new SQSClient({
   region: process.env.AWS_REGION || "us-east-1",
@@ -30,7 +27,7 @@ async function deleteAllMessages(queueUrl: string, options: { logDetails?: boole
 
     const response = await sqsClient.send(receiveCommand);
     const messages = response.Messages || [];
-    
+
     console.log(`Received ${messages.length} messages`);
 
     if (messages.length === 0) {
@@ -43,7 +40,7 @@ async function deleteAllMessages(queueUrl: string, options: { logDetails?: boole
         // Check if message has been retried
         const approximateReceiveCount = message.Attributes?.ApproximateReceiveCount;
         const receiveCount = approximateReceiveCount ? parseInt(approximateReceiveCount, 10) : 0;
-        
+
         // Parse message body to get information about the job
         let body = { trackId: 'unknown', artist: 'unknown', title: 'unknown' };
         try {
@@ -69,7 +66,7 @@ async function deleteAllMessages(queueUrl: string, options: { logDetails?: boole
 
         await sqsClient.send(deleteCommand);
         messagesDeleted++;
-        
+
         // If this was a message that had been received multiple times, it was likely failing
         if (receiveCount > 1) {
           failingMessagesDeleted++;
@@ -98,7 +95,7 @@ async function deleteAllMessages(queueUrl: string, options: { logDetails?: boole
   }
 
   console.log(`Finished deleting ${messagesDeleted} messages (${failingMessagesDeleted} failing)`);
-  
+
   // Show a summary of failed songs if any were found
   if (failedSongs.size > 0) {
     console.log('\nFailed songs:');
@@ -106,7 +103,7 @@ async function deleteAllMessages(queueUrl: string, options: { logDetails?: boole
       console.log(`- ${song}`);
     });
   }
-  
+
   return { messagesDeleted, failingMessagesDeleted, failedSongs: Array.from(failedSongs) };
 }
 
@@ -116,17 +113,17 @@ async function listAllQueues() {
     const command = new ListQueuesCommand({});
     const response = await sqsClient.send(command);
     const queueUrls = response.QueueUrls || [];
-    
+
     if (queueUrls.length === 0) {
       console.log("No queues found in this AWS account/region");
       return [];
     }
-    
+
     console.log(`Found ${queueUrls.length} queues:`);
     queueUrls.forEach((url, index) => {
       console.log(`${index + 1}. ${url}`);
     });
-    
+
     return queueUrls;
   } catch (error) {
     console.error("Error listing queues:", error);
@@ -137,61 +134,61 @@ async function listAllQueues() {
 async function purgeAllQueues() {
   // List all available queues
   const allQueues = await listAllQueues();
-  
+
   if (allQueues.length === 0) {
     console.log("No queues found to purge");
     return;
   }
-  
+
   console.log("\n=== CHECKING ALL QUEUES FOR MESSAGES ===");
-  
+
   // Separate queues into main queues and DLQs
-  const mainQueues = allQueues.filter(url => 
-    !url.includes('DLQ') && 
-    !url.includes('dlq') && 
+  const mainQueues = allQueues.filter(url =>
+    !url.includes('DLQ') &&
+    !url.includes('dlq') &&
     !url.includes('dead-letter')
   );
-  
-  const dlqQueues = allQueues.filter(url => 
-    url.includes('DLQ') || 
-    url.includes('dlq') || 
+
+  const dlqQueues = allQueues.filter(url =>
+    url.includes('DLQ') ||
+    url.includes('dlq') ||
     url.includes('dead-letter')
   );
-  
+
   let totalMessagesDeleted = 0;
   let totalFailingMessagesDeleted = 0;
   let allFailedSongs = new Set<string>();
-  
+
   // Process all main queues
   for (const queueUrl of mainQueues) {
     console.log(`\n=== PROCESSING QUEUE: ${queueUrl} ===`);
     const results = await deleteAllMessages(queueUrl, { logDetails: true });
     totalMessagesDeleted += results.messagesDeleted;
     totalFailingMessagesDeleted += results.failingMessagesDeleted;
-    
+
     // Add any failed songs to our overall set
     if (results.failedSongs && results.failedSongs.length > 0) {
       results.failedSongs.forEach(song => allFailedSongs.add(song));
     }
   }
-  
+
   // Process all DLQs
   for (const queueUrl of dlqQueues) {
     console.log(`\n=== PROCESSING DLQ: ${queueUrl} ===`);
     const results = await deleteAllMessages(queueUrl, { logDetails: true });
     totalMessagesDeleted += results.messagesDeleted;
     totalFailingMessagesDeleted += results.failingMessagesDeleted;
-    
+
     // Add any failed songs to our overall set
     if (results.failedSongs && results.failedSongs.length > 0) {
       results.failedSongs.forEach(song => allFailedSongs.add(song));
     }
   }
-  
+
   console.log("\n=== SUMMARY ===");
   console.log(`Total messages deleted: ${totalMessagesDeleted}`);
   console.log(`Total failing messages deleted: ${totalFailingMessagesDeleted}`);
-  
+
   // Show a summary of all failed songs across all queues
   if (allFailedSongs.size > 0) {
     console.log("\n=== FAILED SONGS ACROSS ALL QUEUES ===");
@@ -201,7 +198,7 @@ async function purgeAllQueues() {
     console.log("\nThese songs have been removed from the queues and will not be retried.");
     console.log("If you want to analyze them again, you'll need to manually trigger analysis.");
   }
-  
+
   if (totalMessagesDeleted === 0) {
     console.log("\nNo messages found in any queue. The problematic message might be in a different system or has already been processed.");
   } else {
@@ -213,39 +210,39 @@ async function purgeAllQueues() {
 async function purgeQueues() {
   // List all available queues
   const allQueues = await listAllQueues();
-  
+
   // Get queue URLs from environment or use defaults
   let mainQueueUrl = process.env.AWS_SQS_QUEUE_URL;
   let dlqUrl = process.env.AWS_SQS_DLQ_URL;
-  
+
   // If no queue URL is provided but we found queues, use the first one that looks like a main queue
   if (!mainQueueUrl && allQueues.length > 0) {
-    const possibleMainQueues = allQueues.filter(url => 
-      !url.includes('DLQ') && 
-      !url.includes('dlq') && 
+    const possibleMainQueues = allQueues.filter(url =>
+      !url.includes('DLQ') &&
+      !url.includes('dlq') &&
       !url.includes('dead-letter')
     );
-    
+
     if (possibleMainQueues.length > 0) {
       mainQueueUrl = possibleMainQueues[0];
       console.log(`No AWS_SQS_QUEUE_URL provided, using discovered queue: ${mainQueueUrl}`);
     }
   }
-  
+
   // If no DLQ URL is provided but we found queues, use the first one that looks like a DLQ
   if (!dlqUrl && allQueues.length > 0) {
-    const possibleDlqs = allQueues.filter(url => 
-      url.includes('DLQ') || 
-      url.includes('dlq') || 
+    const possibleDlqs = allQueues.filter(url =>
+      url.includes('DLQ') ||
+      url.includes('dlq') ||
       url.includes('dead-letter')
     );
-    
+
     if (possibleDlqs.length > 0) {
       dlqUrl = possibleDlqs[0];
       console.log(`No AWS_SQS_DLQ_URL provided, using discovered DLQ: ${dlqUrl}`);
     }
   }
-  
+
   // If we still don't have a DLQ but have a main queue, try to derive it
   if (!dlqUrl && mainQueueUrl) {
     // Try different patterns for deriving DLQ URL
@@ -271,7 +268,7 @@ async function purgeQueues() {
     console.log("\n=== QUEUE CONFIGURATION ===");
     console.log(`Main Queue URL: ${mainQueueUrl}`);
     console.log(`DLQ URL: ${dlqUrl || 'Not configured'}`);
-    
+
     // Process main queue
     console.log("\n=== PROCESSING MAIN QUEUE ===");
     const mainQueueResults = await deleteAllMessages(mainQueueUrl, { logDetails: true });
@@ -280,7 +277,7 @@ async function purgeQueues() {
     if (dlqUrl) {
       console.log("\n=== PROCESSING DEAD LETTER QUEUE ===");
       const dlqResults = await deleteAllMessages(dlqUrl, { logDetails: true });
-      
+
       console.log("\n=== SUMMARY ===");
       console.log(`Main Queue: ${mainQueueResults.messagesDeleted} messages deleted (${mainQueueResults.failingMessagesDeleted} failing)`);
       console.log(`Dead Letter Queue: ${dlqResults.messagesDeleted} messages deleted`);
@@ -290,7 +287,7 @@ async function purgeQueues() {
       console.log(`Main Queue: ${mainQueueResults.messagesDeleted} messages deleted (${mainQueueResults.failingMessagesDeleted} failing)`);
       console.log(`Total: ${mainQueueResults.messagesDeleted} messages deleted`);
     }
-    
+
     console.log("\nQueue purge completed successfully");
     console.log("Note: The SQS service has been configured to only attempt jobs once (MAX_RECEIVE_COUNT = 1)");
   } catch (error) {

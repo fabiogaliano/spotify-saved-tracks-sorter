@@ -2,6 +2,7 @@ import { RefreshCw, Sparkles, Play, Columns } from 'lucide-react';
 import { Button } from '~/shared/components/ui/button';
 import { Checkbox } from '~/shared/components/ui/checkbox';
 import { useEffect, useRef, useState } from 'react';
+import { apiRoutes } from '~/lib/config/routes';
 
 interface AnalysisControlsProps {
   selectedCount: number;
@@ -35,7 +36,7 @@ export const AnalysisControls = ({
   useEffect(() => {
     const loadPreferences = async () => {
       try {
-        const response = await fetch('/api/user-preferences');
+        const response = await fetch(apiRoutes.user.preferences);
         if (response.ok) {
           const data = await response.json();
           if (data.preferences?.batch_size) {

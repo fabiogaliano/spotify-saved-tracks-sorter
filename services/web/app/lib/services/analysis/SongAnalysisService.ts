@@ -1,74 +1,146 @@
-
 import { LyricsService } from '~/lib/models/Lyrics'
-import { SongAnalysisService } from '~/lib/models/SongAnalysis'
+import { SongAnalysisService as ISongAnalysisService } from '~/lib/models/SongAnalysis'
 import type { LlmProviderManager } from '../llm/LlmProviderManager'
+import * as v from 'valibot'
+import { SongAnalysisSchema, type SongAnalysis } from './analysis-schemas'
+import { logger } from '~/lib/logging/Logger'
+import type { TransformedLyricsBySection } from '../lyrics/utils/lyrics-transformer'
+import { AudioFeaturesService } from '~/lib/services/audio/AudioFeaturesService'
+import { createReccoBeatsService } from '~/lib/services/reccobeats/ReccoBeatsService'
+import type { ReccoBeatsAudioFeatures } from '~/lib/services/reccobeats/ReccoBeatsService'
+import { trackRepository } from '~/lib/repositories/TrackRepository'
 
-const MUSIC_ANALYSIS_PROMPT = `Artist: {artist}
+export interface BatchAnalysisOptions {
+  batchSize: 1 | 5 | 10;
+  onProgress?: (completed: number, total: number) => void;
+}
+
+export interface BatchAnalysisResult {
+  trackId: string;
+  artist: string;
+  song: string;
+  success: boolean;
+  analysis?: string;
+  error?: string;
+}
+
+// Streamlined prompt for focused song analysis with audio features
+const ENHANCED_MUSIC_ANALYSIS_PROMPT = `You are an expert music analyst. Analyze this song comprehensively using both lyrics and audio features.
+
+Artist: {artist}
 Title: {title}
 Lyrics and Annotations:
 {lyrics_with_annotations}
 
-Please analyze the following song and provide analysis in this JSON format. Ensure all numerical scores are floating point numbers between 0.0-1.0, where 0.0 represents the lowest possible value and 1.0 represents the highest. Provide detailed reasoning for any score above 0.8 or below 0.2.
+Audio Features:
+{audio_features}
+
+Use the audio features to inform your analysis:
+- High energy/tempo/danceability → higher workout/party/driving scores
+- High valence → positive mood, low valence → melancholic/dark mood
+- High acousticness → organic/intimate, low → electronic/produced
+- Use actual valence and energy values in the emotional section
+
+IMPORTANT STYLE GUIDELINES:
+- Write in direct, present-tense language as an observer
+- Never use phrases like "The song is about..." or "The artist expresses..."
+- Instead use patterns like: "Someone's fighting to...", "We're witnessing...", "Here's a person who..."
+- Make the emotional journey follow the actual song structure (intro, verse 1, chorus, verse 2, etc.)
+- Be specific about which lyrics appear in which sections
+
+Provide analysis in this exact JSON format:
 
 {
   "meaning": {
     "themes": [
       {
-        "name": "Primary Theme",
-        "confidence": 0.0-1.0,
-        "description": "Natural language explanation of this theme and why it matters.",
-        "related_themes": ["related theme 1", "related theme 2"],
-        "connection": "How these themes connect within the song."
+        "name": "Primary theme",
+        "confidence": 0.8-1.0,
+        "description": "What this theme represents and why it matters"
       }
     ],
     "interpretation": {
-      "main_message": "Core message of the song",
-      "verified": ["verified interpretations from annotations"],
-      "derived": ["LLM-derived interpretations"]
+      "surface_meaning": "Direct description of what's happening (e.g., 'Someone's watching their relationship crumble...')",
+      "deeper_meaning": "The underlying dynamics and subtext (e.g., 'There's a power struggle here...')",
+      "cultural_significance": "Why this resonates culturally (if applicable)",
+      "metaphors": [
+        {
+          "text": "The metaphorical line or phrase",
+          "meaning": "What it represents"
+        }
+      ],
+      "key_lines": [
+        {
+          "line": "Most impactful lyric",
+          "significance": "Why this line matters"
+        }
+      ]
     }
   },
   "emotional": {
-    "dominantMood": {
-      "mood": "Primary Mood",
-      "description": "Why this is the dominant mood."
-    },
-    "progression": [
+    "dominant_mood": "happy/sad/angry/anxious/nostalgic/empowered/melancholic/euphoric",
+    "mood_description": "Why this mood dominates and how it's conveyed",
+    "intensity": 0.0-1.0,
+    "valence": 0.0-1.0,
+    "energy": 0.0-1.0,
+    "journey": [
       {
-        "section": "verse/chorus/bridge",
-        "mood": "Specific mood in this section",
-        "intensity": 0.0-1.0,
-        "description": "How this section's mood contributes to the song's journey."
+        "section": "Intro/Verse 1/Pre-Chorus/Chorus/Verse 2/Bridge/Outro (match actual song structure)",
+        "mood": "The emotional state in this section",
+        "description": "What happens emotionally here, referencing specific lyrics"
       }
     ],
-    "intensity_score": 0.0-1.0
+    "emotional_peaks": ["Moments of highest emotional intensity"]
   },
   "context": {
-    "primary_setting": "Most fitting scenario with brief why",
-    "situations": {
-      "perfect_for": ["situations"],
-      "why": "Explanation of why these situations fit."
+    "listening_contexts": {
+      "workout": 0.0-1.0,
+      "party": 0.0-1.0,
+      "relaxation": 0.0-1.0,
+      "focus": 0.0-1.0,
+      "driving": 0.0-1.0,
+      "emotional_release": 0.0-1.0,
+      "cooking": 0.0-1.0,
+      "social_gathering": 0.0-1.0,
+      "morning_routine": 0.0-1.0,
+      "late_night": 0.0-1.0,
+      "romance": 0.0-1.0,
+      "meditation": 0.0-1.0
     },
-    "activities": ["activities"],
-    "temporal": ["temporal contexts"],
-    "social": ["social contexts"],
-    "fit_scores": {
-      "morning": 0.0-1.0,
-      "working": 0.0-1.0,
-      "relaxation": 0.0-1.0
+    "best_moments": ["Perfect situations to play this song"],
+    "audience": {
+      "primary_demographic": "Main audience (if specific)",
+      "universal_appeal": 0.0-1.0,
+      "resonates_with": ["Types of people who connect with this"]
     }
   },
-  "matchability": {
-    "versatility": 0.0-1.0,
+  "musical_style": {
+    "genre_primary": "Main genre",
+    "genre_secondary": "Secondary genre influence",
+    "vocal_style": "rap/singing/spoken/melodic/aggressive/smooth",
+    "production_style": "minimal/lush/electronic/organic/experimental",
+    "sonic_texture": "Description of how the song sounds/feels",
+    "distinctive_elements": ["Unique production or musical elements"]
+  },
+  "matching_profile": {
     "mood_consistency": 0.0-1.0,
-    "uniqueness": 0.0-1.0
+    "energy_flexibility": 0.0-1.0,
+    "theme_cohesion": 0.0-1.0,
+    "sonic_similarity": 0.0-1.0
   }
 }`
 
-export class DefaultSongAnalysisService implements SongAnalysisService {
+export class SongAnalysisService implements ISongAnalysisService {
+  private readonly audioFeaturesService: AudioFeaturesService
+
   constructor(
     private readonly lyricsService: LyricsService,
     private readonly providerManager: LlmProviderManager
-  ) { }
+  ) {
+    // Initialize audio features service
+    const reccoBeatsService = createReccoBeatsService()
+    this.audioFeaturesService = new AudioFeaturesService(reccoBeatsService)
+  }
 
   async fetchSongLyricsAndAnnotations(artist: string, song: string): Promise<string> {
     const lyrics = await this.lyricsService.getLyrics(artist, song)
@@ -76,106 +148,356 @@ export class DefaultSongAnalysisService implements SongAnalysisService {
   }
 
   private extractJsonFromLLMResponse(responseText: string): any {
-    // First try to parse the entire response as JSON
-    try {
-      return JSON.parse(responseText);
-    } catch (parseError) {
-      console.log('Initial JSON parse failed, trying alternative methods');
-    }
+    // Try multiple extraction methods
+    const methods = [
+      // Method 1: Direct JSON parse
+      () => JSON.parse(responseText),
 
-    // Try multiple extraction methods in sequence
-    let extracted = false;
-    let analysisJson: any = null;
-
-    // 1. Try to extract JSON from markdown code blocks
-    if (!extracted) {
-      const jsonMatch = responseText.match(/```(?:json)?([\s\S]*?)```/s);
-      if (jsonMatch && jsonMatch[1]) {
-        const extractedContent = jsonMatch[1].trim();
-        try {
-          analysisJson = JSON.parse(extractedContent);
-          extracted = true;
-          console.log('Successfully extracted JSON from code block');
-        } catch (extractError) {
-          console.error('Failed to parse code block content as JSON');
+      // Method 2: Extract from code blocks
+      () => {
+        const match = responseText.match(/```(?:json)?([\s\S]*?)```/s)
+        if (match?.[1]) {
+          return JSON.parse(match[1].trim())
         }
-      }
-    }
+        throw new Error('No code block found')
+      },
 
-    // 2. Try to find anything that looks like JSON with curly braces
-    if (!extracted) {
-      const possibleJson = responseText.match(/{[\s\S]*}/s);
-      if (possibleJson) {
-        try {
-          analysisJson = JSON.parse(possibleJson[0]);
-          extracted = true;
-          console.log('Successfully extracted JSON from curly braces');
-        } catch (jsonError) {
-          console.error('Failed to parse curly brace content as JSON');
+      // Method 3: Extract from curly braces
+      () => {
+        const match = responseText.match(/{[\s\S]*}/s)
+        if (match) {
+          return JSON.parse(match[0])
         }
-      }
-    }
+        throw new Error('No JSON object found')
+      },
 
-    // 3. Try to clean and fix common JSON issues
-    if (!extracted) {
+      // Method 4: Clean and retry
+      () => {
+        const cleaned = responseText
+          .replace(/\\"([^"]*)\\"/, '"$1"')
+          .replace(/\\\\"([^\\]*?)\\\\"/, '"$1"')
+        const match = cleaned.match(/{[\s\S]*}/s)
+        if (match) {
+          return JSON.parse(match[0])
+        }
+        throw new Error('Cleaning failed')
+      }
+    ]
+
+    for (const method of methods) {
       try {
-        // Replace escaped quotes that might be causing issues
-        let cleanedText = responseText.replace(/\\"([^"]*)\\"/, '"$1"');
-        // Try to extract anything between outermost curly braces
-        const jsonCandidate = cleanedText.match(/{[\s\S]*}/s);
-        if (jsonCandidate) {
-          analysisJson = JSON.parse(jsonCandidate[0]);
-          extracted = true;
-          console.log('Successfully parsed JSON after cleaning');
-        }
-      } catch (cleanError) {
-        console.error('Failed to parse cleaned JSON');
+        const result = method()
+        return result
+      } catch (error) {
+        continue
       }
     }
 
-    // 4. Try to fix double-escaped quotes (common in LLM outputs)
-    if (!extracted) {
-      try {
-        // Replace double-escaped quotes with proper JSON quotes
-        let fixedText = responseText.replace(/\\\\"([^\\]*?)\\\\"/, '"$1"');
-        const fixedJson = fixedText.match(/{[\s\S]*}/s);
-        if (fixedJson) {
-          analysisJson = JSON.parse(fixedJson[0]);
-          extracted = true;
-          console.log('Successfully parsed JSON after fixing double-escaped quotes');
-        }
-      } catch (fixError) {
-        console.error('Failed to parse after fixing double-escaped quotes');
-      }
-    }
-
-    // If all extraction methods fail, throw a detailed error
-    if (!extracted) {
-      console.error('All JSON extraction methods failed. Full response:', responseText);
-      throw new Error('Failed to extract valid JSON from LLM response');
-    }
-
-    return analysisJson;
+    console.error('All JSON extraction methods failed. Response:', responseText.slice(0, 500))
+    throw new Error('Failed to extract valid JSON from LLM response')
   }
 
-  async analyzeSong(artist: string, song: string): Promise<string> {
+  async analyzeSong(artist: string, song: string, trackId?: number): Promise<string> {
     try {
+      // 1. Get lyrics
       const lyrics = await this.lyricsService.getLyrics(artist, song)
-      const filledPrompt = MUSIC_ANALYSIS_PROMPT
+
+      // 2. Get audio features if trackId is provided
+      let audioFeatures: ReccoBeatsAudioFeatures | null = null
+      if (trackId) {
+        const track = await trackRepository.getTrackById(trackId)
+        if (track?.spotify_track_id) {
+          audioFeatures = await this.audioFeaturesService.fetchFeatures(trackId, track.spotify_track_id)
+        }
+      }
+
+      // 3. Format audio features for prompt
+      const audioFeaturesText = audioFeatures ?
+        `Tempo: ${audioFeatures.tempo} BPM
+Energy: ${audioFeatures.energy} (0.0 = low, 1.0 = high)
+Valence: ${audioFeatures.valence} (0.0 = sad/negative, 1.0 = happy/positive)
+Danceability: ${audioFeatures.danceability} (0.0 = not danceable, 1.0 = very danceable)
+Acousticness: ${audioFeatures.acousticness} (0.0 = not acoustic, 1.0 = acoustic)
+Instrumentalness: ${audioFeatures.instrumentalness} (0.0 = vocal, 1.0 = instrumental)
+Liveness: ${audioFeatures.liveness} (0.0 = studio, 1.0 = live performance)
+Speechiness: ${audioFeatures.speechiness} (0.0 = non-speech, 1.0 = speech-like)
+Loudness: ${audioFeatures.loudness} dB` :
+        'Audio features not available - analyze based on lyrics only'
+
+      // 4. Build enhanced prompt
+      const filledPrompt = ENHANCED_MUSIC_ANALYSIS_PROMPT
         .replace('{artist}', artist)
         .replace('{title}', song)
         .replace('{lyrics_with_annotations}', JSON.stringify(lyrics, null, 2))
+        .replace('{audio_features}', audioFeaturesText)
+
       if (!this.providerManager) {
         throw new Error('LLM Provider Manager is not initialized')
       }
 
       const result = await this.providerManager.generateText(filledPrompt)
 
-      const analysisJson = this.extractJsonFromLLMResponse(result.text);
+      const analysisJson = this.extractJsonFromLLMResponse(result.text)
 
-      return JSON.stringify({ model: this.providerManager.getCurrentModel(), analysis: analysisJson })
+      // Validate using valibot schema
+      const validatedAnalysis = this.validateAndParseAnalysis(analysisJson)
+
+      // Attach audio features if available
+      if (audioFeatures) {
+        validatedAnalysis.audio_features = {
+          tempo: audioFeatures.tempo,
+          energy: audioFeatures.energy,
+          valence: audioFeatures.valence,
+          danceability: audioFeatures.danceability,
+          acousticness: audioFeatures.acousticness,
+          instrumentalness: audioFeatures.instrumentalness,
+          liveness: audioFeatures.liveness,
+          speechiness: audioFeatures.speechiness,
+          loudness: audioFeatures.loudness
+        }
+      }
+
+      // Return the standard format expected by workers
+      return JSON.stringify({
+        model: this.providerManager.getCurrentModel(),
+        analysis: validatedAnalysis
+      })
     } catch (error) {
       throw new Error(`Failed to analyze song ${artist} - ${song}: ${error instanceof Error ? error.message : String(error)}`)
     }
+  }
+
+  private validateAndParseAnalysis(analysis: unknown): SongAnalysis {
+    try {
+      // Use valibot to validate and parse the analysis
+      const result = v.safeParse(SongAnalysisSchema, analysis)
+
+      if (result.success) {
+        return result.output
+      } else {
+        // Return the analysis as-is if it has the basic structure
+        // This maintains backward compatibility
+        if (typeof analysis === 'object' && analysis !== null &&
+          'meaning' in analysis && 'emotional' in analysis) {
+          return analysis as SongAnalysis
+        }
+
+        throw new Error('Invalid analysis structure')
+      }
+    } catch (error) {
+      console.error('[SongAnalysis] Validation error:', error)
+      // If validation fails completely, throw to trigger retry
+      throw new Error(`Analysis validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+
+  /**
+   * Optimized batch analysis with parallel lyrics fetching
+   * Fetches all lyrics in parallel before sending to LLM for better performance
+   */
+  async analyzeBatchOptimized(
+    tracks: Array<{ trackId: string; artist: string; song: string }>,
+    options: BatchAnalysisOptions = { batchSize: 5 }
+  ): Promise<BatchAnalysisResult[]> {
+    const results: BatchAnalysisResult[] = [];
+    const { batchSize, onProgress } = options;
+
+    // Process tracks in batches
+    for (let i = 0; i < tracks.length; i += batchSize) {
+      const batch = tracks.slice(i, i + batchSize);
+
+      logger.info(`Processing optimized batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(tracks.length / batchSize)}`, {
+        batchSize: batch.length,
+        startIndex: i
+      });
+
+      const lyricsPromises = batch.map(async (track) => {
+        try {
+          const startTime = Date.now();
+          const lyrics = await this.lyricsService.getLyrics(track.artist, track.song);
+          const duration = Date.now() - startTime;
+
+          logger.info(`Lyrics fetched for: ${track.artist} - ${track.song}`, {
+            trackId: track.trackId,
+            duration
+          });
+
+          return { track, lyrics, success: true };
+        } catch (error) {
+          logger.warn(`Failed to fetch lyrics for ${track.artist} - ${track.song}`, {
+            trackId: track.trackId,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          return {
+            track,
+            lyrics: null,
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch lyrics'
+          };
+        }
+      });
+
+      const lyricsResults = await Promise.all(lyricsPromises);
+
+      // Step 2: Separate successful and failed lyrics fetches
+      const successfulLyrics = lyricsResults.filter(r => r.success && r.lyrics) as Array<{
+        track: typeof tracks[0];
+        lyrics: TransformedLyricsBySection[];
+        success: true;
+      }>;
+      const failedLyrics = lyricsResults.filter(r => !r.success) as Array<{
+        track: typeof tracks[0];
+        lyrics: null;
+        success: false;
+        error: string;
+      }>;
+
+      // Step 3: Analyze successful tracks in parallel using pre-fetched lyrics
+      const analysisPromises = successfulLyrics.map(async ({ track, lyrics }) => {
+        try {
+          const startTime = Date.now();
+
+          // Get audio features for the track using class-level service
+          let audioFeatures: ReccoBeatsAudioFeatures | null = null;
+          try {
+            const trackIdNum = parseInt(track.trackId);
+            const dbTrack = await trackRepository.getTrackById(trackIdNum);
+            if (dbTrack?.spotify_track_id) {
+              audioFeatures = await this.audioFeaturesService.fetchFeatures(trackIdNum, dbTrack.spotify_track_id);
+            }
+          } catch (audioError) {
+            logger.warn(`Failed to fetch audio features for ${track.artist} - ${track.song}`, { error: audioError });
+          }
+
+          // Build the prompt with pre-fetched lyrics and audio features
+          const filledPrompt = this.buildAnalysisPrompt(track.artist, track.song, lyrics, audioFeatures);
+
+          // Send to LLM
+          const result = await this.providerManager.generateText(filledPrompt);
+          const analysisJson = this.extractJsonFromLLMResponse(result.text);
+
+          const duration = Date.now() - startTime;
+          logger.info(`Analysis completed for track: ${track.artist} - ${track.song}`, {
+            trackId: track.trackId,
+            duration
+          });
+
+          return {
+            trackId: track.trackId,
+            artist: track.artist,
+            song: track.song,
+            success: true,
+            analysis: JSON.stringify({
+              model: this.providerManager.getCurrentModel(),
+              analysis: analysisJson
+            })
+          };
+        } catch (error) {
+          logger.error(`Analysis failed for track: ${track.artist} - ${track.song}`, {
+            trackId: track.trackId,
+            error: error instanceof Error ? error.message : String(error)
+          });
+
+          return {
+            trackId: track.trackId,
+            artist: track.artist,
+            song: track.song,
+            success: false,
+            error: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          };
+        }
+      });
+
+      const analysisResults = await Promise.all(analysisPromises);
+
+      // Step 4: Add failed lyrics fetches to results
+      failedLyrics.forEach(({ track, error }) => {
+        results.push({
+          trackId: track.trackId,
+          artist: track.artist,
+          song: track.song,
+          success: false,
+          error: `Lyrics fetch failed: ${error}`
+        });
+      });
+
+      // Add analysis results (both successful and failed)
+      results.push(...analysisResults);
+
+      // Report progress
+      if (onProgress) {
+        onProgress(results.length, tracks.length);
+      }
+
+      // Add small delay between batches to avoid rate limits
+      if (i + batchSize < tracks.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Analyze tracks with automatic retry for failures
+   */
+  async analyzeBatchWithRetry(
+    tracks: Array<{ trackId: string; artist: string; song: string }>,
+    options: BatchAnalysisOptions & { maxRetries?: number } = { batchSize: 5, maxRetries: 1 }
+  ): Promise<BatchAnalysisResult[]> {
+    const { maxRetries = 1, ...batchOptions } = options;
+
+    // First pass - use optimized method
+    let results = await this.analyzeBatchOptimized(tracks, batchOptions);
+
+    // Retry failures
+    let retryCount = 0;
+    while (retryCount < maxRetries) {
+      const failures = results.filter(r => !r.success);
+      if (failures.length === 0) break;
+
+      logger.info(`Retrying ${failures.length} failed tracks (attempt ${retryCount + 1}/${maxRetries})`);
+
+      const retryTracks = failures.map(f => ({
+        trackId: f.trackId,
+        artist: f.artist,
+        song: f.song
+      }));
+
+      // Retry with smaller batch size for failures
+      const retryResults = await this.analyzeBatchOptimized(retryTracks, {
+        ...batchOptions,
+        batchSize: Math.min(batchOptions.batchSize, 3) as 1 | 5 | 10
+      });
+
+      // Update results with retry outcomes
+      results = results.map(original => {
+        const retryResult = retryResults.find(r => r.trackId === original.trackId);
+        return retryResult || original;
+      });
+
+      retryCount++;
+    }
+
+    return results;
+  }
+
+  /**
+   * Build the analysis prompt with lyrics and audio features
+   */
+  private buildAnalysisPrompt(
+    artist: string,
+    song: string,
+    lyrics: TransformedLyricsBySection[],
+    audioFeatures: ReccoBeatsAudioFeatures | null
+  ): string {
+    const audioFeaturesStr = audioFeatures ? JSON.stringify(audioFeatures, null, 2) : 'No audio features available';
+
+    return ENHANCED_MUSIC_ANALYSIS_PROMPT
+      .replace('{artist}', artist)
+      .replace('{title}', song)
+      .replace('{lyrics_with_annotations}', JSON.stringify(lyrics, null, 2))
+      .replace('{audio_features}', audioFeaturesStr);
   }
 }

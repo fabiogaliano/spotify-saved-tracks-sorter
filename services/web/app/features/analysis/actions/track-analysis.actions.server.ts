@@ -29,6 +29,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
       const jobPayload: Omit<AnalysisJobPayload, 'batchId'> = {
+        type: 'track',
         trackId,
         artist,
         title: name,

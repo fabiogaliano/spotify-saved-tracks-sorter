@@ -1,4 +1,5 @@
 import { LoaderFunctionArgs } from 'react-router';
+import { requireUserSession } from '~/features/auth/auth.utils'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
 import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisRepository'
@@ -43,42 +44,47 @@ interface DbSavedTrack {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    const userId = 1 // Replace with actual user ID from session
+    const session = await requireUserSession(request)
+    const userId = session.userId
 
-    // Get playlist analyses using the repository
-    const playlistsWithAnalysis = await playlistAnalysisRepository.getAnalysesByUserId(userId)
+    console.log(`[Matching Loader] Loading data for user ${userId}`)
 
-    if (!playlistsWithAnalysis || playlistsWithAnalysis.length === 0) {
-      return {
-        playlists: [] as AnalyzedPlaylist[],
-        tracks: [] as AnalyzedTrack[]
-      }
-    }
-
-    // Get playlist details for all playlists with analyses
-    const playlistIds = playlistsWithAnalysis.map(pa => pa.playlist_id)
+    // Get ALL flagged playlists for the user (not just analyzed ones)
+    const flaggedPlaylists = await playlistRepository.getFlaggedPlaylists(userId)
+    console.log(`[Matching Loader] Found ${flaggedPlaylists?.length || 0} flagged playlists`)
 
     let playlists: AnalyzedPlaylist[] = []
 
-    if (playlistIds.length > 0) {
-      // Use the repository to get playlists
-      const fetchedPlaylists = await playlistRepository.getPlaylistsByIds(playlistIds)
-
-      // Combine playlists with their analyses
-      playlists = fetchedPlaylists.map(playlist => {
-        const analysisRecord = playlistsWithAnalysis.find(pa => pa.playlist_id === playlist.id)
-        return {
-          ...playlist,
-          description: playlist.description || undefined, // Convert null to undefined to match AnalyzedPlaylist type
-          analysis: analysisRecord?.analysis || null
-        } as AnalyzedPlaylist
-      })
+    if (flaggedPlaylists && flaggedPlaylists.length > 0) {
+      // Get analyses for flagged playlists (one by one to avoid Promise.all issues)
+      playlists = []
+      for (const playlist of flaggedPlaylists) {
+        try {
+          const analysis = await playlistAnalysisRepository.getAnalysisByPlaylistId(playlist.id)
+          playlists.push({
+            ...playlist,
+            description: playlist.description || undefined,
+            analysis: analysis?.analysis || null
+          } as AnalyzedPlaylist)
+        } catch (analysisError) {
+          console.warn(`[Matching Loader] Failed to get analysis for playlist ${playlist.id}:`, analysisError)
+          // Still include the playlist without analysis
+          playlists.push({
+            ...playlist,
+            description: playlist.description || undefined,
+            analysis: null
+          } as AnalyzedPlaylist)
+        }
+      }
+      console.log(`[Matching Loader] Found ${playlists.length} flagged playlists (${playlists.filter(p => p.analysis).length} with analysis)`)
     }
 
     // Get all saved tracks for the user using the repository
     const savedTracks = await savedTrackRepository.getSavedTracksByUserId(userId)
+    console.log(`[Matching Loader] Found ${savedTracks?.length || 0} saved tracks`)
 
     if (!savedTracks || savedTracks.length === 0) {
+      console.log(`[Matching Loader] No saved tracks found for user ${userId}`)
       return { playlists, tracks: [] as AnalyzedTrack[] }
     }
 
@@ -87,8 +93,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     // Get track details using the repository
     const trackDetails = await trackRepository.getTracksByIds(trackIds)
+    console.log(`[Matching Loader] Found ${trackDetails?.length || 0} track details`)
 
     if (!trackDetails || trackDetails.length === 0) {
+      console.log(`[Matching Loader] No track details found`)
       return { playlists, tracks: [] as AnalyzedTrack[] }
     }
 
@@ -103,23 +111,34 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       }
     })
 
-    // Get the track analyses using repository
-    const trackAnalyses = await trackAnalysisRepository.getAllAnalyses()
+    const validTrackAnalyses: any[] = []
 
-    // Filter analyses to only include those for our tracks
-    const relevantAnalyses = trackAnalyses.filter(analysis =>
-      trackIds.includes(analysis.track_id)
-    )
+    for (const trackId of trackIds) {
+      try {
+        const analysis = await trackAnalysisRepository.getByTrackId(trackId)
+        if (analysis) {
+          validTrackAnalyses.push(analysis)
+        }
+      } catch (trackAnalysisError) {
+        console.warn(`[Matching Loader] Failed to get analysis for track ${trackId}:`, trackAnalysisError)
+      }
+    }
 
-    // Combine tracks with their analyses
-    const tracksWithAnalyses: AnalyzedTrack[] = tracksWithSavedInfo.map(track => {
-      const analysis = relevantAnalyses.find(a => a.track_id === track.id)
-      return {
-        ...track,
-        album: track.album || undefined, // Convert null to undefined to match AnalyzedTrack
-        analysis: analysis?.analysis || null
-      } as AnalyzedTrack
-    }).filter(track => track.analysis !== null)
+
+    const tracksWithAnalyses: AnalyzedTrack[] = tracksWithSavedInfo
+      .map(track => {
+        const analysis = validTrackAnalyses.find(a => a?.track_id === track.id)
+        return {
+          ...track,
+          album: track.album || undefined, // Convert null to undefined to match AnalyzedTrack
+          analysis: analysis?.analysis || null
+        } as AnalyzedTrack
+      })
+      .filter(track => track.analysis !== null) // Only include tracks with valid analysis
+
+    console.log(`[Matching Loader] Final result: ${playlists.length} playlists, ${tracksWithAnalyses.length} tracks`)
+    console.log(`[Matching Loader] Playlists:`, playlists.map(p => ({ id: p.id, name: p.name, hasAnalysis: !!p.analysis })))
+    console.log(`[Matching Loader] Tracks:`, tracksWithAnalyses.map(t => ({ id: t.id, name: t.name, hasAnalysis: !!t.analysis })))
 
     return {
       playlists,
@@ -127,6 +146,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
   } catch (error) {
     console.error('Error in matching loader:', error)
+    // Return empty data on error to show the "no data" message
     return {
       playlists: [] as AnalyzedPlaylist[],
       tracks: [] as AnalyzedTrack[]

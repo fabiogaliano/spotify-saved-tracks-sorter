@@ -4,8 +4,9 @@ export interface PlaylistAnalysisResult {
 }
 
 export interface PlaylistAnalysisService {
-	analyzePlaylistWithPrompt(
+	analyzePlaylist(
 		playlistName: string,
-		playlistDescription: string
-	): Promise<{ model: string; analysisJson: any }>
+		playlistDescription: string,
+		tracks: Array<{ name: string; artist: string }>
+	): Promise<string>
 }

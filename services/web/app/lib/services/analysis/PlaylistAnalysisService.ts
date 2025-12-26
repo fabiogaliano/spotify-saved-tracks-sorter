@@ -1,136 +1,282 @@
-import type {
-  PlaylistAnalysisService,
-  LlmProviderManager
-} from '~/lib/services'
-import { logger } from '~/lib/logging/Logger'
+import { PlaylistAnalysisService as IPlaylistAnalysisService } from '~/lib/models/PlaylistAnalysis'
+import type { LlmProviderManager } from '../llm/LlmProviderManager'
+import * as v from 'valibot'
+import { PlaylistAnalysisSchema, type PlaylistAnalysis } from './analysis-schemas'
 
-const PLAYLIST_ANALYSIS_PROMPT = `You are a music analysis AI. Analyze the following playlist and return ONLY a valid JSON response with no additional text or explanation.
+// Enhanced playlist analysis prompt that captures cultural themes and cohesion
+const ENHANCED_PLAYLIST_ANALYSIS_PROMPT = `You are an expert music curator. Analyze this playlist to understand its purpose and cohesive elements. Only identify cultural significance when it's explicitly present and central to the playlist's theme.
 
 Playlist Name: {playlist_name}
 Description: {playlist_description}
+Track Count: {track_count}
 
-Analyze this playlist and provide:
-1. The main themes, moods, and emotions of the playlist.
-2. The ideal listening scenarios and contexts.
-3. A detailed emotional analysis, focusing on the dominant mood.
-4. The adaptability of this playlist to different settings.
+Songs in playlist:
+{track_list}
 
-Return ONLY the following JSON structure (no markdown, no code blocks, just the JSON object):
+Analyze this playlist with focus on:
+1. Thematic consistency - what messages and themes tie these songs together
+2. Emotional journey - how the playlist flows emotionally
+3. Target audience - who would enjoy this playlist
+4. Purpose and context - when/where/why someone would listen
+5. Only note cultural or political themes if they are explicit and central
+
+IMPORTANT: For all numeric scores, provide a decimal number between 0.0 and 1.0 (e.g., 0.75, 0.3, 0.95). Do NOT use strings or descriptions for numeric fields.
+
+Provide analysis in this JSON format:
+
 {
   "meaning": {
-    "themes": [
+    "playlist_purpose": "Why this playlist exists - entertainment/activism/nostalgia/etc",
+    "core_themes": [
       {
-        "name": "primary theme",
-        "confidence": 0.0-1.0,
-        "description": "Explanation of the theme.",
-        "related_themes": ["related themes"],
-        "connection": "How these themes link together."
+        "name": "Theme name",
+        "confidence": 0.85,
+        "description": "How this theme manifests across songs",
+        "cultural_significance": "Broader cultural meaning",
+        "supporting_tracks": ["track 1", "track 2"]
       }
     ],
-    "main_message": "Core vibe of the playlist"
+    "cultural_identity": {
+      "primary_community": "Who does this playlist speak to?",
+      "generational_markers": [],
+      "social_movements": [],
+      "historical_context": "",
+      "geographic_culture": "Regional/national cultural elements"
+    },
+    "main_message": "The overarching message or feeling this playlist conveys",
+    "contradiction_analysis": {
+      "internal_conflicts": ["Any conflicting themes"],
+      "resolution": "How contradictions are resolved"
+    }
   },
   "emotional": {
     "dominantMood": {
-      "mood": "primary mood",
-      "description": "Why this is the dominant mood"
+      "mood": "Overall emotional tone",
+      "description": "Why this mood dominates the playlist",
+      "consistency": 0.8
     },
-    "intensity_score": 0.0-1.0
+    "emotional_arc": {
+      "opening_mood": "How the playlist starts emotionally",
+      "peak_moments": ["Track 3 - emotional high point", "Track 7 - climax"],
+      "resolution": "How the playlist emotionally concludes",
+      "journey_type": "ascending/descending/cyclical/plateau"
+    },
+    "intensity_score": 0.7,
+    "emotional_range": 0.6,
+    "catharsis_potential": 0.75
   },
   "context": {
-    "primary_setting": "Most fitting scenario",
-    "situations": {
-      "perfect_for": ["situations"],
-      "why": "Why these situations fit"
+    "primary_setting": "Where is this playlist meant to be heard?",
+    "social_context": {
+      "alone_vs_group": 0.3,
+      "intimate_vs_public": 0.4,
+      "active_vs_passive": 0.6
     },
-    "fit_scores": {
-      "morning": 0.0-1.0,
-      "working": 0.0-1.0,
-      "relaxation": 0.0-1.0
+    "situations": {
+      "perfect_for": ["Situation 1", "Situation 2"],
+      "avoid_during": ["Situation to avoid"],
+      "why": "Explanation of situational fit"
+    },
+    "temporal_context": {
+      "time_of_day": ["morning", "evening"],
+      "season": ["summer", "fall"],
+      "life_moments": ["relaxation", "reflection"]
+    },
+    "listening_experience": {
+      "attention_level": "background/focused/immersive",
+      "interaction_style": "sing-along/dance/reflect/work",
+      "repeat_potential": 0.8
     }
   },
-  "matchability": {
-    "versatility_score": 0.0-1.0,
-    "distinctiveness": 0.0-1.0,
-    "adaptability": 0.0-1.0
+  "curation": {
+    "cohesion_factors": [
+      "Factor 1 that ties songs together",
+      "Factor 2",
+      "Factor 3"
+    ],
+    "flow_analysis": {
+      "transition_quality": 0.75,
+      "pacing": "How the energy/tempo flows",
+      "narrative_structure": "How the playlist tells a story"
+    },
+    "target_matching": {
+      "genre_flexibility": 0.6,
+      "mood_rigidity": 0.7,
+      "cultural_specificity": 0.4,
+      "era_constraints": 0.3
+    },
+    "expansion_guidelines": {
+      "must_have_elements": ["Essential quality 1", "Essential quality 2"],
+      "deal_breakers": ["Deal breaker 1"],
+      "growth_potential": ["Growth direction 1", "Growth direction 2"]
+    }
+  },
+  "matching_profile": {
+    "similarity_priorities": [
+      "Most important factor",
+      "Secondary consideration",
+      "Nice-to-have element"
+    ],
+    "exclusion_criteria": [
+      "Type that would never fit",
+      "Mood that would clash"
+    ],
+    "ideal_additions": [
+      "Song archetype 1",
+      "Song archetype 2"
+    ]
   }
 }`
 
-export class DefaultPlaylistAnalysisService implements PlaylistAnalysisService {
-  constructor(private readonly llmProviderManager: LlmProviderManager) { }
+export class PlaylistAnalysisService implements IPlaylistAnalysisService {
+  constructor(
+    private readonly providerManager: LlmProviderManager
+  ) { }
 
-  async analyzePlaylistWithPrompt(
-    playlistName: string,
-    playlistDescription: string
-  ): Promise<{ model: string; analysisJson: any }> {
-    try {
-      const filledPrompt = PLAYLIST_ANALYSIS_PROMPT.replace(
-        '{playlist_name}',
-        playlistName
-      ).replace(
-        '{playlist_description}',
-        playlistDescription || 'No description provided'
-      )
-
-      const result = await this.llmProviderManager.generateText(filledPrompt)
-
-      if (!result) {
-        throw new Error('Failed to generate analysis: No response from LLM provider')
+  private extractJsonFromLLMResponse(responseText: string): any {
+    const methods = [
+      () => JSON.parse(responseText),
+      () => {
+        const match = responseText.match(/```(?:json)?([\s\S]*?)```/s)
+        if (match?.[1]) return JSON.parse(match[1].trim())
+        throw new Error('No code block')
+      },
+      () => {
+        const match = responseText.match(/{[\s\S]*}/s)
+        if (match) return JSON.parse(match[0])
+        throw new Error('No JSON object')
       }
+    ]
 
-      let analysisJson
+    for (const method of methods) {
       try {
-        analysisJson = JSON.parse(result.text)
-      } catch (parseError) {
-        // Try to extract JSON from code blocks
-        const jsonMatch = result.text.match(/```(?:json)?(\n|\r\n|\r)?(.*?)```/s)
-        if (jsonMatch && jsonMatch[2]) {
-          try {
-            analysisJson = JSON.parse(jsonMatch[2].trim())
-          } catch (extractError) {
-            // Try to find JSON object in the text
-            const jsonObjectMatch = result.text.match(/\{[\s\S]*\}/)
-            if (jsonObjectMatch) {
-              try {
-                analysisJson = JSON.parse(jsonObjectMatch[0])
-              } catch (e) {
-                logger.error('Failed to parse JSON from text', { text: result.text })
-                throw new Error('Failed to parse extracted content as JSON')
-              }
-            } else {
-              throw new Error('Failed to parse extracted content as JSON')
-            }
-          }
-        } else {
-          // Try to find JSON object in the text
-          const jsonObjectMatch = result.text.match(/\{[\s\S]*\}/)
-          if (jsonObjectMatch) {
-            try {
-              analysisJson = JSON.parse(jsonObjectMatch[0])
-            } catch (e) {
-              logger.error('Failed to parse JSON from text', { text: result.text })
-              throw new Error('Failed to parse analysis result as JSON - no valid JSON found')
-            }
-          } else {
-            logger.error('No JSON found in LLM response', { text: result.text })
-            throw new Error('Failed to parse analysis result as JSON - no JSON object found')
-          }
-        }
+        return method()
+      } catch (error) {
+        continue
+      }
+    }
+
+    console.error('JSON extraction failed. Response:', responseText.slice(0, 500))
+    throw new Error('Failed to extract valid JSON from LLM response')
+  }
+
+  async analyzePlaylist(
+    playlistName: string,
+    playlistDescription: string,
+    tracks: Array<{ name: string; artist: string }>
+  ): Promise<string> {
+    try {
+      const trackList = tracks.length > 0
+        ? tracks.map((track, index) =>
+          `${index + 1}. "${track.name}" by ${track.artist}`
+        ).join('\n')
+        : 'No tracks provided - analyzing based on playlist name and description only'
+
+      const filledPrompt = ENHANCED_PLAYLIST_ANALYSIS_PROMPT
+        .replace('{playlist_name}', playlistName)
+        .replace('{playlist_description}', playlistDescription)
+        .replace('{track_count}', tracks.length.toString())
+        .replace('{track_list}', trackList)
+
+      if (!this.providerManager) {
+        throw new Error('LLM Provider Manager is not initialized')
       }
 
-      return {
-        model: this.llmProviderManager.getCurrentModel(),
-        analysisJson,
+      console.log(`[PlaylistAnalysis] Analyzing playlist: ${playlistName}`)
+      const result = await this.providerManager.generateText(filledPrompt)
+
+      const analysisJson = this.extractJsonFromLLMResponse(result.text)
+
+      // Validate using valibot schema
+      const validatedAnalysis = this.validateAndParseAnalysis(analysisJson)
+
+      // Return the standard format expected by workers
+      return JSON.stringify({
+        model: this.providerManager.getCurrentModel(),
+        analysis: validatedAnalysis
+      })
+    } catch (error) {
+      throw new Error(`Failed to analyze playlist ${playlistName}: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
+   * Coerce LLM output to match expected schema types.
+   * LLMs sometimes return strings instead of arrays or numbers.
+   */
+  private coerceLlmOutput(obj: unknown): unknown {
+    if (obj === null || obj === undefined) return obj
+    if (Array.isArray(obj)) return obj.map(item => this.coerceLlmOutput(item))
+    if (typeof obj !== 'object') return obj
+
+    const result: Record<string, unknown> = {}
+    const record = obj as Record<string, unknown>
+
+    // Fields that should be arrays of strings
+    const arrayFields = new Set([
+      'generational_markers', 'social_movements', 'peak_moments',
+      'perfect_for', 'avoid_during', 'time_of_day', 'season', 'life_moments',
+      'cohesion_factors', 'must_have_elements', 'deal_breakers', 'growth_potential',
+      'similarity_priorities', 'exclusion_criteria', 'ideal_additions',
+      'internal_conflicts', 'supporting_tracks'
+    ])
+
+    // Fields that should be numbers (0.0 to 1.0 scores)
+    const numberFields = new Set([
+      'confidence', 'consistency', 'intensity_score', 'emotional_range',
+      'catharsis_potential', 'alone_vs_group', 'intimate_vs_public',
+      'active_vs_passive', 'repeat_potential', 'transition_quality',
+      'genre_flexibility', 'mood_rigidity', 'cultural_specificity',
+      'era_constraints', 'universal_appeal', 'mood_consistency',
+      'energy_flexibility', 'theme_cohesion', 'sonic_similarity'
+    ])
+
+    for (const [key, value] of Object.entries(record)) {
+      if (arrayFields.has(key) && typeof value === 'string') {
+        // Coerce single string to array
+        result[key] = [value]
+      } else if (numberFields.has(key) && typeof value === 'string') {
+        // Try to extract a number from the string, default to 0.5
+        const parsed = parseFloat(value)
+        result[key] = isNaN(parsed) ? 0.5 : Math.max(0, Math.min(1, parsed))
+      } else if (typeof value === 'object' && value !== null) {
+        // Recurse into nested objects
+        result[key] = this.coerceLlmOutput(value)
+      } else {
+        result[key] = value
+      }
+    }
+
+    return result
+  }
+
+  private validateAndParseAnalysis(analysis: unknown): PlaylistAnalysis {
+    try {
+      // First, coerce LLM output to match expected types
+      const coercedAnalysis = this.coerceLlmOutput(analysis)
+
+      // Use valibot to validate and parse the analysis
+      const result = v.safeParse(PlaylistAnalysisSchema, coercedAnalysis)
+
+      if (result.success) {
+        console.log('[PlaylistAnalysis] Analysis structure validated with valibot')
+        return result.output
+      } else {
+        // Log validation errors but try to work with partial data
+        console.warn('[PlaylistAnalysis] Validation issues:', result.issues)
+
+        // Return the coerced analysis as-is if it has the basic structure
+        if (typeof coercedAnalysis === 'object' && coercedAnalysis !== null &&
+          'meaning' in coercedAnalysis && 'emotional' in coercedAnalysis) {
+          console.log('[PlaylistAnalysis] Using partial analysis data')
+          return coercedAnalysis as PlaylistAnalysis
+        }
+
+        throw new Error('Invalid analysis structure')
       }
     } catch (error) {
-      logger.error('Failed to analyze playlist with prompt', error as Error, {
-        playlistName,
-      })
-      throw new logger.AppError(
-        'Failed to analyze playlist with prompt',
-        'LLM_ANALYSIS_ERROR',
-        500,
-        { cause: error, playlistName }
-      )
+      console.error('[PlaylistAnalysis] Validation error:', error)
+      throw new Error(`Analysis validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 }
