@@ -513,7 +513,7 @@ export class MatchingService {
     if (!song.id || playlistFeatures.length === 0) return 0
 
     try {
-      const songFeatures = song.analysis.audio_features
+      const songFeatures = song.analysis?.audio_features
 
       // Calculate average similarity to playlist songs
       let totalScore = 0
