@@ -127,14 +127,14 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
           status: 'completed' as const,
           // Use the REAL completion stats from WebSocket message
           dbStats: realCompletionStats ? {
-            tracksProcessed: realCompletionStats.tracksProcessed,
-            tracksSucceeded: realCompletionStats.tracksSucceeded,
-            tracksFailed: realCompletionStats.tracksFailed,
+            itemsProcessed: realCompletionStats.itemsProcessed,
+            itemsSucceeded: realCompletionStats.itemsSucceeded,
+            itemsFailed: realCompletionStats.itemsFailed,
           } : {
             // Fallback if WebSocket stats not available
-            tracksProcessed: previousJob.trackCount,
-            tracksSucceeded: previousJob.trackCount,
-            tracksFailed: 0,
+            itemsProcessed: previousJob.itemCount,
+            itemsSucceeded: previousJob.itemCount,
+            itemsFailed: 0,
           }
         },
         isActive: false
@@ -170,9 +170,9 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
 
   // Simple progress stats - now get real data from WebSocket completion stats
   const progressStats = {
-    tracksProcessed: displayJob?.job?.dbStats?.tracksProcessed ?? 0,
-    tracksSucceeded: displayJob?.job?.dbStats?.tracksSucceeded ?? 0,
-    tracksFailed: displayJob?.job?.dbStats?.tracksFailed ?? 0,
+    itemsProcessed: displayJob?.job?.dbStats?.itemsProcessed ?? 0,
+    itemsSucceeded: displayJob?.job?.dbStats?.itemsSucceeded ?? 0,
+    itemsFailed: displayJob?.job?.dbStats?.itemsFailed ?? 0,
   };
 
   // Table setup
@@ -349,9 +349,9 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
           icon={<Clock className="h-6 w-6 text-blue-400" />}
           currentJob={displayJob?.job || null}
           showJobStatus={!!displayJob}
-          tracksProcessed={progressStats.tracksProcessed}
-          tracksSucceeded={progressStats.tracksSucceeded}
-          tracksFailed={progressStats.tracksFailed}
+          itemsProcessed={progressStats.itemsProcessed}
+          itemsSucceeded={progressStats.itemsSucceeded}
+          itemsFailed={progressStats.itemsFailed}
         />
 
         <StatusCard

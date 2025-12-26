@@ -6,6 +6,7 @@ import { jobPersistenceService } from '~/lib/services/JobPersistenceService';
 import { PlaylistService } from '~/lib/services/PlaylistService';
 import { SpotifyService } from '~/lib/services/SpotifyService';
 import { logger } from '~/lib/logging/Logger';
+import { PlaylistJob } from '~/lib/types/analysis.types';
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userSession = await requireUserSession(request);
@@ -103,16 +104,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     // Save job to database
     try {
-      const contextJob = {
+      const contextJob: PlaylistJob = {
         id: batchId,
-        status: 'pending' as const,
-        trackCount: 1,
-        trackStates: new Map(),
+        jobType: 'playlist',
+        status: 'pending',
+        itemCount: 1,
         startedAt: new Date(),
         dbStats: {
-          tracksProcessed: 0,
-          tracksSucceeded: 0,
-          tracksFailed: 0
+          itemsProcessed: 0,
+          itemsSucceeded: 0,
+          itemsFailed: 0
         }
       };
 

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { TrackWithAnalysis } from '~/lib/models/Track';
 import { useLikedSongs, useAnalyzeTracks, useUpdateTrackAnalysis } from '../queries/liked-songs-queries';
+import { jobSubscriptionManager } from '~/lib/services/JobSubscriptionManager';
 
 interface UseLikedSongsManagementProps {
   initialSongs: TrackWithAnalysis[];
@@ -72,28 +73,38 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
   const analyzeSelectedTracks = useCallback(async (batchSize?: 1 | 5 | 10) => {
     const tracks = selectedTracks();
     if (tracks.length === 0) return;
-    
+
     const trackData = tracks.map((track: TrackWithAnalysis) => ({
       id: track.track.id,
       spotifyTrackId: track.track.spotify_track_id,
       artist: track.track.artist,
       name: track.track.name,
     }));
-    
-    await analyzeMutation.mutateAsync({ tracks: trackData, batchSize });
-    
-    // Clear selection after analysis starts
-    setRowSelection({});
+
+    // Generate batchId BEFORE mutation to eliminate race condition
+    // This ensures WebSocket subscription is active before any notifications can arrive
+    const batchId = crypto.randomUUID();
+    jobSubscriptionManager.setCurrentJob(batchId);
+
+    try {
+      await analyzeMutation.mutateAsync({ tracks: trackData, batchSize, batchId });
+      // Clear selection after analysis starts
+      setRowSelection({});
+    } catch (error) {
+      // Clear subscription on failure
+      jobSubscriptionManager.setCurrentJob(null);
+      throw error;
+    }
   }, [selectedTracks, analyzeMutation]);
   
-  const analyzeTracks = useCallback(async (options: { 
-    trackId?: number; 
-    useSelected?: boolean; 
-    useAll?: boolean; 
+  const analyzeTracks = useCallback(async (options: {
+    trackId?: number;
+    useSelected?: boolean;
+    useAll?: boolean;
     batchSize?: 1 | 5 | 10;
   }) => {
     let tracksToAnalyze: TrackWithAnalysis[] = [];
-    
+
     if (options.trackId) {
       const track = likedSongs.find((t: TrackWithAnalysis) => t.track.id === options.trackId);
       if (track) tracksToAnalyze = [track];
@@ -102,17 +113,28 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
     } else if (options.useAll) {
       tracksToAnalyze = likedSongs.filter((t: TrackWithAnalysis) => t.uiAnalysisStatus === 'not_analyzed');
     }
-    
+
     if (tracksToAnalyze.length === 0) return;
-    
+
     const trackData = tracksToAnalyze.map((track: TrackWithAnalysis) => ({
       id: track.track.id,
       spotifyTrackId: track.track.spotify_track_id,
       artist: track.track.artist,
       name: track.track.name,
     }));
-    
-    await analyzeMutation.mutateAsync({ tracks: trackData, batchSize: options.batchSize });
+
+    // Generate batchId BEFORE mutation to eliminate race condition
+    // This ensures WebSocket subscription is active before any notifications can arrive
+    const batchId = crypto.randomUUID();
+    jobSubscriptionManager.setCurrentJob(batchId);
+
+    try {
+      await analyzeMutation.mutateAsync({ tracks: trackData, batchSize: options.batchSize, batchId });
+    } catch (error) {
+      // Clear subscription on failure
+      jobSubscriptionManager.setCurrentJob(null);
+      throw error;
+    }
   }, [likedSongs, selectedTracks, analyzeMutation]);
   
   // Track analysis update

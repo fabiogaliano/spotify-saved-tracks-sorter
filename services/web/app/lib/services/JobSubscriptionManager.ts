@@ -1,6 +1,6 @@
-import { 
-  WebSocketMessage, 
-  isJobStatusMessage, 
+import {
+  WebSocketMessage,
+  isJobStatusMessage,
   isDirectJobNotification,
   isBatchTracksNotification
 } from '~/lib/types/websocket.types';
@@ -27,7 +27,7 @@ export class JobSubscriptionManager {
    */
   setCurrentJob(jobId: string | null): void {
     this.currentJobId = jobId;
-    
+
     // If setting to null, deactivate the manager
     if (jobId === null) {
       this.isActive = false;
@@ -42,7 +42,7 @@ export class JobSubscriptionManager {
    */
   subscribe(callback: JobSubscriptionCallback): () => void {
     this.callbacks.add(callback);
-    
+
     return () => {
       this.callbacks.delete(callback);
     };
@@ -83,6 +83,12 @@ export class JobSubscriptionManager {
         return false;
       }
 
+      // Skip job-level notifications without a trackId (e.g., playlist analysis)
+      // These are handled separately by consumers that check for null trackId
+      if (message.trackId === null) {
+        return true; // Message was processed, just not broadcast to track subscribers
+      }
+
       const update: JobStatusUpdate = {
         trackId: message.trackId,
         status: message.status
@@ -95,7 +101,7 @@ export class JobSubscriptionManager {
     // Handle nested job status message (legacy format)
     if (isJobStatusMessage(message)) {
       const { jobId, trackId, status } = message.data;
-      
+
       // Check if this message belongs to the current job
       if (jobId !== this.currentJobId) {
         return false;

@@ -3,21 +3,16 @@ import { TrackWithAnalysis, UIAnalysisStatus, TrackAnalysis } from '~/lib/models
 import { useWebSocket } from '~/lib/hooks/useWebSocket';
 import { jobSubscriptionManager, JobStatusUpdate } from '~/lib/services/JobSubscriptionManager';
 import { apiRoutes } from '~/lib/config/routes';
+import {
+  ItemState,
+  ItemStatesMap,
+  AnalysisJob,
+  TrackBatchJob,
+  isTrackBatchJob
+} from '~/lib/types/analysis.types';
 
-// Define AnalysisJob type for batch job tracking
-export interface AnalysisJob {
-  id: string; // The batch job ID
-  status: 'pending' | 'in_progress' | 'completed' | 'failed'; // Batch job status
-  trackCount: number;
-  trackStates: Map<number, 'queued' | 'in_progress' | 'completed' | 'failed'>; // Per-track status
-  startedAt?: Date; // When the job started
-  // Database-persisted stats - always present
-  dbStats: {
-    tracksProcessed: number;
-    tracksSucceeded: number;
-    tracksFailed: number;
-  };
-}
+// Re-export for consumers that import from this file
+export type { AnalysisJob } from '~/lib/types/analysis.types';
 
 interface LikedSongsContextType {
   // State
@@ -36,9 +31,9 @@ interface LikedSongsContextType {
   isAnalyzing: boolean;
 
   // Computed properties from job state
-  tracksProcessed: number;
-  tracksSucceeded: number;
-  tracksFailed: number;
+  itemsProcessed: number;
+  itemsSucceeded: number;
+  itemsFailed: number;
 
   // Track status updates
   updateSongAnalysisDetails: (trackId: number, analysisData: TrackAnalysis | null, status: UIAnalysisStatus) => void;
@@ -65,9 +60,9 @@ const LikedSongsContext = createContext<LikedSongsContextType>({
   isAnalyzing: false,
 
   // Computed properties
-  tracksProcessed: 0,
-  tracksSucceeded: 0,
-  tracksFailed: 0,
+  itemsProcessed: 0,
+  itemsSucceeded: 0,
+  itemsFailed: 0,
 
   // Track status updates
   updateSongAnalysisDetails: () => { },
@@ -103,7 +98,7 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
   const {
     isConnected: isWebSocketConnected,
     lastMessage: webSocketLastMessage,
-    subscribeToTrack,
+    subscribeToItem,
     connect: connectWebSocket,
     disconnect: disconnectWebSocket
   } = useWebSocket(WEBSOCKET_URL, { autoConnect: false });
@@ -117,9 +112,9 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
 
     // Always use database stats - all jobs have dbStats
     return {
-      processed: job.dbStats.tracksProcessed,
-      succeeded: job.dbStats.tracksSucceeded,
-      failed: job.dbStats.tracksFailed
+      processed: job.dbStats.itemsProcessed,
+      succeeded: job.dbStats.itemsSucceeded,
+      failed: job.dbStats.itemsFailed
     };
   }, []);
 
@@ -139,7 +134,6 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
     if (initialSongs && initialSongs.length > 0 && !initializedRef.current) {
       // Songs now come with proper uiAnalysisStatus from the server
       // This includes 'failed' status for tracks that failed analysis
-      console.log('Initializing songs with status:', initialSongs.slice(0, 5).map(s => ({ id: s.track.id, status: s.uiAnalysisStatus })));
       setLikedSongs(initialSongs);
       initializedRef.current = true;
     }
@@ -153,7 +147,6 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       if (!userId || jobRecoveryRef.current) return;
 
       try {
-        console.log('Checking for active jobs for user:', userId);
         jobRecoveryRef.current = true;
 
         const response = await fetch(`/api/analysis/active-job?userId=${userId}`);
@@ -161,32 +154,26 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
         if (response.ok) {
           const activeJob = await response.json();
           if (activeJob && activeJob.id) {
-            console.log('Found active job to resume:', activeJob);
-
-            // Convert trackStates from object back to Map (JSON serialization converts Maps to objects)
-            console.log('Raw trackStates from server:', activeJob.trackStates);
-            const trackStatesMap = new Map(
-              Object.entries(activeJob.trackStates || {}).map(([key, value]) => [parseInt(key, 10), value])
+            // Convert itemStates from object back to Map (JSON serialization converts Maps to objects)
+            const itemStatesMap = new Map(
+              Object.entries(activeJob.itemStates || {}).map(([key, value]) => [parseInt(key, 10), value])
             );
-            console.log('Converted trackStates Map:', Array.from(trackStatesMap.entries()));
 
             const recoveredJob: AnalysisJob = {
               ...activeJob,
-              trackStates: trackStatesMap,
+              itemStates: itemStatesMap,
               startedAt: new Date(activeJob.startedAt),
               dbStats: activeJob.dbStats // Always present from proper recovery
             };
 
             // Ensure job recovery is atomic - set job and update subscription manager together
-            console.log('Setting recovered job atomically');
             setCurrentJob(recoveredJob);
             jobSubscriptionManager.setCurrentJob(recoveredJob.id);
 
             // Update UI track states to match the recovered job states
-            console.log('Updating track states for recovered job. TrackStates Map size:', trackStatesMap.size);
             setLikedSongs(prevSongs =>
               prevSongs.map(song => {
-                const trackJobState = trackStatesMap.get(song.track.id);
+                const trackJobState = itemStatesMap.get(song.track.id);
                 if (trackJobState !== undefined) {
                   // Map job states to UI states
                   let uiStatus: UIAnalysisStatus;
@@ -204,16 +191,11 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
                     default:
                       uiStatus = song.uiAnalysisStatus; // Keep existing status
                   }
-                  console.log(`Track ${song.track.id}: ${trackJobState} → ${uiStatus}`);
                   return { ...song, uiAnalysisStatus: uiStatus };
                 }
                 return song;
               })
             );
-
-            console.log('Job recovery completed successfully');
-          } else {
-            console.log('No active jobs found for user');
           }
         }
 
@@ -234,7 +216,6 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
     if (!currentJob) {
       // No job active, ensure WebSocket is disconnected
       if (isWebSocketConnected) {
-        console.log('No active job, disconnecting from WebSocket');
         disconnectWebSocket();
       }
       return;
@@ -242,7 +223,6 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
 
     // Connect to WebSocket when a job starts, but only if we're not already connected
     if ((currentJob.status === 'pending' || currentJob.status === 'in_progress') && !isWebSocketConnected) {
-      console.log('Job active, connecting to WebSocket');
       connectWebSocket();
     }
     // For completed jobs, keep WebSocket connected until job is cleared
@@ -255,15 +235,12 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       const { trackId, status } = update;
 
       if (!trackId) {
-        console.warn('Received job status update without trackId');
         return;
       }
 
-      console.log(`Job status update for track ${trackId}: ${status}`);
-
       // Map the worker status to UI status
       let uiStatus: UIAnalysisStatus = 'not_analyzed';
-      let trackJobStatus: 'queued' | 'in_progress' | 'completed' | 'failed' = 'queued';
+      let trackJobStatus: ItemState = 'queued';
 
       switch (status) {
         case 'QUEUED':
@@ -291,37 +268,38 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       updateSongAnalysisDetails(trackId, null, uiStatus);
 
       // Update job status if this track is part of the current job
-      if (currentJob?.trackStates.has(trackId)) {
-        // Update both trackStates and dbStats atomically
+      // Only track_batch jobs have itemStates; playlist jobs don't track individual items
+      if (currentJob && isTrackBatchJob(currentJob) && currentJob.itemStates.has(trackId)) {
+        // Update both itemStates and dbStats atomically
         setCurrentJob(prevJob => {
-          if (!prevJob || !prevJob.trackStates.has(trackId)) return prevJob;
+          if (!prevJob || !isTrackBatchJob(prevJob) || !prevJob.itemStates.has(trackId)) return prevJob;
 
-          const newTrackStates = new Map(prevJob.trackStates);
-          newTrackStates.set(trackId, trackJobStatus);
+          const newItemStates = new Map(prevJob.itemStates);
+          newItemStates.set(trackId, trackJobStatus);
 
           let newDbStats = { ...prevJob.dbStats };
 
-          // Update dbStats when tracks complete or fail
+          // Update dbStats when items complete or fail
           if (trackJobStatus === 'completed' || trackJobStatus === 'failed') {
-            // Only increment if this track wasn't already processed
-            const prevStatus = prevJob.trackStates.get(trackId);
+            // Only increment if this item wasn't already processed
+            const prevStatus = prevJob.itemStates.get(trackId);
             if (prevStatus !== 'completed' && prevStatus !== 'failed') {
-              newDbStats.tracksProcessed = newDbStats.tracksProcessed + 1;
+              newDbStats.itemsProcessed = newDbStats.itemsProcessed + 1;
 
               if (trackJobStatus === 'completed') {
-                newDbStats.tracksSucceeded = newDbStats.tracksSucceeded + 1;
+                newDbStats.itemsSucceeded = newDbStats.itemsSucceeded + 1;
               } else {
-                newDbStats.tracksFailed = newDbStats.tracksFailed + 1;
+                newDbStats.itemsFailed = newDbStats.itemsFailed + 1;
               }
             }
           }
 
           // Calculate if job is complete
-          const allProcessed = Array.from(newTrackStates.values()).every(s => s === 'completed' || s === 'failed');
+          const allProcessed = Array.from(newItemStates.values()).every(s => s === 'completed' || s === 'failed');
 
           return {
             ...prevJob,
-            trackStates: newTrackStates,
+            itemStates: newItemStates,
             dbStats: newDbStats,
             status: allProcessed ? 'completed' : 'in_progress'
           };
@@ -345,22 +323,19 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
   // Update subscription manager and WebSocket subscriptions when job changes
   useEffect(() => {
     if (currentJob) {
-      console.log(`Setting JobSubscriptionManager to job ${currentJob.id}`);
       jobSubscriptionManager.setCurrentJob(currentJob.id);
 
-      // Subscribe to all track IDs in the job via WebSocket
-      // Only subscribe if WebSocket is connected
-      if (isWebSocketConnected) {
-        for (const trackId of Array.from(currentJob.trackStates.keys())) {
-          console.log(`Subscribing to track ${trackId}`);
-          subscribeToTrack(String(trackId));
+      // Subscribe to all item IDs in the job via WebSocket
+      // Only track_batch jobs have individual items to subscribe to
+      if (isWebSocketConnected && isTrackBatchJob(currentJob)) {
+        for (const itemId of Array.from(currentJob.itemStates.keys())) {
+          subscribeToItem(String(itemId));
         }
       }
     } else {
-      console.log('Clearing JobSubscriptionManager job');
       jobSubscriptionManager.setCurrentJob(null);
     }
-  }, [currentJob?.id, isWebSocketConnected, subscribeToTrack]);
+  }, [currentJob?.id, isWebSocketConnected, subscribeToItem]);
 
   // Derive selected tracks from row selection
   const selectedTracks = useCallback(() => {
@@ -409,22 +384,17 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       track.uiAnalysisStatus !== 'failed'
     );
 
-    console.log(`Filtered ${tracksToAnalyze.length} tracks → ${tracksNeedingAnalysis.length} need analysis`);
-
     if (tracksNeedingAnalysis.length === 0) {
-      console.warn('All specified tracks are already analyzed or in progress');
       return Promise.resolve();
     }
 
     // Prevent multiple concurrent analysis requests
     if (isAnalyzing) {
-      console.warn('Analysis already in progress, ignoring additional request');
       return Promise.resolve();
     }
 
     // Prevent new job creation while recovery is in progress
     if (jobRecoveryRef.current) {
-      console.warn('Job recovery in progress, cannot start new analysis');
       return Promise.resolve();
     }
 
@@ -461,49 +431,37 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          console.log('Analysis submission successful:', data.message);
-
-          // Create track states map - all start as 'queued'
-          const trackStates = new Map<number, 'queued' | 'in_progress' | 'completed' | 'failed'>();
+          // Create item states map - all start as 'queued'
+          const itemStates: ItemStatesMap = new Map();
           trackIdsBeingProcessed.forEach(trackId => {
-            trackStates.set(trackId, 'queued');
+            itemStates.set(trackId, 'queued');
           });
 
           // Create new job with proper state
-          const newJob: AnalysisJob = {
+          const newJob: TrackBatchJob = {
             id: data.batchId || crypto.randomUUID(),
+            jobType: 'track_batch',
             status: 'pending',
-            trackCount: tracksNeedingAnalysis.length,
-            trackStates,
+            itemCount: tracksNeedingAnalysis.length,
+            itemStates,
             startedAt: new Date(),
             dbStats: {
-              tracksProcessed: 0,
-              tracksSucceeded: 0,
-              tracksFailed: 0
+              itemsProcessed: 0,
+              itemsSucceeded: 0,
+              itemsFailed: 0
             }
           };
 
-          console.log(`Creating new job with ID: ${newJob.id}, track count: ${newJob.trackCount}, tracks: [${trackIdsBeingProcessed.join(', ')}]`);
-
           // Atomic job transition - clear old job and set new job simultaneously
           // This prevents UI state gaps where no job exists
-          if (currentJob) {
-            console.log(`Clearing previous job ${currentJob.id} before setting new job ${newJob.id}`);
-          }
           jobSubscriptionManager.setCurrentJob(newJob.id);
           setCurrentJob(newJob);
           setIsAnalyzing(false);
-
-          if (data.errors && data.errors.length > 0) {
-            console.warn('Some tracks failed to enqueue:', data.errors);
-          }
         } else {
-          console.error('Error submitting analysis job:', data.error, data.details);
           setIsAnalyzing(false);
         }
       })
-      .catch(error => {
-        console.error('Error submitting analysis request:', error);
+      .catch(() => {
         setIsAnalyzing(false);
       });
   }, [selectedTracks, likedSongs, setLikedSongs]);
@@ -535,9 +493,9 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
     isAnalyzing,
 
     // Computed properties
-    tracksProcessed: counts.processed,
-    tracksSucceeded: counts.succeeded,
-    tracksFailed: counts.failed,
+    itemsProcessed: counts.processed,
+    itemsSucceeded: counts.succeeded,
+    itemsFailed: counts.failed,
 
     // Track status updates
     updateSongAnalysisDetails,

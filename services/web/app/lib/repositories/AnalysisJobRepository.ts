@@ -79,22 +79,22 @@ export class AnalysisJobRepository {
 
   async updateJobProgress(
     batchId: string,
-    tracksProcessed: number,
-    tracksSucceeded: number,
-    tracksFailed: number
+    itemsProcessed: number,
+    itemsSucceeded: number,
+    itemsFailed: number
   ): Promise<AnalysisJob> {
     const updates: AnalysisJobUpdate = {
-      tracks_processed: tracksProcessed,
-      tracks_succeeded: tracksSucceeded,
-      tracks_failed: tracksFailed,
+      items_processed: itemsProcessed,
+      items_succeeded: itemsSucceeded,
+      items_failed: itemsFailed,
       updated_at: new Date().toISOString()
     };
 
     // Update status based on progress
     const job = await this.getJobByBatchId(batchId);
-    if (job && tracksProcessed >= job.track_count) {
+    if (job && itemsProcessed >= job.item_count) {
       updates.status = 'completed';
-    } else if (job && tracksProcessed > 0) {
+    } else if (job && itemsProcessed > 0) {
       updates.status = 'in_progress';
     }
 

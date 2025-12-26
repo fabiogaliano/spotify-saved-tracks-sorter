@@ -2,21 +2,10 @@ import { ReactNode, useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '~/shared/components/ui/Card';
 import { X } from 'lucide-react';
 import { AnalysisJobStatus } from './AnalysisJobStatus';
+import { AnalysisJob, isTrackBatchJob } from '~/lib/types/analysis.types';
 
-// Define AnalysisJob type locally (copied from original context)
-export interface AnalysisJob {
-  id: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  trackCount: number;
-  trackStates: Map<number, 'queued' | 'in_progress' | 'completed' | 'failed'>;
-  startedAt: Date;
-  // dbStats will be available from server when persistence is complete
-  dbStats?: {
-    tracksProcessed: number;
-    tracksSucceeded: number;
-    tracksFailed: number;
-  };
-}
+// Re-export for backwards compatibility
+export type { AnalysisJob } from '~/lib/types/analysis.types';
 
 interface StatusCardProps {
   title: string;
@@ -36,9 +25,9 @@ interface StatusCardWithJobStatusProps {
   valueColor: string;
   currentJob: AnalysisJob | null;
   showJobStatus?: boolean;
-  tracksProcessed?: number;
-  tracksSucceeded?: number;
-  tracksFailed?: number;
+  itemsProcessed?: number;
+  itemsSucceeded?: number;
+  itemsFailed?: number;
 }
 
 // Status Card component with job status tooltip
@@ -51,9 +40,9 @@ export const StatusCardWithJobStatus = ({
   valueColor,
   currentJob,
   showJobStatus = false,
-  tracksProcessed = 0,
-  tracksSucceeded = 0,
-  tracksFailed = 0
+  itemsProcessed = 0,
+  itemsSucceeded = 0,
+  itemsFailed = 0
 }: StatusCardWithJobStatusProps) => {
   // State to control tooltip open/close
   const [open, setOpen] = useState(false);
@@ -73,9 +62,9 @@ export const StatusCardWithJobStatus = ({
   
   // Use props from parent (now includes real completion data)
   const stableValues = {
-    processed: tracksProcessed,
-    succeeded: tracksSucceeded,
-    failed: tracksFailed
+    processed: itemsProcessed,
+    succeeded: itemsSucceeded,
+    failed: itemsFailed
   };
 
   // Simple popup lifecycle management
@@ -152,9 +141,12 @@ export const StatusCardWithJobStatus = ({
   }, []);
 
   // Show job progress when active, otherwise show normal value
-  const displayValue = activeJob ? 
-    `${stableValues.processed}/${activeJob.trackCount}` : 
-    value;
+  // For playlist jobs, show simpler progress
+  const displayValue = activeJob
+    ? (activeJob.jobType === 'playlist'
+        ? (activeJob.status === 'completed' ? '1/1' : '0/1')
+        : `${stableValues.processed}/${activeJob.itemCount}`)
+    : value;
 
   return (
     <Card className="bg-card border-border relative">
@@ -218,12 +210,13 @@ export const StatusCardWithJobStatus = ({
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>
               
-              <AnalysisJobStatus 
+              <AnalysisJobStatus
+                jobType={activeJob.jobType}
                 status={activeJob.status}
-                trackCount={activeJob.trackCount}
-                tracksProcessed={stableValues.processed}
-                tracksSucceeded={stableValues.succeeded}
-                tracksFailed={stableValues.failed}
+                itemCount={activeJob.itemCount}
+                itemsProcessed={stableValues.processed}
+                itemsSucceeded={stableValues.succeeded}
+                itemsFailed={stableValues.failed}
                 startedAt={activeJob.startedAt}
               />
             </div>

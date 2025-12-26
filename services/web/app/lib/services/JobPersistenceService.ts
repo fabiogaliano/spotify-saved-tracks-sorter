@@ -1,20 +1,43 @@
 import { analysisJobRepository, AnalysisJob as DBAnalysisJob, AnalysisJobInsert } from '~/lib/repositories/AnalysisJobRepository';
-import { AnalysisJob } from '~/features/liked-songs-management/context/LikedSongsContext';
 import { trackAnalysisAttemptsRepository } from '~/lib/repositories/TrackAnalysisAttemptsRepository';
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository';
+import {
+  ItemState,
+  ItemStatesMap,
+  AnalysisJob,
+  TrackBatchJob,
+  PlaylistJob,
+  AnalysisJobType,
+  AnalysisJobStatus
+} from '~/lib/types/analysis.types';
+
+/** Valid job types for runtime validation */
+const VALID_JOB_TYPES = new Set<AnalysisJobType>(['track_batch', 'playlist']);
+
+/** Validates and returns a safe job type, logging warnings for unexpected values */
+function validateJobType(rawJobType: string | null | undefined, batchId: string): AnalysisJobType {
+  if (rawJobType && VALID_JOB_TYPES.has(rawJobType as AnalysisJobType)) {
+    return rawJobType as AnalysisJobType;
+  }
+  if (rawJobType) {
+    console.warn(`Unknown job_type '${rawJobType}' for job ${batchId}, defaulting to 'track_batch'`);
+  }
+  return 'track_batch';
+}
 
 export class JobPersistenceService {
 
-  async saveJob(job: AnalysisJob, userId: number, trackIds: number[]): Promise<DBAnalysisJob> {
+  async saveJob(job: AnalysisJob, userId: number, itemIds: number[]): Promise<DBAnalysisJob> {
     const jobData: AnalysisJobInsert = {
       user_id: userId,
       batch_id: job.id,
       status: job.status,
-      track_count: job.trackCount,
-      tracks_processed: 0,
-      tracks_succeeded: 0,
-      tracks_failed: 0,
-      track_ids: trackIds,
+      item_count: job.itemCount,
+      items_processed: 0,
+      items_succeeded: 0,
+      items_failed: 0,
+      item_ids: itemIds,
+      job_type: job.jobType,
     };
 
     return await analysisJobRepository.createJob(jobData);
@@ -30,99 +53,110 @@ export class JobPersistenceService {
       return null;
     }
 
-    // Get the original track IDs from the job
-    const trackIds = (dbJob.track_ids as number[]) || [];
+    // Get the original item IDs from the job
+    const itemIds = (dbJob.item_ids as number[]) || [];
 
-    if (trackIds.length === 0) {
-      console.warn(`Job ${dbJob.batch_id} has no track_ids stored. This might be an old job created before track_ids were implemented.`);
-      return null; // Cannot recover job without track IDs
+    if (itemIds.length === 0) {
+      console.warn(`Job ${dbJob.batch_id} has no item_ids stored. This might be an old job created before item_ids were implemented.`);
+      return null; // Cannot recover job without item IDs
     }
 
-    // Reconstruct the trackStates map from track_analysis_attempts and track_analyses
-    const attempts = await trackAnalysisAttemptsRepository.getAttemptsByJobId(dbJob.batch_id);
+    // For playlist jobs, skip the detailed state reconstruction
+    const isPlaylistJob = dbJob.job_type === 'playlist';
 
-    // Create a map of track_id -> attempt status
-    const attemptStatusMap = new Map<number, string>();
-    attempts.forEach(attempt => {
-      attemptStatusMap.set(attempt.track_id, attempt.status || '');
-    });
+    // Build item states map
+    const itemStates: ItemStatesMap = new Map();
 
-    // For tracks with no attempt record, check if they have completed analyses
-    const trackIdsWithoutAttempts = trackIds.filter(trackId => !attemptStatusMap.has(trackId));
-    const completedTrackIds = new Set<number>();
-    
-    // Batch check for completed analyses to avoid N+1 queries
-    if (trackIdsWithoutAttempts.length > 0) {
-      try {
-        // Check which tracks have completed analyses
-        for (const trackId of trackIdsWithoutAttempts) {
-          const analysis = await trackAnalysisRepository.getByTrackId(trackId);
-          if (analysis) {
-            completedTrackIds.add(trackId);
+    if (isPlaylistJob) {
+      // Playlist jobs don't need per-item state tracking
+      itemIds.forEach(itemId => {
+        itemStates.set(itemId, dbJob.status === 'completed' ? 'completed' :
+                               dbJob.status === 'failed' ? 'failed' : 'queued');
+      });
+    } else {
+      // Track batch jobs - reconstruct the itemStates map from track_analysis_attempts and track_analyses
+      const attempts = await trackAnalysisAttemptsRepository.getAttemptsByJobId(dbJob.batch_id);
+
+      // Create a map of track_id -> attempt status
+      const attemptStatusMap = new Map<number, string>();
+      attempts.forEach(attempt => {
+        attemptStatusMap.set(attempt.track_id, attempt.status || '');
+      });
+
+      // For tracks with no attempt record, check if they have completed analyses
+      const itemIdsWithoutAttempts = itemIds.filter(itemId => !attemptStatusMap.has(itemId));
+      const completedItemIds = new Set<number>();
+
+      // Batch check for completed analyses to avoid N+1 queries
+      if (itemIdsWithoutAttempts.length > 0) {
+        try {
+          // Check which tracks have completed analyses
+          for (const itemId of itemIdsWithoutAttempts) {
+            const analysis = await trackAnalysisRepository.getByTrackId(itemId);
+            if (analysis) {
+              completedItemIds.add(itemId);
+            }
           }
+        } catch (error) {
+          console.error('Error checking for completed analyses during job recovery:', error);
+          // Continue with recovery even if this check fails
         }
-      } catch (error) {
-        console.error('Error checking for completed analyses during job recovery:', error);
-        // Continue with recovery even if this check fails
       }
+
+      itemIds.forEach(itemId => {
+        const attemptStatus = attemptStatusMap.get(itemId);
+        let state: ItemState = 'queued';
+
+        if (attemptStatus) {
+          // Track has an attempt record
+          switch (attemptStatus) {
+            case 'IN_PROGRESS':
+              state = 'in_progress';
+              break;
+            case 'FAILED':
+              state = 'failed';
+              break;
+            default:
+              // Shouldn't happen, but default to queued
+              state = 'queued';
+          }
+        } else if (completedItemIds.has(itemId)) {
+          // No attempt record but has completed analysis - it's done
+          state = 'completed';
+        } else {
+          // No attempt record and no completed analysis - truly queued/pending
+          state = 'queued';
+        }
+
+        itemStates.set(itemId, state);
+      });
     }
-
-    // Build complete track states map using original track list
-    const trackStates = new Map<number, 'queued' | 'in_progress' | 'completed' | 'failed'>();
-
-    trackIds.forEach(trackId => {
-      const attemptStatus = attemptStatusMap.get(trackId);
-      let state: 'queued' | 'in_progress' | 'completed' | 'failed' = 'queued';
-
-      if (attemptStatus) {
-        // Track has an attempt record
-        switch (attemptStatus) {
-          case 'IN_PROGRESS':
-            state = 'in_progress';
-            break;
-          case 'FAILED':
-            state = 'failed';
-            break;
-          default:
-            // Shouldn't happen, but default to queued
-            state = 'queued';
-        }
-      } else if (completedTrackIds.has(trackId)) {
-        // No attempt record but has completed analysis - it's done
-        state = 'completed';
-      } else {
-        // No attempt record and no completed analysis - truly queued/pending
-        state = 'queued';
-      }
-
-      trackStates.set(trackId, state);
-    });
 
 
     // Check if job should be marked as completed or is stale
-    let finalStatus = dbJob.status;
-    const totalProcessed = dbJob.tracks_processed;
-    const expectedTotal = dbJob.track_count;
+    let finalStatus: 'pending' | 'in_progress' | 'completed' | 'failed' = dbJob.status as 'pending' | 'in_progress' | 'completed' | 'failed';
+    const totalProcessed = dbJob.items_processed;
+    const expectedTotal = dbJob.item_count;
     const jobAge = dbJob.created_at ? Date.now() - new Date(dbJob.created_at).getTime() : 0;
     const jobAgeMinutes = jobAge / (1000 * 60);
-    
-    // Check completion based on trackStates as well as DB counters
-    const completedTracksFromStates = Array.from(trackStates.values()).filter(s => s === 'completed' || s === 'failed').length;
-    const isCompleteByStates = completedTracksFromStates >= expectedTotal;
+
+    // Check completion based on itemStates as well as DB counters
+    const completedItemsFromStates = Array.from(itemStates.values()).filter(s => s === 'completed' || s === 'failed').length;
+    const isCompleteByStates = completedItemsFromStates >= expectedTotal;
     const isCompleteByDB = totalProcessed >= expectedTotal;
-    
-    
+
+
     if (finalStatus === 'in_progress' || finalStatus === 'pending') {
       if (isCompleteByDB || isCompleteByStates) {
-        // All tracks processed, mark as complete
-        console.log(`Job ${dbJob.batch_id} is complete (DB: ${totalProcessed}/${expectedTotal}, States: ${completedTracksFromStates}/${expectedTotal}), updating status`);
+        // All items processed, mark as complete
+        console.log(`Job ${dbJob.batch_id} is complete (DB: ${totalProcessed}/${expectedTotal}, States: ${completedItemsFromStates}/${expectedTotal}), updating status`);
         finalStatus = 'completed';
         this.markJobCompleted(dbJob.batch_id).catch(error => {
           console.error('Failed to mark job as completed:', error);
         });
       } else if (jobAgeMinutes > 30) {
         // Job is over 30 minutes old and still in progress - likely stale
-        console.log(`Job ${dbJob.batch_id} appears stale (DB: ${totalProcessed}/${expectedTotal}, States: ${completedTracksFromStates}/${expectedTotal}, ${jobAgeMinutes.toFixed(1)}min old), marking as failed`);
+        console.log(`Job ${dbJob.batch_id} appears stale (DB: ${totalProcessed}/${expectedTotal}, States: ${completedItemsFromStates}/${expectedTotal}, ${jobAgeMinutes.toFixed(1)}min old), marking as failed`);
         finalStatus = 'failed';
         this.markJobFailed(dbJob.batch_id).catch(error => {
           console.error('Failed to mark stale job as failed:', error);
@@ -130,25 +164,42 @@ export class JobPersistenceService {
       }
     }
 
-    const contextJob: AnalysisJob = {
+    // Validate job type with runtime check (fixes unchecked type casting)
+    const jobType = validateJobType(dbJob.job_type, dbJob.batch_id);
+
+    const baseProps = {
       id: dbJob.batch_id,
       status: finalStatus,
-      trackCount: dbJob.track_count,
-      trackStates,
       startedAt: dbJob.created_at ? new Date(dbJob.created_at) : new Date(),
-      // Include database stats for accurate progress display
       dbStats: {
-        tracksProcessed: dbJob.tracks_processed,
-        tracksSucceeded: dbJob.tracks_succeeded,
-        tracksFailed: dbJob.tracks_failed
+        itemsProcessed: dbJob.items_processed,
+        itemsSucceeded: dbJob.items_succeeded,
+        itemsFailed: dbJob.items_failed
       }
     };
 
-    return contextJob;
+    // Return proper discriminated union type based on job type
+    if (jobType === 'playlist') {
+      const playlistJob: PlaylistJob = {
+        ...baseProps,
+        jobType: 'playlist',
+        itemCount: 1
+      };
+      return playlistJob;
+    }
+
+    // Default: track_batch job
+    const trackBatchJob: TrackBatchJob = {
+      ...baseProps,
+      jobType: 'track_batch',
+      itemCount: dbJob.item_count,
+      itemStates
+    };
+    return trackBatchJob;
   }
 
-  async updateJobProgress(batchId: string, tracksProcessed: number, tracksSucceeded: number, tracksFailed: number): Promise<void> {
-    await analysisJobRepository.updateJobProgress(batchId, tracksProcessed, tracksSucceeded, tracksFailed);
+  async updateJobProgress(batchId: string, itemsProcessed: number, itemsSucceeded: number, itemsFailed: number): Promise<void> {
+    await analysisJobRepository.updateJobProgress(batchId, itemsProcessed, itemsSucceeded, itemsFailed);
   }
 
   async markJobCompleted(batchId: string): Promise<void> {
@@ -166,9 +217,9 @@ export class JobPersistenceService {
     }
 
     return {
-      processed: job.tracks_processed,
-      succeeded: job.tracks_succeeded,
-      failed: job.tracks_failed
+      processed: job.items_processed,
+      succeeded: job.items_succeeded,
+      failed: job.items_failed
     };
   }
 }

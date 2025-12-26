@@ -1,23 +1,27 @@
 import { AlertCircle, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '~/shared/components/ui/Card';
+import { AnalysisJobType, AnalysisJobStatus as JobStatus } from '~/lib/types/analysis.types';
 
 interface AnalysisJobStatusProps {
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  tracksProcessed: number;
-  trackCount: number;
-  tracksSucceeded: number;
-  tracksFailed: number;
+  jobType?: AnalysisJobType;
+  status: JobStatus;
+  itemsProcessed: number;
+  itemCount: number;
+  itemsSucceeded: number;
+  itemsFailed: number;
   startedAt?: Date;
 }
 
 export const AnalysisJobStatus = ({
+  jobType = 'track_batch',
   status,
-  tracksProcessed,
-  trackCount,
-  tracksSucceeded,
-  tracksFailed
+  itemsProcessed,
+  itemCount,
+  itemsSucceeded,
+  itemsFailed
 }: AnalysisJobStatusProps) => {
-  const completionPercentage = Math.round((tracksProcessed / trackCount) * 100) || 0;
+  const completionPercentage = Math.round((itemsProcessed / itemCount) * 100) || 0;
+  const isPlaylistJob = jobType === 'playlist';
   
   const getStatusConfig = () => {
     switch (status) {
@@ -32,15 +36,15 @@ export const AnalysisJobStatus = ({
       case 'in_progress':
         return {
           icon: <Loader2 className="h-4 w-4 animate-spin" />,
-          text: 'Analyzing Tracks',
-          subtitle: 'Processing your music collection',
+          text: isPlaylistJob ? 'Analyzing Playlist' : 'Analyzing Tracks',
+          subtitle: isPlaylistJob ? 'Processing playlist details' : 'Processing your music collection',
           color: 'text-blue-400',
           progressColor: 'bg-blue-500'
         };
       case 'pending':
         return {
           icon: <Clock className="h-4 w-4" />,
-          text: 'Analysis Queued',
+          text: isPlaylistJob ? 'Playlist Queued' : 'Analysis Queued',
           subtitle: 'Waiting to be processed',
           color: 'text-yellow-400',
           progressColor: 'bg-yellow-500'
@@ -103,24 +107,30 @@ export const AnalysisJobStatus = ({
         
         {/* Progress text */}
         <div className="text-center">
-          <p className="text-muted-foreground text-sm">
-            <span className="font-semibold text-foreground">{tracksProcessed}</span> of{' '}
-            <span className="font-semibold text-foreground">{trackCount}</span> tracks
-          </p>
+          {isPlaylistJob ? (
+            <p className="text-muted-foreground text-sm">
+              {status === 'completed' ? 'Playlist analyzed' : 'Analyzing playlist...'}
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              <span className="font-semibold text-foreground">{itemsProcessed}</span> of{' '}
+              <span className="font-semibold text-foreground">{itemCount}</span> tracks
+            </p>
+          )}
         </div>
-        
-        {/* Results summary */}
-        {tracksProcessed > 0 && (
+
+        {/* Results summary - only show for track batch jobs with processed items */}
+        {!isPlaylistJob && itemsProcessed > 0 && (
           <div className="pt-4 border-t border-border">
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                 <CheckCircle className="h-4 w-4 text-green-400 mx-auto mb-1" />
-                <div className="text-lg font-bold text-green-400">{tracksSucceeded}</div>
+                <div className="text-lg font-bold text-green-400">{itemsSucceeded}</div>
                 <div className="text-xs text-muted-foreground">Completed</div>
               </div>
               <div className="text-center p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <AlertCircle className="h-4 w-4 text-red-400 mx-auto mb-1" />
-                <div className="text-lg font-bold text-red-400">{tracksFailed}</div>
+                <div className="text-lg font-bold text-red-400">{itemsFailed}</div>
                 <div className="text-xs text-muted-foreground">Failed</div>
               </div>
             </div>

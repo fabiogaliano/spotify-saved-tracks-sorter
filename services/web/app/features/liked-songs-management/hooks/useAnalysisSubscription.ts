@@ -4,7 +4,7 @@ import { useUpdateTrackAnalysis, useAnalysisStatus, likedSongsKeys } from '../qu
 import { jobSubscriptionManager, JobStatusUpdate } from '~/lib/services/JobSubscriptionManager';
 import { useQueryClient } from '@tanstack/react-query';
 import { useJobSubscription } from './useJobSubscription';
-import { isAnalysisUpdateMessage, isAnalysisFailedMessage, isJobCompletionMessage } from '~/lib/types/websocket.types';
+import { isAnalysisUpdateMessage, isAnalysisFailedMessage, isJobCompletionMessage, isDirectJobNotification } from '~/lib/types/websocket.types';
 import { toast } from 'sonner';
 
 interface AnalysisSubscriptionOptions {
@@ -92,7 +92,7 @@ export function useAnalysisSubscription({ userId, enabled = true }: AnalysisSubs
     if (isJobCompletionMessage(wsMessage)) {
       if (wsMessage.jobId === currentJobIdRef.current) {
         const { stats } = wsMessage;
-        const message = `Analysis complete: ${stats.tracksSucceeded} succeeded, ${stats.tracksFailed} failed`;
+        const message = `Analysis complete: ${stats.itemsSucceeded} succeeded, ${stats.itemsFailed} failed`;
 
         toast.success(message, {
           duration: 15000,
@@ -110,6 +110,31 @@ export function useAnalysisSubscription({ userId, enabled = true }: AnalysisSubs
         queryClient.invalidateQueries({ queryKey: likedSongsKeys.lists() });
       }
       return;
+    }
+
+    // Handle direct job notifications (including failures without trackId)
+    if (isDirectJobNotification(wsMessage)) {
+      if (wsMessage.status === 'FAILED' && wsMessage.error) {
+        toast.error(`Analysis failed: ${wsMessage.error}`, {
+          duration: 5000,
+          dismissible: true,
+        });
+      }
+      // If we have a trackId, update the track status
+      if (wsMessage.trackId !== null) {
+        const trackId = wsMessage.trackId;
+        if (wsMessage.status === 'FAILED') {
+          updateTrackAnalysis(trackId, null, 'failed');
+        } else if (wsMessage.status === 'COMPLETED') {
+          updateTrackAnalysis(trackId, null, 'analyzed');
+        }
+      }
+      // Invalidate to refresh job stats
+      if (wsMessage.status === 'FAILED' || wsMessage.status === 'COMPLETED') {
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: likedSongsKeys.analysisStatus() });
+        }, 100);
+      }
     }
 
     // Route messages through subscription manager for track updates
