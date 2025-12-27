@@ -277,6 +277,7 @@ const LikedSongsContent: React.FC<LikedSongsContentProps> = ({ initialSongs, use
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    autoResetPageIndex: false, // Preserve page when data changes (e.g., during analysis)
     onPaginationChange: (updater) => {
       if (typeof updater === 'function') {
         const newState = updater({ pageIndex: currentPage, pageSize });
