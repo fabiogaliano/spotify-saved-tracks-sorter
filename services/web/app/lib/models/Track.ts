@@ -11,8 +11,8 @@ export type SavedTrackInsert = TablesInsert<'saved_tracks'>
 export type TrackAnalysis = Tables<'track_analyses'>
 export type TrackAnalysisInsert = TablesInsert<'track_analyses'>
 
-// NEW: Define and export UIAnalysisStatus
-export type UIAnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed' | 'unknown';
+// UIAnalysisStatus now derived from database ENUM for type safety
+export type UIAnalysisStatus = Enums<'ui_analysis_status_enum'>;
 
 export type TrackWithAnalysis = SavedTrackRow & {
   analysis: TrackAnalysis | null;

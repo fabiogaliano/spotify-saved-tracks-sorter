@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-table';
 import { AlertCircle, CheckCircle, Clock, Columns, Music, RefreshCw, Sparkles } from 'lucide-react';
 import { useMemo, useState, useRef, useEffect } from 'react';
-import { TrackWithAnalysis } from '~/lib/models/Track';
+import { TrackWithAnalysis, UIAnalysisStatus } from '~/lib/models/Track';
 import {
   Card,
   CardContent,
@@ -38,8 +38,8 @@ import { useSyncLikedSongs, useAnalysisStatus, likedSongsKeys, type AnalysisJob,
 import { useQueryClient } from '@tanstack/react-query';
 import type { VisibilityState } from '@tanstack/react-table';
 
-// Types
-export type UIAnalysisStatus = 'analyzed' | 'pending' | 'not_analyzed' | 'failed' | 'unknown';
+// Re-export for backwards compatibility
+export type { UIAnalysisStatus };
 
 interface LikedSongsContentProps {
   initialSongs: TrackWithAnalysis[];

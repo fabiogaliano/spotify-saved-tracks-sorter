@@ -639,7 +639,7 @@ export type Database = {
           sorting_status: Database["public"]["Enums"]["sorting_status_enum"]
           spotify_track_id: string
           track_id: number
-          ui_analysis_status: string
+          ui_analysis_status: Database["public"]["Enums"]["ui_analysis_status_enum"]
         }[]
       }
       queue_analyze_track_task: {
@@ -659,6 +659,12 @@ export type Database = {
       sorting_status_enum: "unsorted" | "sorted" | "ignored"
       sync_mode_enum: "manual" | "automatic"
       theme: "light" | "dark"
+      ui_analysis_status_enum:
+        | "analyzed"
+        | "pending"
+        | "not_analyzed"
+        | "failed"
+        | "unknown"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -801,6 +807,13 @@ export const Constants = {
       sorting_status_enum: ["unsorted", "sorted", "ignored"],
       sync_mode_enum: ["manual", "automatic"],
       theme: ["light", "dark"],
+      ui_analysis_status_enum: [
+        "analyzed",
+        "pending",
+        "not_analyzed",
+        "failed",
+        "unknown",
+      ],
     },
   },
 } as const
