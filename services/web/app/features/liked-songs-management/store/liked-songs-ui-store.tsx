@@ -97,11 +97,11 @@ export const LikedSongsUIProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, []);
 
   const toggleColumn = useCallback((columnId: string) => {
-    setColumnVisibility(prev => ({
-      ...prev,
-      [columnId]: !prev[columnId],
-    }));
-  }, [setColumnVisibility]);
+    setColumnVisibility({
+      ...columnVisibility,
+      [columnId]: !columnVisibility[columnId],
+    });
+  }, [columnVisibility, setColumnVisibility]);
 
   const value = {
     // State

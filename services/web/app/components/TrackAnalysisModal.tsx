@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -757,8 +756,6 @@ const TrackAnalysisModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] md:max-w-4xl lg:max-w-5xl h-[85vh] flex flex-col overflow-hidden bg-card border-border p-0 gap-0">
-        <DialogClose className="text-green-500 absolute right-4 top-4 z-10" />
-
         <DialogHeader className="border-b border-border px-6 py-4 shrink-0 bg-gradient-to-r from-card to-card-foreground/5">
           <div className="space-y-3">
             <div>

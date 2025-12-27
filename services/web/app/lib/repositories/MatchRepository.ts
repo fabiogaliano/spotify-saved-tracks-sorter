@@ -3,49 +3,49 @@ import { MatchResult } from '~/lib/models/Matching'
 import { logger } from '~/lib/logging/Logger'
 
 export interface MatchRepository {
-  saveMatchResult(songId: number, playlistId: number, matchResult: MatchResult, modelName: string): Promise<void>
-  getSongPlaylistMatches(songId: number): Promise<Array<{ playlist_id: number; score: number; factors: any }>>
-  getPlaylistSongMatches(playlistId: number): Promise<Array<{ song_id: number; score: number; factors: any }>>
-  deleteMatchResult(songId: number, playlistId: number): Promise<void>
+  saveMatchResult(trackId: number, playlistId: number, matchResult: MatchResult, modelName: string): Promise<void>
+  getTrackPlaylistMatches(trackId: number): Promise<Array<{ playlist_id: number; score: number; factors: any }>>
+  getPlaylistTrackMatches(playlistId: number): Promise<Array<{ track_id: number; score: number; factors: any }>>
+  deleteMatchResult(trackId: number, playlistId: number): Promise<void>
 }
 
 export class SupabaseMatchRepository implements MatchRepository {
-  async saveMatchResult(songId: number, playlistId: number, matchResult: MatchResult, modelName: string): Promise<void> {
+  async saveMatchResult(trackId: number, playlistId: number, matchResult: MatchResult, modelName: string): Promise<void> {
     try {
-      logger.debug('Saving match result', { songId, playlistId, similarity: matchResult.similarity })
+      logger.debug('Saving match result', { trackId, playlistId, similarity: matchResult.similarity })
 
       const { error } = await getSupabase()
-        .from('song_playlist_matches')
+        .from('track_playlist_matches')
         .upsert({
-          song_id: songId,
+          track_id: trackId,
           playlist_id: playlistId,
           score: matchResult.similarity,
           factors: matchResult.component_scores,
           model_name: modelName,
-          version: '1.0'
+          version: 1
         }, {
-          onConflict: 'song_id,playlist_id'
+          onConflict: 'track_id,playlist_id'
         })
 
       if (error) {
         throw new logger.AppError('Failed to save match result', error.code, 0, { error })
       }
 
-      logger.debug('Successfully saved match result', { songId, playlistId })
+      logger.debug('Successfully saved match result', { trackId, playlistId })
     } catch (error) {
-      logger.error('Error saving match result', error as Error, { songId, playlistId })
+      logger.error('Error saving match result', error as Error, { trackId, playlistId })
       throw new logger.AppError('Failed to save match result', 'match-save-failed', 0, { error })
     }
   }
 
-  async getSongPlaylistMatches(songId: number): Promise<Array<{ playlist_id: number; score: number; factors: any }>> {
+  async getTrackPlaylistMatches(trackId: number): Promise<Array<{ playlist_id: number; score: number; factors: any }>> {
     try {
-      logger.debug('Getting playlist matches for song', { songId })
+      logger.debug('Getting playlist matches for song', { trackId })
 
       const { data, error } = await getSupabase()
-        .from('song_playlist_matches')
+        .from('track_playlist_matches')
         .select('playlist_id, score, factors')
-        .eq('song_id', songId)
+        .eq('track_id', trackId)
         .order('score', { ascending: false })
 
       if (error) {
@@ -53,24 +53,24 @@ export class SupabaseMatchRepository implements MatchRepository {
       }
 
       logger.debug('Successfully got playlist matches for song', {
-        songId,
+        trackId,
         matchCount: data?.length
       })
 
       return data || []
     } catch (error) {
-      logger.error('Error getting song playlist matches', error as Error, { songId })
+      logger.error('Error getting song playlist matches', error as Error, { trackId })
       throw new logger.AppError('Failed to get song playlist matches', 'match-get-failed', 0, { error })
     }
   }
 
-  async getPlaylistSongMatches(playlistId: number): Promise<Array<{ song_id: number; score: number; factors: any }>> {
+  async getPlaylistTrackMatches(playlistId: number): Promise<Array<{ track_id: number; score: number; factors: any }>> {
     try {
       logger.debug('Getting song matches for playlist', { playlistId })
 
       const { data, error } = await getSupabase()
-        .from('song_playlist_matches')
-        .select('song_id, score, factors')
+        .from('track_playlist_matches')
+        .select('track_id, score, factors')
         .eq('playlist_id', playlistId)
         .order('score', { ascending: false })
 
@@ -90,23 +90,23 @@ export class SupabaseMatchRepository implements MatchRepository {
     }
   }
 
-  async deleteMatchResult(songId: number, playlistId: number): Promise<void> {
+  async deleteMatchResult(trackId: number, playlistId: number): Promise<void> {
     try {
-      logger.debug('Deleting match result', { songId, playlistId })
+      logger.debug('Deleting match result', { trackId, playlistId })
 
       const { error } = await getSupabase()
-        .from('song_playlist_matches')
+        .from('track_playlist_matches')
         .delete()
-        .eq('song_id', songId)
+        .eq('track_id', trackId)
         .eq('playlist_id', playlistId)
 
       if (error) {
         throw new logger.AppError('Failed to delete match result', error.code, 0, { error })
       }
 
-      logger.debug('Successfully deleted match result', { songId, playlistId })
+      logger.debug('Successfully deleted match result', { trackId, playlistId })
     } catch (error) {
-      logger.error('Error deleting match result', error as Error, { songId, playlistId })
+      logger.error('Error deleting match result', error as Error, { trackId, playlistId })
       throw new logger.AppError('Failed to delete match result', 'match-delete-failed', 0, { error })
     }
   }

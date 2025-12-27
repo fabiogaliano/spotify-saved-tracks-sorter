@@ -313,6 +313,7 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
         });
       } else if (data.success) {
         toast.success(`${data.message || 'Tracks queued for analysis'}`);
+        setCurrentJobId(null);
         setIsAnalyzingTracks(false);
       } else {
         toast.error(data.error || 'Failed to start track analysis');

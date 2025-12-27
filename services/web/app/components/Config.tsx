@@ -8,7 +8,7 @@ import { ConfigLoaderData } from '~/routes/config'
 export function Config() {
 	const [removeLikedSongs, setRemoveLikedSongs] = useState(false)
 	const [hasApiKeys, setHasApiKeys] = useState(false)
-	const [providerStatuses, setProviderStatuses] = useState([])
+	const [providerStatuses, setProviderStatuses] = useState<Array<{ provider: string; hasKey: boolean; isActive: boolean }>>([])
 	const { user } = useLoaderData<ConfigLoaderData>()
 
 	useEffect(() => {
@@ -22,7 +22,7 @@ export function Config() {
 			const response = await fetch(`${apiRoutes.llmProvider.statuses}?userId=${userId}`)
 			const data = await response.json()
 			setProviderStatuses(data.providerStatuses)
-			setHasApiKeys(data.providerStatuses.some(status => status.hasKey))
+			setHasApiKeys(data.providerStatuses.some((status: { hasKey: boolean }) => status.hasKey))
 		} catch (error) {
 			console.error('Failed to fetch provider statuses:', error)
 		}
