@@ -6,7 +6,8 @@ import {
   GetQueueAttributesCommand,
   GetQueueUrlCommand,
   SendMessageBatchResultEntry,
-  SendMessageBatchRequestEntry
+  SendMessageBatchRequestEntry,
+  BatchResultErrorEntry
 } from "@aws-sdk/client-sqs";
 import crypto from "crypto";
 import { logger } from '~/lib/logging/Logger';
@@ -46,6 +47,7 @@ export interface EnqueueJobResult {
 export interface EnqueueBatchResult {
   batchId: string;
   results: SendMessageBatchResultEntry[];
+  failed: BatchResultErrorEntry[];
 }
 
 class SQSService {
@@ -164,11 +166,12 @@ class SQSService {
     const effectiveBatchId = batchId || crypto.randomUUID();
 
     if (payloads.length === 0) {
-      return { batchId: effectiveBatchId, results: [] };
+      return { batchId: effectiveBatchId, results: [], failed: [] };
     }
 
     const queueUrl = await this.getQueueUrl();
     const results: SendMessageBatchResultEntry[] = [];
+    const failed: BatchResultErrorEntry[] = [];
 
     const MAX_BATCH_SIZE = 10;
 
@@ -219,7 +222,10 @@ class SQSService {
         }
 
         if (result.Failed?.length) {
-          logger.error(`Failed to enqueue ${result.Failed.length} tracks`);
+          failed.push(...result.Failed);
+          logger.error(`Failed to enqueue ${result.Failed.length} tracks`, {
+            failed: result.Failed.map(f => ({ id: f.Id, code: f.Code, message: f.Message }))
+          });
         }
       } catch (error) {
         logger.error("Error sending to SQS");
@@ -227,7 +233,7 @@ class SQSService {
       }
     }
 
-    return { batchId: effectiveBatchId, results };
+    return { batchId: effectiveBatchId, results, failed };
   }
 }
 

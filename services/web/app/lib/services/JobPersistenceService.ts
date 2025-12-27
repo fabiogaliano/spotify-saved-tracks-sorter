@@ -61,8 +61,11 @@ export class JobPersistenceService {
       return null; // Cannot recover job without item IDs
     }
 
+    // Validate job type early to ensure correct path selection
+    const validatedJobType = validateJobType(dbJob.job_type, dbJob.batch_id);
+
     // For playlist jobs, skip the detailed state reconstruction
-    const isPlaylistJob = dbJob.job_type === 'playlist';
+    const isPlaylistJob = validatedJobType === 'playlist';
 
     // Build item states map
     const itemStates: ItemStatesMap = new Map();
@@ -112,6 +115,9 @@ export class JobPersistenceService {
           switch (attemptStatus) {
             case 'IN_PROGRESS':
               state = 'in_progress';
+              break;
+            case 'COMPLETED':
+              state = 'completed';
               break;
             case 'FAILED':
               state = 'failed';
@@ -164,9 +170,6 @@ export class JobPersistenceService {
       }
     }
 
-    // Validate job type with runtime check (fixes unchecked type casting)
-    const jobType = validateJobType(dbJob.job_type, dbJob.batch_id);
-
     const baseProps = {
       id: dbJob.batch_id,
       status: finalStatus,
@@ -179,7 +182,7 @@ export class JobPersistenceService {
     };
 
     // Return proper discriminated union type based on job type
-    if (jobType === 'playlist') {
+    if (validatedJobType === 'playlist') {
       const playlistJob: PlaylistJob = {
         ...baseProps,
         jobType: 'playlist',

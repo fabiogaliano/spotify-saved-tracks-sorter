@@ -174,8 +174,8 @@ export class SongAnalysisService implements ISongAnalysisService {
       // Method 4: Clean and retry
       () => {
         const cleaned = responseText
-          .replace(/\\"([^"]*)\\"/, '"$1"')
-          .replace(/\\\\"([^\\]*?)\\\\"/, '"$1"')
+          .replace(/\\"([^"]*)\\"/g, '"$1"')
+          .replace(/\\\\"([^\\]*?)\\\\"/g, '"$1"')
         const match = cleaned.match(/{[\s\S]*}/s)
         if (match) {
           return JSON.parse(match[0])
@@ -211,25 +211,12 @@ export class SongAnalysisService implements ISongAnalysisService {
         }
       }
 
-      // 3. Format audio features for prompt
-      const audioFeaturesText = audioFeatures ?
-        `Tempo: ${audioFeatures.tempo} BPM
-Energy: ${audioFeatures.energy} (0.0 = low, 1.0 = high)
-Valence: ${audioFeatures.valence} (0.0 = sad/negative, 1.0 = happy/positive)
-Danceability: ${audioFeatures.danceability} (0.0 = not danceable, 1.0 = very danceable)
-Acousticness: ${audioFeatures.acousticness} (0.0 = not acoustic, 1.0 = acoustic)
-Instrumentalness: ${audioFeatures.instrumentalness} (0.0 = vocal, 1.0 = instrumental)
-Liveness: ${audioFeatures.liveness} (0.0 = studio, 1.0 = live performance)
-Speechiness: ${audioFeatures.speechiness} (0.0 = non-speech, 1.0 = speech-like)
-Loudness: ${audioFeatures.loudness} dB` :
-        'Audio features not available - analyze based on lyrics only'
-
-      // 4. Build enhanced prompt
+      // 3. Build enhanced prompt with formatted audio features
       const filledPrompt = ENHANCED_MUSIC_ANALYSIS_PROMPT
         .replace('{artist}', artist)
         .replace('{title}', song)
         .replace('{lyrics_with_annotations}', JSON.stringify(lyrics, null, 2))
-        .replace('{audio_features}', audioFeaturesText)
+        .replace('{audio_features}', this.formatAudioFeatures(audioFeatures))
 
       if (!this.providerManager) {
         throw new Error('LLM Provider Manager is not initialized')
@@ -379,6 +366,21 @@ Loudness: ${audioFeatures.loudness} dB` :
           const result = await this.providerManager.generateText(filledPrompt);
           const analysisJson = this.extractJsonFromLLMResponse(result.text);
 
+          // Attach audio features if available (matching analyzeSong behavior)
+          if (audioFeatures) {
+            analysisJson.audio_features = {
+              tempo: audioFeatures.tempo,
+              energy: audioFeatures.energy,
+              valence: audioFeatures.valence,
+              danceability: audioFeatures.danceability,
+              acousticness: audioFeatures.acousticness,
+              instrumentalness: audioFeatures.instrumentalness,
+              liveness: audioFeatures.liveness,
+              speechiness: audioFeatures.speechiness,
+              loudness: audioFeatures.loudness
+            };
+          }
+
           const duration = Date.now() - startTime;
           logger.info(`Analysis completed for track: ${track.artist} - ${track.song}`, {
             trackId: track.trackId,
@@ -486,6 +488,25 @@ Loudness: ${audioFeatures.loudness} dB` :
   }
 
   /**
+   * Format audio features as human-readable text for LLM prompt
+   */
+  private formatAudioFeatures(audioFeatures: ReccoBeatsAudioFeatures | null): string {
+    if (!audioFeatures) {
+      return 'Audio features not available - analyze based on lyrics only';
+    }
+
+    return `Tempo: ${audioFeatures.tempo} BPM
+Energy: ${audioFeatures.energy} (0.0 = low, 1.0 = high)
+Valence: ${audioFeatures.valence} (0.0 = sad/negative, 1.0 = happy/positive)
+Danceability: ${audioFeatures.danceability} (0.0 = not danceable, 1.0 = very danceable)
+Acousticness: ${audioFeatures.acousticness} (0.0 = not acoustic, 1.0 = acoustic)
+Instrumentalness: ${audioFeatures.instrumentalness} (0.0 = vocal, 1.0 = instrumental)
+Liveness: ${audioFeatures.liveness} (0.0 = studio, 1.0 = live performance)
+Speechiness: ${audioFeatures.speechiness} (0.0 = non-speech, 1.0 = speech-like)
+Loudness: ${audioFeatures.loudness} dB`;
+  }
+
+  /**
    * Build the analysis prompt with lyrics and audio features
    */
   private buildAnalysisPrompt(
@@ -494,12 +515,10 @@ Loudness: ${audioFeatures.loudness} dB` :
     lyrics: TransformedLyricsBySection[],
     audioFeatures: ReccoBeatsAudioFeatures | null
   ): string {
-    const audioFeaturesStr = audioFeatures ? JSON.stringify(audioFeatures, null, 2) : 'No audio features available';
-
     return ENHANCED_MUSIC_ANALYSIS_PROMPT
       .replace('{artist}', artist)
       .replace('{title}', song)
       .replace('{lyrics_with_annotations}', JSON.stringify(lyrics, null, 2))
-      .replace('{audio_features}', audioFeaturesStr);
+      .replace('{audio_features}', this.formatAudioFeatures(audioFeatures));
   }
 }

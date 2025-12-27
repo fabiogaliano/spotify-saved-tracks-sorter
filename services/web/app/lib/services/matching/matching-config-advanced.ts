@@ -99,22 +99,22 @@ export class MatchingConfigManager {
    * Get active A/B test for user
    */
   private getActiveABTest(userId: number): { name: string; weights: typeof DEFAULT_WEIGHTS } | null {
+    // Guard against non-positive IDs to avoid unintended enrollment
+    if (userId <= 0) {
+      return null
+    }
+
     // Simple hash-based assignment (in production, use proper A/B testing service)
     const testGroup = userId % 10
-    
+
     if (testGroup === 0 && this.abTests.has('audio_boost_test')) {
+      const testConfig = this.abTests.get('audio_boost_test')
       return {
         name: 'audio_boost_test',
-        weights: {
-          metadata: 0.1,
-          vector: 0.2,
-          audio: 0.4,  // Testing higher audio weight
-          cultural: 0.15,
-          thematic: 0.15
-        }
+        weights: testConfig?.weights ?? DEFAULT_WEIGHTS
       }
     }
-    
+
     return null
   }
   
@@ -130,7 +130,8 @@ export class MatchingConfigManager {
 // Performance tracking
 export class AlgorithmPerformance {
   private metrics: Map<string, number[]> = new Map()
-  
+  private static readonly MAX_SCORES_PER_KEY = 1000
+
   /**
    * Track a match result
    */
@@ -138,8 +139,14 @@ export class AlgorithmPerformance {
     const key = `${userId}:${outcome}`
     const scores = this.metrics.get(key) || []
     scores.push(score)
+
+    // Prevent unbounded growth - keep only recent scores
+    if (scores.length > AlgorithmPerformance.MAX_SCORES_PER_KEY) {
+      scores.shift()
+    }
+
     this.metrics.set(key, scores)
-    
+
     // Log for analysis
     logger.debug('Match outcome tracked', { userId, trackId, score, outcome })
   }

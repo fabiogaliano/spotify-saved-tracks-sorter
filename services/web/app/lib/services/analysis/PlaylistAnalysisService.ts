@@ -172,9 +172,11 @@ export class PlaylistAnalysisService implements IPlaylistAnalysisService {
         ).join('\n')
         : 'No tracks provided - analyzing based on playlist name and description only'
 
+      const safeDescription = playlistDescription?.trim() || 'No description provided'
+
       const filledPrompt = ENHANCED_PLAYLIST_ANALYSIS_PROMPT
         .replace('{playlist_name}', playlistName)
-        .replace('{playlist_description}', playlistDescription)
+        .replace('{playlist_description}', safeDescription)
         .replace('{track_count}', tracks.length.toString())
         .replace('{track_list}', trackList)
 

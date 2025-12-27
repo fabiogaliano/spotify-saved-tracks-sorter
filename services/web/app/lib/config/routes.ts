@@ -104,6 +104,19 @@ export function createAuthenticatedFetcher(request?: Request) {
       throw new Error(`API request failed with status ${response.status}`);
     }
 
-    return response.json();
+    // Handle empty responses (204 No Content, 304 Not Modified)
+    if (response.status === 204 || response.status === 304) {
+      return null;
+    }
+
+    // Check content-type before parsing as JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      return response.json();
+    }
+
+    // Return text for non-JSON responses, or null if empty
+    const text = await response.text();
+    return text || null;
   };
 }
