@@ -87,6 +87,21 @@ export const MATCHING_WEIGHTS = {
 } as const
 
 /**
+ * Audio feature weights for comparing songs
+ * Used in compareAudioFeatures() to weight each audio dimension
+ */
+export const AUDIO_FEATURE_WEIGHTS = {
+  energy: 0.25,
+  valence: 0.2,
+  danceability: 0.15,
+  tempo: 0.15,
+  acousticness: 0.1,
+  instrumentalness: 0.1,
+  speechiness: 0.025,
+  liveness: 0.025
+} as const
+
+/**
  * Note: Analysis type definitions are imported from analysis-schemas.ts
  * This file only contains matching algorithm configuration
  */
