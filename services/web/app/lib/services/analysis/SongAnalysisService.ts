@@ -1,9 +1,8 @@
 import { LyricsService } from '~/lib/models/Lyrics'
 import { SongAnalysisService as ISongAnalysisService } from '~/lib/models/SongAnalysis'
 import type { LlmProviderManager } from '../llm/LlmProviderManager'
-import * as v from 'valibot'
-import { SongAnalysisSchema, type SongAnalysis } from './analysis-schemas'
-import { coerceLlmOutput } from './analysis-validator'
+import { SongAnalysisLlmSchema, type SongAnalysis, type SongAnalysisLlm } from './analysis-schemas'
+import { valibotSchema } from '@ai-sdk/valibot'
 import { logger } from '~/lib/logging/Logger'
 import type { TransformedLyricsBySection } from '../lyrics/utils/lyrics-transformer'
 import { AudioFeaturesService } from '~/lib/services/audio/AudioFeaturesService'
@@ -148,56 +147,6 @@ export class SongAnalysisService implements ISongAnalysisService {
     return JSON.stringify(lyrics, null, 2)
   }
 
-  private extractJsonFromLLMResponse(responseText: string): any {
-    // Try multiple extraction methods
-    const methods = [
-      // Method 1: Direct JSON parse
-      () => JSON.parse(responseText),
-
-      // Method 2: Extract from code blocks
-      () => {
-        const match = responseText.match(/```(?:json)?([\s\S]*?)```/s)
-        if (match?.[1]) {
-          return JSON.parse(match[1].trim())
-        }
-        throw new Error('No code block found')
-      },
-
-      // Method 3: Extract from curly braces
-      () => {
-        const match = responseText.match(/{[\s\S]*}/s)
-        if (match) {
-          return JSON.parse(match[0])
-        }
-        throw new Error('No JSON object found')
-      },
-
-      // Method 4: Clean and retry
-      () => {
-        const cleaned = responseText
-          .replace(/\\"([^"]*)\\"/g, '"$1"')
-          .replace(/\\\\"([^\\]*?)\\\\"/g, '"$1"')
-        const match = cleaned.match(/{[\s\S]*}/s)
-        if (match) {
-          return JSON.parse(match[0])
-        }
-        throw new Error('Cleaning failed')
-      }
-    ]
-
-    for (const method of methods) {
-      try {
-        const result = method()
-        return result
-      } catch (error) {
-        continue
-      }
-    }
-
-    logger.error('All JSON extraction methods failed', { responsePreview: responseText.slice(0, 500) })
-    throw new Error('Failed to extract valid JSON from LLM response')
-  }
-
   async analyzeSong(artist: string, song: string, trackId?: number): Promise<string> {
     try {
       // 1. Get lyrics
@@ -223,27 +172,29 @@ export class SongAnalysisService implements ISongAnalysisService {
         throw new Error('LLM Provider Manager is not initialized')
       }
 
-      const result = await this.providerManager.generateText(filledPrompt)
+      // Use structured output - AI SDK validates against schema automatically
+      const result = await this.providerManager.generateObject<SongAnalysisLlm>(
+        filledPrompt,
+        valibotSchema(SongAnalysisLlmSchema)
+      )
 
-      const analysisJson = this.extractJsonFromLLMResponse(result.text)
-
-      // Validate using valibot schema
-      const validatedAnalysis = this.validateAndParseAnalysis(analysisJson)
-
-      // Attach audio features if available
-      if (audioFeatures) {
-        validatedAnalysis.audio_features = {
-          tempo: audioFeatures.tempo,
-          energy: audioFeatures.energy,
-          valence: audioFeatures.valence,
-          danceability: audioFeatures.danceability,
-          acousticness: audioFeatures.acousticness,
-          instrumentalness: audioFeatures.instrumentalness,
-          liveness: audioFeatures.liveness,
-          speechiness: audioFeatures.speechiness,
-          loudness: audioFeatures.loudness
-        }
-      }
+      // Build the final analysis with audio features
+      const validatedAnalysis: SongAnalysis = audioFeatures
+        ? {
+            ...result.output,
+            audio_features: {
+              tempo: audioFeatures.tempo,
+              energy: audioFeatures.energy,
+              valence: audioFeatures.valence,
+              danceability: audioFeatures.danceability,
+              acousticness: audioFeatures.acousticness,
+              instrumentalness: audioFeatures.instrumentalness,
+              liveness: audioFeatures.liveness,
+              speechiness: audioFeatures.speechiness,
+              loudness: audioFeatures.loudness
+            }
+          }
+        : result.output
 
       // Return the standard format expected by workers
       return JSON.stringify({
@@ -253,18 +204,6 @@ export class SongAnalysisService implements ISongAnalysisService {
     } catch (error) {
       throw new Error(`Failed to analyze song ${artist} - ${song}: ${error instanceof Error ? error.message : String(error)}`)
     }
-  }
-
-  private validateAndParseAnalysis(analysis: unknown): SongAnalysis {
-    // First, coerce LLM output to match expected types
-    const coercedAnalysis = coerceLlmOutput(analysis)
-
-    const result = v.safeParse(SongAnalysisSchema, coercedAnalysis)
-    if (!result.success) {
-      logger.error('[SongAnalysis] Validation failed', { issues: result.issues })
-      throw new Error(`Invalid analysis structure: ${result.issues.map(i => i.message).join(', ')}`)
-    }
-    return result.output
   }
 
 
@@ -351,24 +290,29 @@ export class SongAnalysisService implements ISongAnalysisService {
           // Build the prompt with pre-fetched lyrics and audio features
           const filledPrompt = this.buildAnalysisPrompt(track.artist, track.song, lyrics, audioFeatures);
 
-          // Send to LLM
-          const result = await this.providerManager.generateText(filledPrompt);
-          const analysisJson = this.extractJsonFromLLMResponse(result.text);
+          // Use structured output - AI SDK validates against schema automatically
+          const result = await this.providerManager.generateObject<SongAnalysisLlm>(
+            filledPrompt,
+            valibotSchema(SongAnalysisLlmSchema)
+          );
 
-          // Attach audio features if available (matching analyzeSong behavior)
-          if (audioFeatures) {
-            analysisJson.audio_features = {
-              tempo: audioFeatures.tempo,
-              energy: audioFeatures.energy,
-              valence: audioFeatures.valence,
-              danceability: audioFeatures.danceability,
-              acousticness: audioFeatures.acousticness,
-              instrumentalness: audioFeatures.instrumentalness,
-              liveness: audioFeatures.liveness,
-              speechiness: audioFeatures.speechiness,
-              loudness: audioFeatures.loudness
-            };
-          }
+          // Build the final analysis with audio features
+          const analysisJson: SongAnalysis = audioFeatures
+            ? {
+                ...result.output,
+                audio_features: {
+                  tempo: audioFeatures.tempo,
+                  energy: audioFeatures.energy,
+                  valence: audioFeatures.valence,
+                  danceability: audioFeatures.danceability,
+                  acousticness: audioFeatures.acousticness,
+                  instrumentalness: audioFeatures.instrumentalness,
+                  liveness: audioFeatures.liveness,
+                  speechiness: audioFeatures.speechiness,
+                  loudness: audioFeatures.loudness
+                }
+              }
+            : result.output;
 
           const duration = Date.now() - startTime;
           logger.info(`Analysis completed for track: ${track.artist} - ${track.song}`, {

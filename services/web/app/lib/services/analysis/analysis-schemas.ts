@@ -197,8 +197,13 @@ export const PlaylistAnalysisSchema = v.object({
   })
 })
 
+// LLM output schemas (without programmatically-added fields)
+export const SongAnalysisLlmSchema = v.omit(SongAnalysisSchema, ['audio_features'])
+export const PlaylistAnalysisLlmSchema = PlaylistAnalysisSchema // No programmatic additions
+
 // Type exports from schemas
 export type SongAnalysis = v.InferOutput<typeof SongAnalysisSchema>
+export type SongAnalysisLlm = v.InferOutput<typeof SongAnalysisLlmSchema>
 export type PlaylistAnalysis = v.InferOutput<typeof PlaylistAnalysisSchema>
 export type CulturalMarkers = v.InferOutput<typeof CulturalMarkersSchema>
 export type Theme = v.InferOutput<typeof ThemeSchema>

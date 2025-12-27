@@ -1,6 +1,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic'
-import { generateText, LanguageModelUsage } from 'ai'
-import type { ProviderInterface } from '~/lib/models/LlmProvider'
+import { generateText, Output, LanguageModelUsage } from 'ai'
+import type { ProviderInterface, LlmProviderObjectResponse } from '~/lib/models/LlmProvider'
+import type { Schema } from '@ai-sdk/provider-utils'
 
 export class AnthropicProvider implements ProviderInterface {
   name = 'anthropic'
@@ -35,5 +36,21 @@ export class AnthropicProvider implements ProviderInterface {
       prompt,
     })
     return { text, usage }
+  }
+
+  async generateObject<T>(prompt: string, schema: Schema<T>, model?: string): Promise<LlmProviderObjectResponse<T>> {
+    const selectedModel = model || this.activeModel
+
+    const { output, usage } = await generateText({
+      model: this.client(selectedModel),
+      prompt,
+      output: Output.object({ schema }),
+    })
+
+    if (!output) {
+      throw new Error('Failed to generate structured output')
+    }
+
+    return { output: output as T, usage }
   }
 }

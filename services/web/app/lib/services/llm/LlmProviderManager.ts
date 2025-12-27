@@ -2,7 +2,8 @@ import { OpenAIProvider } from './providers/OpenAIProvider'
 import { AnthropicProvider } from './providers/AnthropicProvider'
 import { GoogleProvider } from './providers/GoogleProvider'
 import type { LlmProviderManager as ILlmProviderManager } from '~/lib/services'
-import type { ProviderInterface, LlmProviderResponse } from '~/lib/models/LlmProvider'
+import type { ProviderInterface, LlmProviderResponse, LlmProviderObjectResponse } from '~/lib/models/LlmProvider'
+import type { Schema } from '@ai-sdk/provider-utils'
 import { logger } from '~/lib/logging/Logger'
 
 export type LlmProviderName = 'openai' | 'anthropic' | 'google'
@@ -117,6 +118,34 @@ export class LlmProviderManager implements ILlmProviderManager {
       return response
     } catch (error: any) {
       // Extract useful error info instead of dumping entire error object
+      const statusCode = error?.statusCode || error?.status || 500
+      const apiError = error?.data?.error || error?.lastError?.data?.error
+      const message = apiError?.message || error?.message || 'Unknown error'
+      const retryDelay = apiError?.details?.find((d: any) => d.retryDelay)?.retryDelay
+
+      throw new logger.AppError(
+        message,
+        statusCode === 429 ? 'RATE_LIMIT_ERROR' : 'LLM_PROVIDER_ERROR',
+        statusCode,
+        { retryDelay, provider: this.provider?.name }
+      )
+    }
+  }
+
+  async generateObject<T>(prompt: string, schema: Schema<T>, model?: string): Promise<LlmProviderObjectResponse<T>> {
+    try {
+      if (!this.provider) {
+        throw new logger.AppError(
+          'No provider selected',
+          'LLM_PROVIDER_ERROR',
+          400
+        )
+      }
+
+      const activeModel = model || this.provider.getActiveModel()
+      const response = await this.provider.generateObject<T>(prompt, schema, activeModel)
+      return response
+    } catch (error: any) {
       const statusCode = error?.statusCode || error?.status || 500
       const apiError = error?.data?.error || error?.lastError?.data?.error
       const message = apiError?.message || error?.message || 'Unknown error'

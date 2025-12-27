@@ -1,8 +1,7 @@
 import { PlaylistAnalysisService as IPlaylistAnalysisService } from '~/lib/models/PlaylistAnalysis'
 import type { LlmProviderManager } from '../llm/LlmProviderManager'
-import * as v from 'valibot'
-import { PlaylistAnalysisSchema, type PlaylistAnalysis } from './analysis-schemas'
-import { coerceLlmOutput } from './analysis-validator'
+import { PlaylistAnalysisLlmSchema, type PlaylistAnalysis } from './analysis-schemas'
+import { valibotSchema } from '@ai-sdk/valibot'
 
 // Enhanced playlist analysis prompt that captures cultural themes and cohesion
 const ENHANCED_PLAYLIST_ANALYSIS_PROMPT = `You are an expert music curator. Analyze this playlist to understand its purpose and cohesive elements. Only identify cultural significance when it's explicitly present and central to the playlist's theme.
@@ -134,34 +133,6 @@ export class PlaylistAnalysisService implements IPlaylistAnalysisService {
     private readonly providerManager: LlmProviderManager
   ) { }
 
-  private extractJsonFromLLMResponse(responseText: string): any {
-    const methods = [
-      () => JSON.parse(responseText),
-      () => {
-        const match = responseText.match(/```(?:json)?([\s\S]*?)```/s)
-        if (match?.[1]) return JSON.parse(match[1].trim())
-        throw new Error('No code block')
-      },
-      // TODO: Replace with structured output (JSON mode) when upgrading ai/sdk
-      () => {
-        const match = responseText.match(/{[\s\S]*}/s)
-        if (match) return JSON.parse(match[0])
-        throw new Error('No JSON object')
-      }
-    ]
-
-    for (const method of methods) {
-      try {
-        return method()
-      } catch (error) {
-        continue
-      }
-    }
-
-    console.error('JSON extraction failed. Response:', responseText.slice(0, 500))
-    throw new Error('Failed to extract valid JSON from LLM response')
-  }
-
   async analyzePlaylist(
     playlistName: string,
     playlistDescription: string,
@@ -187,42 +158,22 @@ export class PlaylistAnalysisService implements IPlaylistAnalysisService {
       }
 
       console.log(`[PlaylistAnalysis] Analyzing playlist: ${playlistName}`)
-      const result = await this.providerManager.generateText(filledPrompt)
 
-      const analysisJson = this.extractJsonFromLLMResponse(result.text)
+      // Use structured output - AI SDK validates against schema automatically
+      const result = await this.providerManager.generateObject<PlaylistAnalysis>(
+        filledPrompt,
+        valibotSchema(PlaylistAnalysisLlmSchema)
+      )
 
-      // Validate using valibot schema
-      const validatedAnalysis = this.validateAndParseAnalysis(analysisJson)
+      console.log('[PlaylistAnalysis] Analysis structure validated via structured output')
 
       // Return the standard format expected by workers
       return JSON.stringify({
         model: this.providerManager.getCurrentModel(),
-        analysis: validatedAnalysis
+        analysis: result.output
       })
     } catch (error) {
       throw new Error(`Failed to analyze playlist ${playlistName}: ${error instanceof Error ? error.message : String(error)}`)
-    }
-  }
-
-  private validateAndParseAnalysis(analysis: unknown): PlaylistAnalysis {
-    try {
-      // First, coerce LLM output to match expected types
-      const coercedAnalysis = coerceLlmOutput(analysis)
-
-      // Use valibot to validate and parse the analysis
-      const result = v.safeParse(PlaylistAnalysisSchema, coercedAnalysis)
-
-      if (result.success) {
-        console.log('[PlaylistAnalysis] Analysis structure validated with valibot')
-        return result.output
-      } else {
-        const issues = result.issues.map(i => `${i.path?.map(p => p.key).join('.') || 'root'}: ${i.message}`).join('; ')
-        console.error('[PlaylistAnalysis] Validation failed:', issues)
-        throw new Error(`Invalid analysis structure: ${issues}`)
-      }
-    } catch (error) {
-      console.error('[PlaylistAnalysis] Validation error:', error)
-      throw new Error(`Analysis validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 }
