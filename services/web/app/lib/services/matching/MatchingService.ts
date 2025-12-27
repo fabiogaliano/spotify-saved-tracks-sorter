@@ -1,7 +1,7 @@
 import type { MatchResult, MatchScores, Playlist, Song } from '~/lib/models/Matching'
 import { MatchRepository } from '~/lib/repositories/MatchRepository'
 import { logger } from '~/lib/logging/Logger'
-import { MATCHING_WEIGHTS } from './matching-config'
+import { MATCHING_WEIGHTS, AUDIO_FEATURE_WEIGHTS } from './matching-config'
 import type { SongAnalysis } from '../analysis/analysis-schemas'
 import type { ReccoBeatsAudioFeatures } from '../reccobeats/ReccoBeatsService'
 import type { VectorizationService } from '../vectorization/VectorizationService'
@@ -581,16 +581,7 @@ export class MatchingService {
     features2: Partial<ReccoBeatsAudioFeatures>
   ): number {
     // Weight different features based on importance for playlist cohesion
-    const weights = {
-      energy: 0.25,
-      valence: 0.2,   // Musical positivity
-      danceability: 0.15,
-      acousticness: 0.1,
-      instrumentalness: 0.1,
-      tempo: 0.15,    // Normalized tempo difference
-      speechiness: 0.025,
-      liveness: 0.025
-    }
+    const weights = AUDIO_FEATURE_WEIGHTS
 
     let score = 0
     let totalWeight = 0
