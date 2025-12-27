@@ -27,6 +27,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       return { user: null }
     }
 
+    // Critical data - returned immediately (not deferred)
     const userData = {
       id: userSession.userId,
       spotify: {
@@ -36,14 +37,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       }
     }
 
+    // Non-critical data - deferred and fetched in parallel
+    // Both promises start executing immediately, React Router streams results
     const likedSongsPromise = trackService.getUserTracksWithAnalysis(userSession.userId)
     const playlistService = new PlaylistService(new SpotifyService(userSession.spotifyApi))
     const playlistsPromise = playlistService.getPlaylists(userSession.userId)
 
     return {
       user: userData,
-      likedSongs: likedSongsPromise,
-      playlists: playlistsPromise
+      likedSongs: likedSongsPromise,  // Deferred - uses optimized RPC (single query)
+      playlists: playlistsPromise     // Deferred
     } as DashboardLoaderData
   } catch (error) {
     if (error instanceof Response) throw error

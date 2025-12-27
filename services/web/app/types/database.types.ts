@@ -627,6 +627,21 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_user_tracks_with_analysis: {
+        Args: { p_user_id: number }
+        Returns: {
+          album: string
+          analysis: Json
+          analysis_version: number
+          artist: string
+          liked_at: string
+          name: string
+          sorting_status: Database["public"]["Enums"]["sorting_status_enum"]
+          spotify_track_id: string
+          track_id: number
+          ui_analysis_status: string
+        }[]
+      }
       queue_analyze_track_task: {
         Args: { p_job_id: number; p_track_id: number; p_user_id: number }
         Returns: boolean

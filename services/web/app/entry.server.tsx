@@ -14,6 +14,10 @@ import { renderToPipeableStream } from 'react-dom/server';
 
 const ABORT_DELAY = 25_000;
 
+// Increase deferred promise timeout from default 4950ms to 15000ms
+// This prevents timeout failures for slower database queries
+export const streamTimeout = 15_000;
+
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -51,7 +55,6 @@ function handleBotRequest(
       <ServerRouter
         context={reactRouterContext}
         url={request.url}
-        abortDelay={ABORT_DELAY}
       />,
       {
         onAllReady() {
@@ -101,7 +104,6 @@ function handleBrowserRequest(
       <ServerRouter
         context={reactRouterContext}
         url={request.url}
-        abortDelay={ABORT_DELAY}
       />,
       {
         onShellReady() {
