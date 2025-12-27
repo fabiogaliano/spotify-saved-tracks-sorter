@@ -15,7 +15,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   // Handle JSON request (batch analysis)
   if (contentType.includes('application/json')) {
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return { success: false, error: 'Invalid JSON payload', status: 400 };
+    }
+
     const { trackIds, batchSize, batchId: clientBatchId } = body as {
       trackIds: number[];
       batchSize?: number;
@@ -49,6 +55,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // otherwise generate a new one for backwards compatibility
     const batchId = clientBatchId || crypto.randomUUID();
 
+    // Validate batchSize to allowed values only
+    const validBatchSizes = [1, 5, 10] as const;
+    const validatedBatchSize = validBatchSizes.includes(batchSize as 1 | 5 | 10)
+      ? (batchSize as 1 | 5 | 10)
+      : undefined;
+
     // Build payloads from DB data - guaranteed correct metadata
     const payloads: Omit<AnalysisJobPayload, 'batchId'>[] = tracks.map(track => ({
       type: 'track' as const,
@@ -57,7 +69,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       artist: track.artist,
       title: track.name,
       userId: userSession.userId,
-      batchSize: batchSize as 1 | 5 | 10 | undefined,
+      batchSize: validatedBatchSize,
     }));
 
     // DB-first approach: Save job record before enqueueing to SQS
@@ -85,11 +97,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       // 2. Then enqueue to SQS
       try {
-        const { results } = await sqsService.enqueueBatchAnalysisJobs(payloads, batchId);
+        const { results, failed } = await sqsService.enqueueBatchAnalysisJobs(payloads, batchId);
 
         logger.info('Batch track analysis enqueued', {
           batchId,
           trackCount: tracks.length,
+          successCount: results.length,
+          failedCount: failed.length,
           userId: userSession.userId
         });
 
@@ -97,7 +111,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: true,
           batchId,
           trackIds: tracks.map(t => t.id),
-          totalQueued: results.length
+          totalQueued: results.length,
+          totalFailed: failed.length,
+          failedIds: failed.map(f => f.Id)
         };
       } catch (sqsError) {
         // 3. SQS failed - rollback by marking job as failed
@@ -122,7 +138,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   // Handle form data request (single track analysis)
-  const formData = await request.formData();
+  // React Router actions expect form data by default via <Form> or useFetcher
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return { success: false, error: 'Invalid request body', status: 400 };
+  }
+
   const formAction = formData.get('action');
 
   if (formAction === 'analyze') {
