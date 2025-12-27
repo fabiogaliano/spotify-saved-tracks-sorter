@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRoutes } from '~/lib/config/routes';
-import { TrackWithAnalysis } from '~/lib/models/Track';
+import { TrackWithAnalysis, UIAnalysisStatus } from '~/lib/models/Track';
 import { useNotificationStore } from '~/lib/stores/notificationStore';
 import { AnalysisJob, AnalysisJobDbStats } from '~/lib/types/analysis.types';
 
@@ -233,7 +233,7 @@ export function useAnalyzeTracks() {
       queryClient.setQueryData(likedSongsKeys.lists(), (oldData: TrackWithAnalysis[] = []) => {
         return oldData.map(track =>
           trackIds.includes(track.track.id)
-            ? { ...track, uiAnalysisStatus: 'pending' as any }
+            ? { ...track, uiAnalysisStatus: 'pending' as UIAnalysisStatus }
             : track
         );
       });
@@ -264,7 +264,7 @@ export function useAnalyzeTracks() {
         queryClient.setQueryData(likedSongsKeys.lists(), (oldData: TrackWithAnalysis[] = []) => {
           return oldData.map(track =>
             context.trackIds.includes(track.track.id)
-              ? { ...track, uiAnalysisStatus: 'not_analyzed' as any }
+              ? { ...track, uiAnalysisStatus: 'not_analyzed' as UIAnalysisStatus }
               : track
           );
         });

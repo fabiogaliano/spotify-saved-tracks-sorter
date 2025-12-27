@@ -13,7 +13,7 @@ type UserTrackWithAnalysisRow = {
   sorting_status: Database['public']['Enums']['sorting_status_enum'] | null
   analysis: TrackAnalysis['analysis'] | null
   analysis_version: number | null
-  ui_analysis_status: string
+  ui_analysis_status: Database['public']['Enums']['ui_analysis_status_enum']
 }
 
 export const SYNC_STATUS = {
@@ -299,7 +299,7 @@ class SupabaseTrackRepository implements TrackRepository {
         version: row.analysis_version || 1,
         created_at: null
       } : null,
-      uiAnalysisStatus: row.ui_analysis_status as UIAnalysisStatus
+      uiAnalysisStatus: row.ui_analysis_status
     }))
   }
 }
