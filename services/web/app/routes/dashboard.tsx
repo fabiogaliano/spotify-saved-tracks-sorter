@@ -43,6 +43,20 @@ const LoadingFallback = () => (
   </div>
 );
 
+const AwaitError = ({ message }: { message: string }) => (
+  <Card className="bg-destructive/10 border-destructive">
+    <CardContent className="p-6 text-center">
+      <p className="text-destructive mb-4">{message}</p>
+      <button
+        onClick={() => window.location.reload()}
+        className="px-4 py-2 bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-md transition-colors"
+      >
+        Retry
+      </button>
+    </CardContent>
+  </Card>
+);
+
 const MatchingWrapper = ({ userId }: { userId: number }) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard-matching-data', userId],
@@ -130,7 +144,10 @@ const Dashboard = () => {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-4">
                   <Suspense fallback={<LoadingFallback />}>
-                    <Await resolve={likedSongs}>
+                    <Await
+                      resolve={likedSongs}
+                      errorElement={<AwaitError message="Failed to load library status. Please try again." />}
+                    >
                       {(resolvedLikedSongs) => <LibraryStatus likedSongs={resolvedLikedSongs} playlists={playlists} />}
                     </Await>
                   </Suspense>
@@ -153,7 +170,10 @@ const Dashboard = () => {
                 <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <Suspense fallback={<LoadingFallback />}>
-                      <Await resolve={likedSongs}>
+                      <Await
+                        resolve={likedSongs}
+                        errorElement={<AwaitError message="Failed to load liked songs. Please try again." />}
+                      >
                         {(resolvedLikedSongs) => (
                           <LikedSongsTable initialSongs={resolvedLikedSongs} userId={user.id} />
                         )}
@@ -169,7 +189,10 @@ const Dashboard = () => {
                 <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <Suspense fallback={<LoadingFallback />}>
-                      <Await resolve={playlists}>
+                      <Await
+                        resolve={playlists}
+                        errorElement={<AwaitError message="Failed to load playlists. Please try again." />}
+                      >
                         {(resolvedPlaylists) => <PlaylistManagement playlists={resolvedPlaylists} />}
                       </Await>
                     </Suspense>
