@@ -66,7 +66,9 @@ export class SyncService {
       await this.trackService.updateSyncStatus(userId, SYNC_STATUS.IN_PROGRESS)
 
       // Fetch ALL liked tracks from Spotify (no filter) to enable removal detection
-      const spotifyTracks = await this.spotifyService.getLikedTracks()
+      const spotifyTracksRaw = await this.spotifyService.getLikedTracks()
+      // Filter out unavailable/deleted tracks where track is null
+      const spotifyTracks = spotifyTracksRaw.filter(t => t.track != null)
       const spotifyTrackIds = new Set(spotifyTracks.map(t => t.track.id))
 
       // Get existing saved tracks from DB
