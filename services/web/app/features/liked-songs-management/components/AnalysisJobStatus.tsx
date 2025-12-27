@@ -20,7 +20,7 @@ export const AnalysisJobStatus = ({
   itemsSucceeded,
   itemsFailed
 }: AnalysisJobStatusProps) => {
-  const completionPercentage = Math.round((itemsProcessed / itemCount) * 100) || 0;
+  const completionPercentage = itemCount > 0 ? Math.round((itemsProcessed / itemCount) * 100) : 0;
   const isPlaylistJob = jobType === 'playlist';
   
   const getStatusConfig = () => {

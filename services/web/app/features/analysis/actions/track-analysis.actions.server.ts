@@ -1,5 +1,6 @@
 import { ActionFunctionArgs } from 'react-router';
 import { trackAnalysisRepository } from "~/lib/repositories/TrackAnalysisRepository";
+import { trackRepository } from "~/lib/repositories/TrackRepository";
 import { sqsService, AnalysisJobPayload } from "~/lib/services/queue/SQSService";
 import { jobPersistenceService } from '~/lib/services/JobPersistenceService';
 import { requireUserSession } from '~/features/auth/auth.utils';
@@ -7,36 +8,52 @@ import { logger } from '~/lib/logging/Logger';
 import { TrackBatchJob, ItemStatesMap } from '~/lib/types/analysis.types';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  // requireUserSession throws redirect if no session - never returns null
   const userSession = await requireUserSession(request);
-  if (!userSession) {
-    return { success: false, error: 'Authentication required', status: 401 };
-  }
 
   const contentType = request.headers.get('content-type') || '';
 
   // Handle JSON request (batch analysis)
   if (contentType.includes('application/json')) {
     const body = await request.json();
-    const { tracks, batchSize, batchId: clientBatchId } = body as {
-      tracks: Array<{ id: number; spotifyTrackId: string; artist: string; name: string }>;
+    const { trackIds, batchSize, batchId: clientBatchId } = body as {
+      trackIds: number[];
       batchSize?: number;
-      /** Client-generated batchId to eliminate race condition in WebSocket subscription setup */
       batchId?: string;
     };
 
-    if (!tracks || !Array.isArray(tracks) || tracks.length === 0) {
-      return { success: false, error: 'No tracks provided for analysis', status: 400 };
+    if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
+      return { success: false, error: 'No trackIds provided', status: 400 };
+    }
+
+    // Validate all trackIds are numbers
+    const invalidIds = trackIds.filter(id => typeof id !== 'number' || Number.isNaN(id));
+    if (invalidIds.length > 0) {
+      return { success: false, error: 'Invalid trackIds: all must be numbers', status: 400 };
+    }
+
+    // Fetch track metadata from DB - single source of truth
+    const tracks = await trackRepository.getTracksByIds(trackIds);
+    if (tracks.length === 0) {
+      return { success: false, error: 'No tracks found for provided IDs', status: 404 };
+    }
+
+    // Log if some tracks weren't found
+    if (tracks.length !== trackIds.length) {
+      const foundIds = new Set(tracks.map(t => t.id));
+      const missingIds = trackIds.filter(id => !foundIds.has(id));
+      logger.warn('Some tracks not found', { missingIds, requestedCount: trackIds.length, foundCount: tracks.length });
     }
 
     // Use client-provided batchId if available (eliminates race condition),
     // otherwise generate a new one for backwards compatibility
     const batchId = clientBatchId || crypto.randomUUID();
 
-    // Build payloads for all tracks
+    // Build payloads from DB data - guaranteed correct metadata
     const payloads: Omit<AnalysisJobPayload, 'batchId'>[] = tracks.map(track => ({
       type: 'track' as const,
       trackId: String(track.id),
-      spotifyTrackId: track.spotifyTrackId,
+      spotifyTrackId: track.spotify_track_id,
       artist: track.artist,
       title: track.name,
       userId: userSession.userId,
@@ -109,26 +126,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formAction = formData.get('action');
 
   if (formAction === 'analyze') {
-    const trackId = formData.get('trackId') as string;
-    const artist = formData.get('artist') as string;
-    const name = formData.get('name') as string;
+    const trackIdRaw = formData.get('trackId') as string;
 
-    if (!trackId || !artist || !name) {
-      return { success: false, error: 'Missing required track information', status: 400 };
+    if (!trackIdRaw) {
+      return { success: false, error: 'Missing trackId', status: 400 };
+    }
+
+    const trackId = parseInt(trackIdRaw, 10);
+    if (Number.isNaN(trackId)) {
+      return { success: false, error: 'Invalid trackId: must be a number', status: 400 };
     }
 
     try {
-      const existingAnalysis = await trackAnalysisRepository.getByTrackId(Number(trackId));
+      // Fetch track from DB - single source of truth for metadata
+      const track = await trackRepository.getTrackById(trackId);
+      if (!track) {
+        return { success: false, error: 'Track not found', status: 404 };
+      }
 
+      const existingAnalysis = await trackAnalysisRepository.getByTrackId(trackId);
       if (existingAnalysis) {
         return { success: true, trackId, analysisId: existingAnalysis.id, alreadyAnalyzed: true };
       }
 
       const jobPayload: Omit<AnalysisJobPayload, 'batchId'> = {
         type: 'track',
-        trackId,
-        artist,
-        title: name,
+        trackId: String(track.id),
+        spotifyTrackId: track.spotify_track_id,
+        artist: track.artist,
+        title: track.name,
         userId: userSession.userId,
       };
 

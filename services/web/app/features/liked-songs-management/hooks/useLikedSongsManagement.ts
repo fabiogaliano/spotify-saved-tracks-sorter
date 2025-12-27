@@ -74,12 +74,7 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
     const tracks = selectedTracks();
     if (tracks.length === 0) return;
 
-    const trackData = tracks.map((track: TrackWithAnalysis) => ({
-      id: track.track.id,
-      spotifyTrackId: track.track.spotify_track_id,
-      artist: track.track.artist,
-      name: track.track.name,
-    }));
+    const trackIds = tracks.map((track: TrackWithAnalysis) => track.track.id);
 
     // Generate batchId BEFORE mutation to eliminate race condition
     // This ensures WebSocket subscription is active before any notifications can arrive
@@ -87,7 +82,7 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
     jobSubscriptionManager.setCurrentJob(batchId);
 
     try {
-      await analyzeMutation.mutateAsync({ tracks: trackData, batchSize, batchId });
+      await analyzeMutation.mutateAsync({ trackIds, batchSize, batchId });
       // Clear selection after analysis starts
       setRowSelection({});
     } catch (error) {
@@ -96,7 +91,7 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
       throw error;
     }
   }, [selectedTracks, analyzeMutation]);
-  
+
   const analyzeTracks = useCallback(async (options: {
     trackId?: number;
     useSelected?: boolean;
@@ -116,12 +111,7 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
 
     if (tracksToAnalyze.length === 0) return;
 
-    const trackData = tracksToAnalyze.map((track: TrackWithAnalysis) => ({
-      id: track.track.id,
-      spotifyTrackId: track.track.spotify_track_id,
-      artist: track.track.artist,
-      name: track.track.name,
-    }));
+    const trackIds = tracksToAnalyze.map((track: TrackWithAnalysis) => track.track.id);
 
     // Generate batchId BEFORE mutation to eliminate race condition
     // This ensures WebSocket subscription is active before any notifications can arrive
@@ -129,7 +119,7 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
     jobSubscriptionManager.setCurrentJob(batchId);
 
     try {
-      await analyzeMutation.mutateAsync({ tracks: trackData, batchSize: options.batchSize, batchId });
+      await analyzeMutation.mutateAsync({ trackIds, batchSize: options.batchSize, batchId });
     } catch (error) {
       // Clear subscription on failure
       jobSubscriptionManager.setCurrentJob(null);

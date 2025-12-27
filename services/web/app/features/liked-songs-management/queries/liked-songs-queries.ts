@@ -20,12 +20,7 @@ export const likedSongsKeys = {
 
 // Types
 interface AnalyzeTracksParams {
-  tracks: Array<{
-    id: number;
-    spotifyTrackId: string;
-    artist: string;
-    name: string;
-  }>;
+  trackIds: number[];
   batchSize?: 1 | 5 | 10;
   /** Client-generated batchId to eliminate race condition in WebSocket subscription setup */
   batchId?: string;
@@ -233,7 +228,7 @@ export function useAnalyzeTracks() {
     },
     onMutate: (variables) => {
       // Immediately update tracks to 'pending' status in the cache
-      const trackIds = variables.tracks.map(t => t.id);
+      const { trackIds } = variables;
 
       queryClient.setQueryData(likedSongsKeys.lists(), (oldData: TrackWithAnalysis[] = []) => {
         return oldData.map(track =>
@@ -244,7 +239,7 @@ export function useAnalyzeTracks() {
       });
 
       // Show loading notification
-      const trackCount = variables.tracks.length;
+      const trackCount = variables.trackIds.length;
       notify.loading(`Queuing ${trackCount} track${trackCount > 1 ? 's' : ''} for analysis...`);
 
       return { trackIds };
@@ -254,7 +249,7 @@ export function useAnalyzeTracks() {
       queryClient.invalidateQueries({ queryKey: likedSongsKeys.analysisStatus() });
 
       // Dismiss loading notification and show info message
-      const trackCount = variables.tracks.length;
+      const trackCount = variables.trackIds.length;
       notify.dismiss(); // Clear loading notification
       notify.info(`${trackCount} track${trackCount > 1 ? 's' : ''} queued for analysis`);
 

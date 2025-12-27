@@ -4,7 +4,15 @@ import type { SongAnalysis, PlaylistAnalysis } from '../services/analysis/analys
 export type { SongAnalysis, PlaylistAnalysis }
 
 export interface Track {
-  id?: string | number;
+  id: string | number;
+  artist: string;
+  title: string;
+  spotify_track_id?: string;
+  album?: string;
+}
+
+/** Track input for creation - before database assigns ID */
+export interface TrackInput {
   artist: string;
   title: string;
   spotify_track_id?: string;

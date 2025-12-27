@@ -5,7 +5,7 @@ export interface AnalysisStatus {
 
 // These types align with the matching-algorithm.ts types
 export interface TrackInfo {
-  id: number | string;
+  id: number;  // Database primary key is always integer
   spotify_track_id: string;
   name: string;
   artist: string;
@@ -17,9 +17,11 @@ export interface AnalyzedTrack extends TrackInfo {
 }
 
 export interface AnalyzedPlaylist {
-  id: number | string;
+  id: number;
   spotify_playlist_id: string;
   name: string;
   description?: string;
+  track_count?: number;
+  is_flagged?: boolean;
   analysis?: any; // This should match parts of the Playlist type in matching-algorithm.ts
 } 
