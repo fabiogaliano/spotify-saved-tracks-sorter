@@ -1,14 +1,9 @@
 import { useState } from 'react'
 import { apiRoutes } from '~/lib/config/routes'
-import { useLoaderData, useFetcher, useNavigate } from 'react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import type { AnalyzedTrack, AnalyzedPlaylist } from '~/types/analysis'
 import type { MatchResult } from '~/lib/models/Matching'
-
-interface LoaderData {
-  playlists: AnalyzedPlaylist[]
-  tracks: AnalyzedTrack[]
-}
 
 interface PlaylistCardData {
   id: number
@@ -37,27 +32,15 @@ interface MatchedSong {
 }
 
 interface MatchingPageProps {
-  // Optional props for when used as embedded component
-  playlists?: AnalyzedPlaylist[]
-  tracks?: AnalyzedTrack[]
+  playlists: AnalyzedPlaylist[]
+  tracks: AnalyzedTrack[]
 }
 
-export default function MatchingPage({ playlists: propPlaylists, tracks: propTracks }: MatchingPageProps = {}) {
-  // Use props if provided, otherwise use loader data
-  let loaderData: LoaderData | null = null
-  try {
-    loaderData = propPlaylists && propTracks ? null : useLoaderData<LoaderData>()
-  } catch (error) {
-    // Loader not available (e.g., used in dashboard context)
-    console.log('[MatchingPage] No loader data available, using props or fetching data')
-  }
-
-  const playlists = propPlaylists || loaderData?.playlists || []
-  const tracks = propTracks || loaderData?.tracks || []
-
-  // Ensure playlists and tracks are arrays
+export default function MatchingPage({ playlists, tracks }: MatchingPageProps) {
+  // Safety guards for data
   const safePlaylists = Array.isArray(playlists) ? playlists : []
   const safeTracks = Array.isArray(tracks) ? tracks : []
+
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
@@ -65,37 +48,6 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
   const [matchResults, setMatchResults] = useState<MatchedSong[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isMatching, setIsMatching] = useState(false)
-  const [isLoadingData, setIsLoadingData] = useState(false)
-  const [dashboardData, setDashboardData] = useState<{ playlists: AnalyzedPlaylist[], tracks: AnalyzedTrack[] } | null>(null)
-
-  // Fetch data if not provided (dashboard context)
-  const { data: fetchedData, isLoading } = useQuery({
-    queryKey: ['matching-data'],
-    queryFn: async () => {
-      const response = await fetch(apiRoutes.matching.base + '?_data=routes/matching')
-      if (!response.ok) throw new Error('Failed to fetch matching data')
-      return response.json() as Promise<{ playlists: AnalyzedPlaylist[], tracks: AnalyzedTrack[] }>
-    },
-    enabled: safePlaylists.length === 0 && safeTracks.length === 0, // Only fetch if no data provided
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-
-  // Use fetched data if available
-  const finalPlaylists = safePlaylists.length > 0 ? safePlaylists : (fetchedData?.playlists || [])
-  const finalTracks = safeTracks.length > 0 ? safeTracks : (fetchedData?.tracks || [])
-
-  // Debug logging
-  console.log('[MatchingPage] Component state:', {
-    propPlaylists: propPlaylists?.length || 0,
-    propTracks: propTracks?.length || 0,
-    loaderDataAvailable: !!loaderData,
-    safePlaylists: safePlaylists.length,
-    safeTracks: safeTracks.length,
-    fetchedData: fetchedData ? { playlists: fetchedData.playlists?.length || 0, tracks: fetchedData.tracks?.length || 0 } : null,
-    finalPlaylists: finalPlaylists.length,
-    finalTracks: finalTracks.length,
-    isLoading
-  })
 
   const handlePlaylistSelect = async (playlist: PlaylistCardData) => {
     setSelectedPlaylist(playlist)
@@ -138,7 +90,13 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
     setIsMatching(true)
     try {
       // Use all analyzed liked songs for matching
-      const tracksForMatching = finalTracks
+      const tracksForMatching = safeTracks
+
+      if (tracksForMatching.length === 0) {
+        console.warn('[MatchingPage] No tracks available for matching')
+        setIsMatching(false)
+        return
+      }
 
       const formData = new FormData()
       formData.append('playlistId', playlist.id.toString())
@@ -217,7 +175,7 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
   }
 
   // Convert playlists to card format
-  const playlistCards: PlaylistCardData[] = finalPlaylists.map(p => ({
+  const playlistCards: PlaylistCardData[] = safePlaylists.map(p => ({
     id: p.id,
     name: p.name,
     description: p.description,
@@ -246,18 +204,6 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
     return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
   }
 
-  // Show loading if fetching data
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="mt-2 text-muted-foreground">Loading matching data...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold text-foreground">Smart Playlists - Song Matching</h1>
@@ -283,7 +229,7 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
         </div>
       )}
 
-      {finalTracks.length === 0 && flaggedPlaylists.length > 0 && (
+      {safeTracks.length === 0 && flaggedPlaylists.length > 0 && (
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex">
             <div className="flex-shrink-0">

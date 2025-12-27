@@ -7,6 +7,10 @@ import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 import { savedTrackRepository } from '~/lib/repositories/SavedTrackRepository'
 import type { AnalyzedTrack, AnalyzedPlaylist } from '~/types/analysis'
 
+export interface MatchingLoaderData {
+  playlists: AnalyzedPlaylist[]
+  tracks: AnalyzedTrack[]
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
