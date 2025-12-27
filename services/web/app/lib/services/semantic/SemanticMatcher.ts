@@ -235,10 +235,10 @@ export class SemanticMatcher {
   }
 
   /**
-   * Cache an embedding with LRU eviction
+   * Cache an embedding with FIFO eviction
    */
   private cacheEmbedding(key: string, embedding: number[]): void {
-    // Evict oldest entries if cache is full
+    // Evict oldest entry if cache is full
     if (this.cache.size >= this.config.maxCacheSize) {
       const oldestKey = this.cache.keys().next().value
       if (oldestKey) {

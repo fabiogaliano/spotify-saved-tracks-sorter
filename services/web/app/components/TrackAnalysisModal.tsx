@@ -442,20 +442,22 @@ const TrackAnalysisModal = ({
                   <p className="text-sm text-foreground">{context.audience.primary_demographic}</p>
                 </div>
               )}
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-2">Universal Appeal</h4>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-secondary rounded-full h-2">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full"
-                      style={{ width: `${context.audience.universal_appeal * 100}%` }}
-                    />
+              {context.audience.universal_appeal != null && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Universal Appeal</h4>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-secondary rounded-full h-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full"
+                        style={{ width: `${context.audience.universal_appeal * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground shrink-0">
+                      {Math.round(context.audience.universal_appeal * 100)}%
+                    </span>
                   </div>
-                  <span className="text-sm text-muted-foreground shrink-0">
-                    {Math.round(context.audience.universal_appeal * 100)}%
-                  </span>
                 </div>
-              </div>
+              )}
               {context.audience.resonates_with && context.audience.resonates_with.length > 0 && (
                 <div className="mt-3">
                   <h4 className="text-sm font-medium text-muted-foreground mb-2">Resonates With</h4>

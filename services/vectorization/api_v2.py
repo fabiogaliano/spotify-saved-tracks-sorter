@@ -233,10 +233,12 @@ async def embed_hybrid(request: HybridEmbedRequest) -> Dict:
             "context": 0.2
         }
 
-        # Normalize weights
+        # Normalize weights (fall back to defaults if sum is 0)
         total_weight = sum(weights.values())
         if total_weight > 0:
             weights = {k: v / total_weight for k, v in weights.items()}
+        else:
+            weights = {"metadata": 0.3, "analysis": 0.5, "context": 0.2}
 
         # Choose model based on content
         # Use creative model for richer semantic content
