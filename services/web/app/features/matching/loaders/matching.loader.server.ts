@@ -7,40 +7,6 @@ import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 import { savedTrackRepository } from '~/lib/repositories/SavedTrackRepository'
 import type { AnalyzedTrack, AnalyzedPlaylist } from '~/types/analysis'
 
-// Database types that represent the actual structure from Supabase
-interface DbPlaylistAnalysis {
-  id: number;
-  playlist_id: number;
-  analysis: any;
-}
-
-interface DbPlaylist {
-  id: number;
-  name: string;
-  description: string | null;
-  spotify_playlist_id: string;
-  user_id: number | null;
-  is_flagged: boolean | null;
-  track_count: number;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
-interface DbTrack {
-  id: number;
-  spotify_track_id: string;
-  name: string;
-  artist: string;
-  album: string | null;
-  created_at: string | null;
-}
-
-interface DbSavedTrack {
-  track_id: number;
-  user_id: number;
-  liked_at: string;
-  sorting_status: string;
-}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
@@ -145,6 +111,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       tracks: tracksWithAnalyses
     }
   } catch (error) {
+    // Re-throw Response objects (redirects from requireUserSession, etc.)
+    if (error instanceof Response) {
+      throw error
+    }
+
     console.error('Error in matching loader:', error)
     // Return empty data on error to show the "no data" message
     return {

@@ -170,10 +170,10 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm">Emotional Intensity</span>
                         <span className="text-sm font-medium">
-                          {formatScore(analysis?.emotional?.intensity_score || 0)}%
+                          {formatScore(analysis?.emotional?.intensity_score ?? 0)}%
                         </span>
                       </div>
-                      <Progress value={formatScore(analysis?.emotional?.intensity_score || 0)} />
+                      <Progress value={formatScore(analysis?.emotional?.intensity_score ?? 0)} />
                     </div>
                   </>
                 )}
@@ -223,19 +223,19 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
                       <div className="text-center space-y-1">
                         <p className="text-xs text-muted-foreground">Solo Listening</p>
                         <div className="text-lg font-semibold">
-                          {formatScore(1 - (analysis?.context?.social_context?.alone_vs_group || 0.5))}%
+                          {formatScore(1 - (analysis?.context?.social_context?.alone_vs_group ?? 0.5))}%
                         </div>
                       </div>
                       <div className="text-center space-y-1">
                         <p className="text-xs text-muted-foreground">Intimate</p>
                         <div className="text-lg font-semibold">
-                          {formatScore(1 - (analysis?.context?.social_context?.intimate_vs_public || 0.5))}%
+                          {formatScore(1 - (analysis?.context?.social_context?.intimate_vs_public ?? 0.5))}%
                         </div>
                       </div>
                       <div className="text-center space-y-1">
                         <p className="text-xs text-muted-foreground">Passive</p>
                         <div className="text-lg font-semibold">
-                          {formatScore(1 - (analysis?.context?.social_context?.active_vs_passive || 0.5))}%
+                          {formatScore(1 - (analysis?.context?.social_context?.active_vs_passive ?? 0.5))}%
                         </div>
                       </div>
                     </div>
@@ -275,25 +275,25 @@ const PlaylistAnalysisModal: React.FC<PlaylistAnalysisModalProps> = ({
                   <div className="grid grid-cols-4 gap-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary">
-                        {formatScore(analysis?.curation?.target_matching?.genre_flexibility || 0)}%
+                        {formatScore(analysis?.curation?.target_matching?.genre_flexibility ?? 0)}%
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Genre Flex</p>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary">
-                        {formatScore(analysis?.curation?.target_matching?.mood_rigidity || 0)}%
+                        {formatScore(analysis?.curation?.target_matching?.mood_rigidity ?? 0)}%
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Mood Focus</p>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary">
-                        {formatScore(analysis?.curation?.target_matching?.cultural_specificity || 0)}%
+                        {formatScore(analysis?.curation?.target_matching?.cultural_specificity ?? 0)}%
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Cultural</p>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary">
-                        {formatScore(1 - (analysis?.curation?.target_matching?.era_constraints || 0))}%
+                        {formatScore(1 - (analysis?.curation?.target_matching?.era_constraints ?? 0))}%
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Era Range</p>
                     </div>

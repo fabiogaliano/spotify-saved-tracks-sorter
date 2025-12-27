@@ -219,16 +219,10 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
 
     setIsAnalyzingTracks(true);
 
-    // Format tracks for the API using raw data (has id, name, artist, spotify_track_id)
-    const tracksForAnalysis = rawPlaylistTracks.map((t: any) => ({
-      id: t.id,
-      spotifyTrackId: t.spotify_track_id,
-      artist: t.artist,
-      name: t.name
-    }));
+    const trackIds = rawPlaylistTracks.map((t: any) => t.id);
 
     trackAnalysisFetcher.submit(
-      { tracks: tracksForAnalysis, batchSize: 5 },
+      { trackIds, batchSize: 5 },
       {
         method: 'post',
         action: '/actions/track-analysis',

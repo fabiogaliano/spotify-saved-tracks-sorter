@@ -262,17 +262,9 @@ export class PlaylistAnalysisService implements IPlaylistAnalysisService {
         console.log('[PlaylistAnalysis] Analysis structure validated with valibot')
         return result.output
       } else {
-        // Log validation errors but try to work with partial data
-        console.warn('[PlaylistAnalysis] Validation issues:', result.issues)
-
-        // Return the coerced analysis as-is if it has the basic structure
-        if (typeof coercedAnalysis === 'object' && coercedAnalysis !== null &&
-          'meaning' in coercedAnalysis && 'emotional' in coercedAnalysis) {
-          console.log('[PlaylistAnalysis] Using partial analysis data')
-          return coercedAnalysis as PlaylistAnalysis
-        }
-
-        throw new Error('Invalid analysis structure')
+        const issues = result.issues.map(i => `${i.path?.map(p => p.key).join('.') || 'root'}: ${i.message}`).join('; ')
+        console.error('[PlaylistAnalysis] Validation failed:', issues)
+        throw new Error(`Invalid analysis structure: ${issues}`)
       }
     } catch (error) {
       console.error('[PlaylistAnalysis] Validation error:', error)

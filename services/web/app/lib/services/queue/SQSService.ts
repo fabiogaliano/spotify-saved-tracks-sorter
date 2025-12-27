@@ -52,8 +52,8 @@ class SQSService {
   private queueUrl: string | null = null;
 
   constructor() {
-    this.setupQueues().catch(() => {
-      // Silently fail - setup will be retried on first use
+    this.setupQueues().catch((error) => {
+      logger.warn('Queue setup failed, falling back to AWS_SQS_QUEUE_URL:', error);
     });
   }
   private dlqUrl: string | null = null;
@@ -146,6 +146,9 @@ class SQSService {
     batchId?: string
   ): Promise<EnqueueJobResult> {
     const { batchId: returnedBatchId, results } = await this.enqueueBatchAnalysisJobs([payload], batchId);
+    if (!results[0]) {
+      throw new Error('Failed to enqueue analysis job');
+    }
     return { batchId: returnedBatchId, result: results[0] };
   }
 

@@ -362,9 +362,11 @@ Loudness: ${audioFeatures.loudness} dB` :
           let audioFeatures: ReccoBeatsAudioFeatures | null = null;
           try {
             const trackIdNum = parseInt(track.trackId);
-            const dbTrack = await trackRepository.getTrackById(trackIdNum);
-            if (dbTrack?.spotify_track_id) {
-              audioFeatures = await this.audioFeaturesService.fetchFeatures(trackIdNum, dbTrack.spotify_track_id);
+            if (!Number.isNaN(trackIdNum)) {
+              const dbTrack = await trackRepository.getTrackById(trackIdNum);
+              if (dbTrack?.spotify_track_id) {
+                audioFeatures = await this.audioFeaturesService.fetchFeatures(trackIdNum, dbTrack.spotify_track_id);
+              }
             }
           } catch (audioError) {
             logger.warn(`Failed to fetch audio features for ${track.artist} - ${track.song}`, { error: audioError });

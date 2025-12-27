@@ -65,15 +65,19 @@ export class ReccoBeatsService {
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-      const error = await response.json() as ReccoBeatsError | ReccoBeatsValidationError
+      let errorBody: unknown = null
+      try {
+        errorBody = await response.json()
+      } catch {
+        errorBody = await response.text().catch(() => null)
+      }
 
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After')
         throw new Error(`Rate limit exceeded. Retry after ${retryAfter || 'unknown'} seconds`)
       }
 
-
-      throw new Error(`ReccoBeats API error: ${JSON.stringify(error)}`)
+      throw new Error(`ReccoBeats API error: ${typeof errorBody === 'object' ? JSON.stringify(errorBody) : errorBody || response.statusText}`)
     }
 
     return response.json()

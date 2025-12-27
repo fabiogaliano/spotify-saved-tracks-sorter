@@ -135,6 +135,7 @@ export function useAnalysisSubscription({ userId, enabled = true }: AnalysisSubs
           queryClient.invalidateQueries({ queryKey: likedSongsKeys.analysisStatus() });
         }, 100);
       }
+      return;
     }
 
     // Route messages through subscription manager for track updates

@@ -379,7 +379,7 @@ const TrackAnalysisModal = ({
                       <div className="p-3 rounded-lg border border-border hover:border-green-500/50 transition-all bg-card hover:bg-card-foreground/5">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-lg">{getActivityIcon(activity)}</span>
-                          <span className="text-xs font-medium capitalize">{activity.replace('_', ' ')}</span>
+                          <span className="text-xs font-medium capitalize">{activity.replaceAll('_', ' ')}</span>
                         </div>
                         <div className="space-y-1">
                           <div className="flex justify-between text-xs">
@@ -643,11 +643,11 @@ const TrackAnalysisModal = ({
         <CardContent className="pt-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { key: 'mood_consistency', label: 'Mood Consistency', color: 'blue' },
-              { key: 'energy_flexibility', label: 'Energy Flexibility', color: 'pink' },
-              { key: 'theme_cohesion', label: 'Theme Cohesion', color: 'purple' },
-              { key: 'sonic_similarity', label: 'Sonic Similarity', color: 'green' }
-            ].map(({ key, label, color }) => (
+              { key: 'mood_consistency', label: 'Mood Consistency', bgClass: 'bg-blue-500' },
+              { key: 'energy_flexibility', label: 'Energy Flexibility', bgClass: 'bg-pink-500' },
+              { key: 'theme_cohesion', label: 'Theme Cohesion', bgClass: 'bg-purple-500' },
+              { key: 'sonic_similarity', label: 'Sonic Similarity', bgClass: 'bg-green-500' }
+            ].map(({ key, label, bgClass }) => (
               <div key={key} className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-medium truncate mr-2">{label}</span>
@@ -657,7 +657,7 @@ const TrackAnalysisModal = ({
                 </div>
                 <div className="w-full bg-secondary rounded-full h-2">
                   <div
-                    className={`bg-${color}-500 h-2 rounded-full`}
+                    className={`${bgClass} h-2 rounded-full`}
                     style={{ width: `${(profile[key as keyof typeof profile] as number) * 100}%` }}
                   />
                 </div>

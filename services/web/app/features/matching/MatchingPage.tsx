@@ -103,7 +103,7 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
 
     // If playlist doesn't have analysis, trigger it
     if (!playlist.hasAnalysis) {
-      await triggerPlaylistAnalysis(playlist.id)
+      await triggerPlaylistAnalysis(playlist)
       return
     }
 
@@ -111,11 +111,11 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
     await performMatching(playlist)
   }
 
-  const triggerPlaylistAnalysis = async (playlistId: number) => {
+  const triggerPlaylistAnalysis = async (playlist: PlaylistCardData) => {
     setIsAnalyzing(true)
     try {
       // Trigger playlist analysis
-      const response = await fetch(apiRoutes.playlists.analysis(playlistId.toString()), {
+      const response = await fetch(apiRoutes.playlists.analysis(playlist.id.toString()), {
         method: 'POST',
       })
 
@@ -123,7 +123,7 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
         // Refresh the playlist data
         queryClient.invalidateQueries({ queryKey: ['playlists'] })
         // After analysis, trigger matching
-        const updatedPlaylist = { ...selectedPlaylist!, hasAnalysis: true }
+        const updatedPlaylist = { ...playlist, hasAnalysis: true }
         setSelectedPlaylist(updatedPlaylist)
         await performMatching(updatedPlaylist)
       }
@@ -164,7 +164,9 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
         // Convert to our MatchedSong format and sort by similarity
         const songs: MatchedSong[] = data.results
           .map(result => ({
-            id: parseInt(result.track_info.id as string),
+            id: typeof result.track_info.id === 'string'
+              ? parseInt(result.track_info.id, 10)
+              : result.track_info.id,
             name: result.track_info.title,
             artist: result.track_info.artist,
             similarity: result.similarity,
@@ -219,8 +221,8 @@ export default function MatchingPage({ playlists: propPlaylists, tracks: propTra
     id: p.id,
     name: p.name,
     description: p.description,
-    track_count: p.track_count,
-    is_flagged: p.is_flagged || false,
+    track_count: p.track_count ?? 0,
+    is_flagged: p.is_flagged ?? false,
     hasAnalysis: !!p.analysis,
     analysis: p.analysis
   }))
