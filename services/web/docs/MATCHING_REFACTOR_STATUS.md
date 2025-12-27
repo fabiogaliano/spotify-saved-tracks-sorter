@@ -281,7 +281,7 @@ audio_features?: {               // From ReccoBeats API
 
 **Files Modified:**
 - `app/lib/services/vectorization/VectorizationService.ts` (REWRITTEN)
-- `services/vectorization/api_v2.py` (SIMPLIFIED)
+- `services/vectorization/api.py` (SIMPLIFIED)
 
 **What Was Done:**
 - Created dedicated extractors for Song and Playlist schemas
@@ -351,7 +351,7 @@ audio_features?: {               // From ReccoBeats API
 | `app/lib/services/vectorization/analysis-extractors.ts` | ✅ Complete | Song/Playlist text extraction |
 | `app/lib/services/vectorization/VectorCache.ts` | ✅ Complete | Embedding cache (1hr TTL) |
 | `app/lib/config/vectorization.ts` | ✅ Complete | Env-based config |
-| `services/vectorization/api_v2.py` | ✅ Complete | Generic text→vector, no schemas |
+| `services/vectorization/api.py` | ✅ Complete | Generic text→vector, no schemas |
 
 ### Matching Files
 
@@ -432,7 +432,7 @@ profiles: {
 
 ```bash
 cd services/vectorization
-python api_v2.py
+python api.py
 ```
 
 ### Test Commands
@@ -464,6 +464,6 @@ cd services/web && bun tsc --noEmit
 
 - This is a greenfield project - no need for backwards compatibility with old analysis format
 - ReccoBeats API is public, no authentication needed
-- Vectorization service is a Python FastAPI app (see `services/vectorization/api_v2.py`)
+- Vectorization service is a Python FastAPI app (see `services/vectorization/api.py`)
 - All weights in `matching-config.ts` are tunable - start with defaults, adjust based on results
 - Python API has zero knowledge of music schemas - TypeScript handles all extraction

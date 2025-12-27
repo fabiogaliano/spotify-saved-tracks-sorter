@@ -6,6 +6,26 @@
 const API = '/api';
 const ACTIONS = '/actions';
 
+/**
+ * Get the WebSocket URL for real-time connections.
+ * Derives from current origin with protocol switching (http->ws, https->wss).
+ * Falls back to localhost:3001 for SSR/non-browser contexts.
+ */
+export function getWebSocketUrl(path: string = '/ws'): string {
+  if (typeof window === 'undefined') {
+    // SSR fallback - will be replaced on client hydration
+    return `ws://localhost:3001${path}`;
+  }
+
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.hostname;
+  // Use port 3001 for WebSocket server in development, same port in production
+  const port = window.location.port === '5173' ? '3001' : window.location.port;
+  const portSuffix = port ? `:${port}` : '';
+
+  return `${protocol}//${host}${portSuffix}${path}`;
+}
+
 export const apiRoutes = {
   auth: {
     spotify: {

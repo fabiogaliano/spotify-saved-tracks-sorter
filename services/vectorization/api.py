@@ -1,507 +1,407 @@
+"""
+Text Vectorization API
+
+A generic text→vector service with NO knowledge of music schemas.
+TypeScript handles domain-specific extraction, Python just embeds text.
+"""
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Dict, List, Optional, Any
-import json
+from typing import Dict, List, Optional
 import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
 from fastapi.middleware.cors import CORSMiddleware
+import numpy as np
+from enum import Enum
 
-app = FastAPI(title="Music-Playlist Vectorization API")
+app = FastAPI(title="Text Vectorization API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Replace with your Remix server URL
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# Load embedding model - updated to use the better performing model
-embedding_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+class ModelType(str, Enum):
+    GENERAL = "general"
+    CREATIVE = "creative"
+    SEMANTIC = "semantic"
+    FAST = "fast"
 
-# Load multilingual sentiment analysis model
-sentiment_tokenizer = AutoTokenizer.from_pretrained("tabularisai/multilingual-sentiment-analysis")
-sentiment_model = AutoModelForSequenceClassification.from_pretrained("tabularisai/multilingual-sentiment-analysis")
 
-class AnalysisRequest(BaseModel):
-    analyses: List[Dict[str, Any]]
+# Load models
+print("Loading models...")
+models = {
+    ModelType.GENERAL: {
+        "tokenizer": AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2"),
+        "model": AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    },
+    ModelType.CREATIVE: {
+        "tokenizer": AutoTokenizer.from_pretrained("sentence-transformers/all-mpnet-base-v2"),
+        "model": AutoModel.from_pretrained("sentence-transformers/all-mpnet-base-v2")
+    },
+    ModelType.SEMANTIC: {
+        "tokenizer": AutoTokenizer.from_pretrained("sentence-transformers/multi-qa-mpnet-base-dot-v1"),
+        "model": AutoModel.from_pretrained("sentence-transformers/multi-qa-mpnet-base-dot-v1")
+    },
+    ModelType.FAST: {
+        "tokenizer": AutoTokenizer.from_pretrained("sentence-transformers/paraphrase-MiniLM-L3-v2"),
+        "model": AutoModel.from_pretrained("sentence-transformers/paraphrase-MiniLM-L3-v2")
+    }
+}
 
-class TextRequest(BaseModel):
+sentiment_tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment-latest")
+sentiment_model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment-latest")
+print("Models loaded successfully!")
+
+
+# =============================================================================
+# Request/Response Models
+# =============================================================================
+
+class EmbedRequest(BaseModel):
     text: str
+    model_type: ModelType = ModelType.GENERAL
+
+
+class EmbedBatchRequest(BaseModel):
+    texts: List[str]
+    model_type: ModelType = ModelType.GENERAL
+
+
+class HybridEmbedRequest(BaseModel):
+    """
+    Hybrid embedding request with categorized text.
+    TypeScript extracts these from domain objects (songs, playlists).
+    """
+    texts: Dict[str, str]  # {"metadata": "...", "analysis": "...", "context": "..."}
+    weights: Optional[Dict[str, float]] = None  # Optional custom weights
+
+
+class SentimentRequest(BaseModel):
+    text: str
+
 
 class SentimentResponse(BaseModel):
     positive: float
     negative: float
     neutral: float
 
-# Mean Pooling - Take attention mask into account for correct averaging
+
+class SimilarityRequest(BaseModel):
+    vec1: List[float]
+    vec2: List[float]
+
+
+# =============================================================================
+# Core Embedding Functions
+# =============================================================================
+
 def mean_pooling(model_output, attention_mask):
-    token_embeddings = model_output[0] # First element of model_output contains all token embeddings
+    """Mean pooling for sentence embeddings"""
+    token_embeddings = model_output[0]
     input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
-def determine_emotional_valence(mood: str, description: str) -> str:
-    """
-    Determine the emotional valence (positive, negative, neutral) based on mood and description.
-    """
-    if not mood and not description:
-        return "NEUTRAL"
-        
-    # Keywords for positive valence
-    positive_keywords = [
-        "happy", "joy", "upbeat", "uplift", "bright", "cheerful", "optimistic", 
-        "energetic", "positive", "confident", "empowering", "uplifting", "calm", 
-        "peaceful", "relaxing", "soothing", "serene", "tranquil", "hopeful",
-        "excited", "blissful", "content", "satisfied", "love", "warm", "gentle"
-    ]
-    
-    # Keywords for negative valence
-    negative_keywords = [
-        "sad", "melancholy", "somber", "dark", "gloomy", "depressing", "depressed",
-        "angry", "aggressive", "tension", "anxious", "fearful", "worried", 
-        "uncertain", "frustrated", "bitter", "regretful", "resentful", "grief",
-        "painful", "struggle", "conflict", "intense", "haunting", "desperate",
-        "longing", "yearning", "lonely", "isolated", "brooding", "moody"
-    ]
-    
-    combined_text = (mood + " " + description).lower()
-    
-    positive_matches = sum(1 for word in positive_keywords if word in combined_text)
-    negative_matches = sum(1 for word in negative_keywords if word in combined_text)
-    
-    # Determine valence based on keyword matches
-    if positive_matches > negative_matches * 1.5:
-        return "POSITIVE"
-    elif negative_matches > positive_matches * 1.5:
-        return "NEGATIVE"
-    elif positive_matches > 0 and negative_matches > 0:
-        return "MIXED"
-    elif positive_matches > 0:
-        return "SLIGHTLY_POSITIVE"
-    elif negative_matches > 0:
-        return "SLIGHTLY_NEGATIVE"
-    else:
-        return "NEUTRAL"
 
-def identify_incompatible_themes(themes: List[Dict[str, Any]]) -> List[str]:
-    """
-    Identify themes that would be incompatible with this playlist/song.
-    """
-    incompatible_themes = []
-    theme_names = [t.get("name", "").lower() for t in themes if "name" in t]
-    
-    # Define opposites based on theme names
-    theme_opposites = {
-        "self-care": ["violence", "struggle", "conflict", "anxiety", "stress", "poverty", "anger"],
-        "relaxation": ["tension", "stress", "anxiety", "conflict", "intense", "pressure", "violence"],
-        "happiness": ["sadness", "depression", "melancholy", "grief", "misery", "struggle"],
-        "confidence": ["doubt", "uncertainty", "insecurity", "fear", "anxiety"],
-        "uplifting": ["depressing", "dark", "negative", "heavy", "downbeat", "gloomy"],
-        "growth": ["stagnation", "regression", "failure", "hopelessness"],
-        "love": ["hate", "anger", "resentment", "bitterness", "violence"],
-        "peace": ["war", "conflict", "violence", "chaos", "disorder"],
-        "hope": ["despair", "hopelessness", "resignation", "defeat"],
-        "justice": ["injustice", "corruption", "inequality", "oppression"],
-        "success": ["failure", "defeat", "poverty", "struggle"],
-        "wealth": ["poverty", "scarcity", "lack", "insufficiency"],
-        "freedom": ["oppression", "confinement", "restriction", "limitation"],
-        "unity": ["division", "separation", "isolation", "fragmentation"],
-        "health": ["illness", "disease", "sickness", "infirmity"],
-        "positive": ["negative", "dark", "depressing", "harmful", "destructive"],
-        "negative": ["positive", "uplifting", "encouraging", "constructive"],
-        "celebration": ["mourning", "grief", "regret", "lamentation"],
-        "trust": ["suspicion", "distrust", "skepticism", "paranoia"]
-    }
-    
-    # For each theme, find its opposites
-    for theme in theme_names:
-        # Find matching keys in the theme_opposites dictionary
-        for key, opposites in theme_opposites.items():
-            if key in theme:
-                incompatible_themes.extend(opposites)
-            # Also check if the theme is in any of the opposites lists
-            if theme in opposites:
-                incompatible_themes.append(key)
-    
-    # Make the list unique and return
-    return list(set(incompatible_themes))
+def get_embedding(text: str, model_type: ModelType = ModelType.GENERAL) -> List[float]:
+    """Generate embedding for a single text"""
+    if not text or not text.strip():
+        # Return zero vector for empty text
+        dim = 384 if model_type in [ModelType.GENERAL, ModelType.FAST] else 768
+        return [0.0] * dim
 
-def extract_mood_boundaries(mood: str, description: str) -> List[str]:
-    """
-    Extract mood boundaries and limitations.
-    """
-    boundaries = []
-    
-    # Determine valence
-    valence = determine_emotional_valence(mood, description)
-    
-    # Set boundaries based on valence
-    if valence == "POSITIVE":
-        boundaries.append("STRICTLY_POSITIVE_ONLY")
-    elif valence == "SLIGHTLY_POSITIVE":
-        boundaries.append("POSITIVE_LEANING")
-    elif valence == "NEGATIVE":
-        boundaries.append("SERIOUS_REFLECTIVE_CONTENT")
-    elif valence == "SLIGHTLY_NEGATIVE":
-        boundaries.append("ALLOWS_MELANCHOLY")
-    elif valence == "MIXED":
-        boundaries.append("EMOTIONAL_COMPLEXITY_ALLOWED")
-    
-    # Check for specific mood types in the text
-    combined_text = (mood + " " + description).lower()
-    
-    if any(word in combined_text for word in ["energetic", "lively", "upbeat", "dynamic", "powerful"]):
-        boundaries.append("ENERGETIC_FOCUS")
-    
-    if any(word in combined_text for word in ["calm", "peaceful", "relaxing", "tranquil", "serene"]):
-        boundaries.append("CALM_FOCUS")
-    
-    if any(word in combined_text for word in ["deep", "profound", "introspective", "thoughtful"]):
-        boundaries.append("DEPTH_REQUIRED")
-    
-    if any(word in combined_text for word in ["light", "easy", "fun", "carefree"]):
-        boundaries.append("LIGHT_CONTENT_ONLY")
-    
-    return boundaries
+    model_info = models[model_type]
+    tokenizer = model_info["tokenizer"]
+    model = model_info["model"]
 
-def create_playlist_vector_query(playlist_data: Dict[str, Any]) -> str:
-    """Create a comprehensive query for playlist embedding with contradiction detection."""
-    # Extract playlist metadata
-    playlist_id = playlist_data.get("id", "")
-    track_count = len(playlist_data.get("track_ids", []))
-    
-    # Extract meaning elements
-    meaning = playlist_data.get("meaning", {})
-    themes = meaning.get("themes", [])
-    theme_names = ", ".join([t.get("name", "") for t in themes if "name" in t])
-    
-    # Enhance theme descriptions with more repetition for emphasis
-    theme_descriptions = []
-    for t in themes:
-        if "description" in t:
-            # Repeat high confidence themes more often for emphasis
-            repeat_count = max(1, int(t.get("confidence", 0.5) * 3))
-            for _ in range(repeat_count):
-                theme_descriptions.append(t.get("description", ""))
-    
-    theme_description_text = " ".join(theme_descriptions)
-    main_message = meaning.get("main_message", "")
-    
-    # Extract emotional elements
-    emotional = playlist_data.get("emotional", {})
-    dominant_mood = emotional.get("dominant_mood", {}).get("mood", "")
-    mood_description = emotional.get("dominant_mood", {}).get("description", "")
-    intensity = emotional.get("intensity_score", 0)
-    
-    # NEW: Determine emotional valence
-    valence = determine_emotional_valence(dominant_mood, mood_description)
-    
-    # NEW: Identify incompatible themes
-    incompatible_themes = identify_incompatible_themes(themes)
-    
-    # NEW: Extract mood boundaries
-    mood_boundaries = extract_mood_boundaries(dominant_mood, mood_description)
-    
-    # Extract context elements
-    context = playlist_data.get("context", {})
-    primary_setting = context.get("primary_setting", "")
-    perfect_for = ", ".join(context.get("situations", {}).get("perfect_for", []))
-    why = context.get("situations", {}).get("why", "")
-    
-    # Build enhanced query with theme repetition and stronger emphasis
-    query = "Represent this playlist for music matching:\n\n"
-    
-    # NEW: Add emotional valence and mood boundaries first for emphasis
-    if valence != "NEUTRAL":
-        query += f"EMOTIONAL_VALENCE: {valence}\n"
-    
-    if mood_boundaries:
-        query += f"MOOD_BOUNDARIES: {', '.join(mood_boundaries)}\n"
-    
-    # NEW: Add incompatible themes section
-    if incompatible_themes:
-        query += f"NOT_COMPATIBLE_WITH: {', '.join(incompatible_themes)}\n\n"
-    
-    # Add stronger emphasis on playlist qualities
-    query += f"IMPORTANT_PLAYLIST_THEMES: {theme_names.upper()}\n\n"
-    
-    if main_message:
-        query += f"ESSENTIAL_MESSAGE: {main_message}\n\n"
-    
-    # Create a more detailed emotional section
-    query += "EMOTIONAL_PROFILE (CRITICAL FOR MATCHING):\n"
-    if dominant_mood:
-        query += f"Must have this mood: {dominant_mood.upper()}\n"
-    if mood_description:
-        query += f"Mood details: {mood_description}\n"
-    if intensity:
-        query += f"With emotional intensity level: {intensity}\n"
-    
-    # Repeat theme descriptions for emphasis
-    if theme_description_text:
-        query += f"\nTHEME_DETAILS (MUST MATCH):\n{theme_description_text}\n"
-    
-    # Context is still important but secondary
-    query += "\nLISTENING_CONTEXT:\n"
-    if primary_setting:
-        query += f"Setting: {primary_setting}\n"
-    if perfect_for:
-        query += f"Activities: {perfect_for}\n"
-    if why:
-        query += f"Reason: {why}\n"
-    
-    # Add fit scores with less emphasis
-    fit_scores = context.get("fit_scores", {})
-    if fit_scores:
-        query += f"\nTime contexts: morning ({fit_scores.get('morning', 0)}), "
-        query += f"working ({fit_scores.get('working', 0)}), "
-        query += f"relaxation ({fit_scores.get('relaxation', 0)})\n"
-    
-    return query
+    inputs = tokenizer(text, padding=True, truncation=True,
+                       return_tensors="pt", max_length=512)
 
-def create_song_vector_query(song_analysis: Dict[str, Any]) -> str:
-    """Create a comprehensive query for song embedding with enhanced theme detection."""
-    analysis = song_analysis.get("analysis", song_analysis)
-    
-    # Extract meaning elements
-    meaning = analysis.get("meaning", {})
-    themes = meaning.get("themes", [])
-    theme_names = ", ".join([t.get("name", "") for t in themes if "name" in t])
-    theme_descriptions = " ".join([t.get("description", "") for t in themes if "description" in t])
-    main_message = meaning.get("interpretation", {}).get("main_message", "")
-    if not main_message and "main_message" in meaning:
-        main_message = meaning.get("main_message", "")
-    
-    # Extract emotional elements
-    emotional = analysis.get("emotional", {})
-    dominant_mood = emotional.get("dominant_mood", {}).get("mood", "")
-    mood_description = emotional.get("dominant_mood", {}).get("description", "")
-    intensity = emotional.get("intensity_score", 0)
-    
-    # NEW: Determine emotional valence
-    valence = determine_emotional_valence(dominant_mood, mood_description)
-    
-    # NEW: Identify potentially problematic themes
-    problematic_themes = identify_incompatible_themes(themes)
-    
-    # Extract lyrical content if available (add this field to your song analysis)
-    lyrics_summary = analysis.get("lyrics_summary", "")
-    
-    # Build enhanced query
-    query = "Represent this song for music similarity: "
-    
-    # Add track info if available
-    track = song_analysis.get("track", {})
-    if track:
-        artist = track.get("artist", "")
-        title = track.get("title", "")
-        if artist and title:
-            query += f"Song: {title} by {artist}\n\n"
-    
-    # NEW: Add emotional valence first for emphasis
-    if valence != "NEUTRAL":
-        query += f"EMOTIONAL_VALENCE: {valence}\n\n"
-    
-    # NEW: Add problematic themes if any
-    if problematic_themes:
-        query += f"CONTAINS_THEMES_OF: {', '.join(problematic_themes)}\n\n"
-    
-    # Themes section with greater emphasis
-    query += "THEMES_AND_MEANING:\n"
-    if theme_names:
-        query += f"Primary themes: {theme_names.upper()}\n"
-    if main_message:
-        query += f"Main message: {main_message}\n"
-    if theme_descriptions:
-        query += f"Theme details: {theme_descriptions}\n"
-    
-    # Emotional section with equal emphasis
-    query += "\nEMOTIONAL_PROFILE:\n"
-    if dominant_mood:
-        query += f"Primary mood: {dominant_mood.upper()}\n"
-    if mood_description:
-        query += f"Mood description: {mood_description}\n"
-    if intensity:
-        query += f"Emotional intensity: {intensity}\n"
-    
-    # Add lyrics summary if available
-    if lyrics_summary:
-        query += f"\nLYRICS_SUMMARY: {lyrics_summary}\n"
-    
-    # Context with lower emphasis
-    context = analysis.get("context", {})
-    primary_setting = context.get("primary_setting", "")
-    perfect_for = ", ".join(context.get("situations", {}).get("perfect_for", []))
-    
-    if primary_setting or perfect_for:
-        query += "\nLISTENING_CONTEXT:\n"
-        if primary_setting:
-            query += f"Setting: {primary_setting}\n"
-        if perfect_for:
-            query += f"Activities: {perfect_for}\n"
-    
-    return query
+    with torch.no_grad():
+        outputs = model(**inputs)
 
-@app.post("/vectorize/text")
-async def vectorize_text(request: TextRequest) -> Dict[str, Any]:
-    """Generate embedding for a specific text snippet using Transformers."""
-    try:
-        # Add instruction prefix for E5 model
-        instruction_text = f"Represent this text for music similarity: {request.text}"
-        
-        # Tokenize and get model inputs
-        inputs = embedding_tokenizer(instruction_text, padding=True, truncation=True, 
-                                   return_tensors="pt", max_length=512)
-        
-        # Generate embeddings
+    embeddings = mean_pooling(outputs, inputs["attention_mask"])
+    embeddings = F.normalize(embeddings, p=2, dim=1)
+
+    return embeddings[0].tolist()
+
+
+def get_embeddings_batch(texts: List[str], model_type: ModelType = ModelType.GENERAL) -> List[List[float]]:
+    """Generate embeddings for multiple texts efficiently"""
+    if not texts:
+        return []
+
+    model_info = models[model_type]
+    tokenizer = model_info["tokenizer"]
+    model = model_info["model"]
+
+    # Filter empty texts but track their positions
+    non_empty_indices = [i for i, t in enumerate(texts) if t and t.strip()]
+    non_empty_texts = [texts[i] for i in non_empty_indices]
+
+    if not non_empty_texts:
+        dim = 384 if model_type in [ModelType.GENERAL, ModelType.FAST] else 768
+        return [[0.0] * dim for _ in texts]
+
+    # Process in batches
+    batch_size = 8
+    all_embeddings = []
+
+    for i in range(0, len(non_empty_texts), batch_size):
+        batch = non_empty_texts[i:i + batch_size]
+
+        inputs = tokenizer(batch, padding=True, truncation=True,
+                           return_tensors="pt", max_length=512)
+
         with torch.no_grad():
-            outputs = embedding_model(**inputs)
-            
-        # Use mean pooling to get sentence representation
-        sentence_embedding = mean_pooling(outputs, inputs["attention_mask"])
-        
-        # Normalize embeddings
-        sentence_embedding = F.normalize(sentence_embedding, p=2, dim=1)
-        
-        # Convert to list for JSON serialization
-        embedding = sentence_embedding[0].tolist()
-        
+            outputs = model(**inputs)
+
+        embeddings = mean_pooling(outputs, inputs["attention_mask"])
+        embeddings = F.normalize(embeddings, p=2, dim=1)
+        all_embeddings.extend(embeddings.tolist())
+
+    # Reconstruct full list with zero vectors for empty texts
+    dim = len(all_embeddings[0]) if all_embeddings else 384
+    result = [[0.0] * dim for _ in texts]
+    for idx, emb_idx in enumerate(non_empty_indices):
+        result[emb_idx] = all_embeddings[idx]
+
+    return result
+
+
+# =============================================================================
+# API Endpoints
+# =============================================================================
+
+@app.post("/embed")
+async def embed(request: EmbedRequest) -> Dict:
+    """
+    Generate embedding for a single text.
+
+    This is the core endpoint - TypeScript extracts text from domain objects
+    and sends it here for embedding.
+    """
+    try:
+        embedding = get_embedding(request.text, request.model_type)
         return {
             "embedding": embedding,
+            "model": request.model_type,
+            "dimensions": len(embedding)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/analyze/sentiment")
-async def analyze_sentiment(request: TextRequest) -> SentimentResponse:
-    """Analyze sentiment using the multilingual 5-class sentiment model."""
+
+@app.post("/embed/batch")
+async def embed_batch(request: EmbedBatchRequest) -> Dict:
+    """
+    Batch embed multiple texts efficiently.
+    """
     try:
-        # Tokenize the input
-        inputs = sentiment_tokenizer(request.text, truncation=True, padding=True, 
-                                   return_tensors="pt", max_length=512)
-        
-        # Get predictions
+        embeddings = get_embeddings_batch(request.texts, request.model_type)
+        return {
+            "embeddings": embeddings,
+            "count": len(embeddings),
+            "model": request.model_type
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/embed/hybrid")
+async def embed_hybrid(request: HybridEmbedRequest) -> Dict:
+    """
+    Generate hybrid embedding from categorized text with weights.
+
+    TypeScript sends pre-extracted text categories:
+    - metadata: title, artist, genre
+    - analysis: themes, mood, meaning
+    - context: listening contexts, situations
+
+    Each category is embedded separately and combined with weights.
+    """
+    try:
+        # Get keys that have actual text content
+        text_keys = [k for k, v in request.texts.items() if v and v.strip()]
+
+        if not text_keys:
+            # No valid text, return zero vector
+            return {
+                "embedding": [0.0] * 768,
+                "components": [],
+                "weights": {},
+                "dimensions": 768
+            }
+
+        # Build weights only for keys present in request.texts
+        if request.weights:
+            # Filter to only keys that exist in texts
+            filtered_weights = {k: v for k, v in request.weights.items() if k in text_keys}
+            if filtered_weights:
+                # Normalize filtered weights
+                total = sum(filtered_weights.values())
+                if total > 0:
+                    weights = {k: v / total for k, v in filtered_weights.items()}
+                else:
+                    # All zero weights, use equal distribution
+                    weights = {k: 1.0 / len(text_keys) for k in text_keys}
+            else:
+                # No matching keys, use equal distribution
+                weights = {k: 1.0 / len(text_keys) for k in text_keys}
+        else:
+            # No custom weights provided, use equal distribution
+            weights = {k: 1.0 / len(text_keys) for k in text_keys}
+
+        # Choose model based on content
+        # Use creative model for richer semantic content
+        model_type = ModelType.CREATIVE
+
+        # Generate embeddings for each category
+        embeddings = {}
+        combined = None
+
+        for key in text_keys:
+            text = request.texts[key]
+            emb = get_embedding(text, model_type)
+            embeddings[key] = emb
+
+            weight = weights[key]  # Guaranteed to exist now
+            if combined is None:
+                combined = np.array(emb) * weight
+            else:
+                # Handle dimension mismatch by padding/truncating
+                emb_array = np.array(emb)
+                if len(emb_array) != len(combined):
+                    # Use the longer dimension
+                    if len(emb_array) > len(combined):
+                        combined = np.pad(combined, (0, len(emb_array) - len(combined)))
+                    else:
+                        emb_array = np.pad(emb_array, (0, len(combined) - len(emb_array)))
+                combined += emb_array * weight
+
+        # combined is guaranteed to exist since text_keys is non-empty
+
+        # Normalize the combined embedding
+        norm = np.linalg.norm(combined)
+        if norm > 0:
+            combined = combined / norm
+
+        return {
+            "embedding": combined.tolist(),
+            "components": list(embeddings.keys()),
+            "weights": weights,
+            "dimensions": len(combined)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/sentiment")
+async def analyze_sentiment(request: SentimentRequest) -> SentimentResponse:
+    """Analyze sentiment of text"""
+    try:
+        text = request.text[:512] if request.text else ""
+
+        if not text.strip():
+            return SentimentResponse(negative=0.33, neutral=0.34, positive=0.33)
+
+        inputs = sentiment_tokenizer(text, truncation=True, padding=True,
+                                     return_tensors="pt", max_length=512)
+
         with torch.no_grad():
             outputs = sentiment_model(**inputs)
-        
-        # Get probabilities
+
         probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)[0]
-        
-        # Map the 5-class model results to our 3-class response
-        # Class ordering: 0: Very Negative, 1: Negative, 2: Neutral, 3: Positive, 4: Very Positive
-        very_negative = probabilities[0].item()
-        negative = probabilities[1].item()
-        neutral = probabilities[2].item()
-        positive = probabilities[3].item()
-        very_positive = probabilities[4].item()
-        
-        # Combine the classes into our 3-class format
-        combined_negative = very_negative + negative
-        combined_positive = positive + very_positive
-        
-        # Normalize to ensure sum is 1.0
-        total = combined_negative + neutral + combined_positive
-        
+
+        # Model outputs: [negative, neutral, positive]
         return SentimentResponse(
-            positive=combined_positive / total,
-            negative=combined_negative / total,
-            neutral=neutral / total
+            negative=probabilities[0].item(),
+            neutral=probabilities[1].item(),
+            positive=probabilities[2].item()
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/vectorize/song")
-async def vectorize_song(request: AnalysisRequest) -> Dict[str, Any]:
-    """Generate embeddings for song analyses using Transformers."""
+
+@app.post("/similarity/calculate")
+async def calculate_similarity(request: SimilarityRequest) -> Dict[str, float]:
+    """Calculate similarity metrics between two vectors"""
     try:
-        results = []
-        
-        for song_analysis in request.analyses:
-            # Generate query from song analysis
-            query = create_song_vector_query(song_analysis)
-            
-            # Tokenize and get model inputs
-            inputs = embedding_tokenizer(query, padding=True, truncation=True, 
-                                     return_tensors="pt", max_length=512)
-            
-            # Generate embeddings
-            with torch.no_grad():
-                outputs = embedding_model(**inputs)
-                
-            # Use mean pooling to get sentence representation
-            sentence_embedding = mean_pooling(outputs, inputs["attention_mask"])
-            
-            # Normalize embeddings
-            sentence_embedding = F.normalize(sentence_embedding, p=2, dim=1)
-            
-            # Get track info if available
-            track_info = song_analysis.get("track", {})
-            
-            result = {
-                "embedding": sentence_embedding[0].tolist(),
-                "track_info": track_info
-            }
-            
-            results.append(result)
-        
-        return {"results": results}
+        v1 = np.array(request.vec1)
+        v2 = np.array(request.vec2)
+
+        # Reject dimension mismatch - indicates bug or misconfiguration
+        if len(v1) != len(v2):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Vector dimension mismatch: vec1 has {len(v1)} dimensions, vec2 has {len(v2)} dimensions"
+            )
+
+        # Cosine similarity
+        norm1, norm2 = np.linalg.norm(v1), np.linalg.norm(v2)
+        if norm1 == 0 or norm2 == 0:
+            cosine_sim = 0.0
+        else:
+            cosine_sim = float(np.dot(v1, v2) / (norm1 * norm2))
+
+        # Euclidean distance → similarity
+        euclidean_dist = float(np.linalg.norm(v1 - v2))
+        euclidean_sim = 1 / (1 + euclidean_dist)
+
+        # Manhattan distance → similarity
+        manhattan_dist = float(np.sum(np.abs(v1 - v2)))
+        manhattan_sim = 1 / (1 + manhattan_dist)
+
+        return {
+            "cosine": cosine_sim,
+            "euclidean": euclidean_sim,
+            "manhattan": manhattan_sim,
+            "average": (cosine_sim + euclidean_sim + manhattan_sim) / 3
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/vectorize/playlist")
-async def vectorize_playlist(request: Dict[str, Any]) -> Dict[str, Any]:
-    """Generate embeddings for a playlist using Transformers."""
-    try:
-        playlist_data = request.get("playlist", request)
-        
-        # Generate query from playlist data
-        query = create_playlist_vector_query(playlist_data)
-        
-        # Tokenize and get model inputs
-        inputs = embedding_tokenizer(query, padding=True, truncation=True, 
-                                 return_tensors="pt", max_length=512)
-        
-        # Generate embeddings
-        with torch.no_grad():
-            outputs = embedding_model(**inputs)
-            
-        # Use mean pooling to get sentence representation
-        sentence_embedding = mean_pooling(outputs, inputs["attention_mask"])
-        
-        # Normalize embeddings
-        sentence_embedding = F.normalize(sentence_embedding, p=2, dim=1)
-        
-        # Return the embedding with playlist info
-        return {
-            "embedding": sentence_embedding[0].tolist(),
-            "playlist_id": playlist_data.get("id", ""),
-            "track_count": len(playlist_data.get("track_ids", []))
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 async def root():
-    """Root endpoint that provides API information."""
+    """API information"""
     return {
-        "service": "Music-Playlist Vectorization API",
-        "version": "2.0.0",
+        "service": "Text Vectorization API",
+        "version": "1.0.0",
+        "description": "Generic text→vector service. No domain knowledge.",
+        "models": {
+            "general": "all-MiniLM-L6-v2 (384d)",
+            "creative": "all-mpnet-base-v2 (768d)",
+            "semantic": "multi-qa-mpnet-base-dot-v1 (768d)",
+            "fast": "paraphrase-MiniLM-L3-v2 (384d)"
+        },
         "endpoints": {
-            "/vectorize/song": "Generate embeddings for songs",
-            "/vectorize/playlist": "Generate embeddings for playlists",
-            "/vectorize/text": "Generate embeddings for arbitrary text",
-            "/analyze/sentiment": "Analyze text sentiment with 5-class model",
-            "/": "This information"
+            "/embed": "Single text embedding",
+            "/embed/batch": "Batch text embedding",
+            "/embed/hybrid": "Weighted multi-category embedding",
+            "/sentiment": "Sentiment analysis",
+            "/similarity/calculate": "Vector similarity metrics"
         }
     }
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint"""
+    return {"status": "healthy", "models_loaded": True}
+
 
 if __name__ == "__main__":
     import uvicorn
     import sys
     PORT = 8000
-    print(f"🚀 Enhanced Vectorization Server starting on http://localhost:{PORT}", flush=True)
+    print(f"🚀 Text Vectorization API starting on http://localhost:{PORT}", flush=True)
     sys.stdout.flush()
     uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")

@@ -117,6 +117,10 @@ export class ReccoBeatsService {
   }
 
   async getAudioFeaturesBatch(spotifyTrackIds: string[]): Promise<Map<string, ReccoBeatsAudioFeatures>> {
+    if (spotifyTrackIds.length === 0) {
+      return new Map();
+    }
+
     const results = new Map<string, ReccoBeatsAudioFeatures>();
     const failedIds: string[] = [];
 

@@ -14,6 +14,9 @@ import {
 /** Valid job types for runtime validation */
 const VALID_JOB_TYPES = new Set<AnalysisJobType>(['track_batch', 'playlist']);
 
+/** Valid job statuses for runtime validation */
+const VALID_JOB_STATUSES = new Set<AnalysisJobStatus>(['pending', 'in_progress', 'completed', 'failed']);
+
 /** Validates and returns a safe job type, logging warnings for unexpected values */
 function validateJobType(rawJobType: string | null | undefined, batchId: string): AnalysisJobType {
   if (rawJobType && VALID_JOB_TYPES.has(rawJobType as AnalysisJobType)) {
@@ -23,6 +26,17 @@ function validateJobType(rawJobType: string | null | undefined, batchId: string)
     console.warn(`Unknown job_type '${rawJobType}' for job ${batchId}, defaulting to 'track_batch'`);
   }
   return 'track_batch';
+}
+
+/** Validates and returns a safe job status, logging warnings for unexpected values */
+function validateJobStatus(rawStatus: string | null | undefined, batchId: string): AnalysisJobStatus {
+  if (rawStatus && VALID_JOB_STATUSES.has(rawStatus as AnalysisJobStatus)) {
+    return rawStatus as AnalysisJobStatus;
+  }
+  if (rawStatus) {
+    console.warn(`Unknown status '${rawStatus}' for job ${batchId}, defaulting to 'pending'`);
+  }
+  return 'pending';
 }
 
 export class JobPersistenceService {
@@ -140,7 +154,7 @@ export class JobPersistenceService {
 
 
     // Check if job should be marked as completed or is stale
-    let finalStatus: 'pending' | 'in_progress' | 'completed' | 'failed' = dbJob.status as 'pending' | 'in_progress' | 'completed' | 'failed';
+    let finalStatus = validateJobStatus(dbJob.status, dbJob.batch_id);
     const totalProcessed = dbJob.items_processed;
     const expectedTotal = dbJob.item_count;
     const jobAge = dbJob.created_at ? Date.now() - new Date(dbJob.created_at).getTime() : 0;

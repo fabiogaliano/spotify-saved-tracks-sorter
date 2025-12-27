@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useJobSubscription } from './useJobSubscription';
 import { isAnalysisUpdateMessage, isAnalysisFailedMessage, isJobCompletionMessage, isDirectJobNotification } from '~/lib/types/websocket.types';
 import { toast } from 'sonner';
+import { getWebSocketUrl } from '~/lib/config/routes';
 
 interface AnalysisSubscriptionOptions {
   userId: number;
@@ -21,7 +22,7 @@ export function useAnalysisSubscription({ userId, enabled = true }: AnalysisSubs
   const { data: analysisStatus } = useAnalysisStatus();
 
   // WebSocket connection
-  const wsUrl = `ws://localhost:3001/ws`;
+  const wsUrl = getWebSocketUrl();
   const { isConnected: wsConnected, lastMessage: wsMessage, connect, disconnect } = useWebSocket(wsUrl, {
     autoConnect: false,
     debug: false,
