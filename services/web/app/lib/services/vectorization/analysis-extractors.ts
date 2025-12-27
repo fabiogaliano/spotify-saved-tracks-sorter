@@ -7,6 +7,7 @@
 
 import type { SongAnalysis, PlaylistAnalysis } from '~/lib/services/analysis/analysis-schemas'
 import type { Song, Playlist } from '~/lib/models/Matching'
+import { isValidNumber, safeNumber } from '~/lib/utils/safe-number'
 
 /**
  * Text extracted for vectorization, split by semantic category.
@@ -82,7 +83,7 @@ function extractSongAnalysisText(analysis: SongAnalysis): string {
   if (analysis.meaning?.themes?.length) {
     const themeText = analysis.meaning.themes
       .map(t => {
-        const weight = Math.max(1, Math.round((t.confidence ?? 0.5) * 2))
+        const weight = Math.max(1, Math.round(safeNumber(t.confidence, 0.5) * 2))
         const text = `${t.name} ${t.description}`.trim()
         return Array(weight).fill(text).join(' ')
       })
@@ -108,7 +109,7 @@ function extractSongAnalysisText(analysis: SongAnalysis): string {
 
   // Intensity as text
   const intensity = analysis.emotional?.intensity
-  if (typeof intensity === 'number') {
+  if (isValidNumber(intensity)) {
     parts.push(intensityToText(intensity))
   }
 
@@ -187,7 +188,7 @@ function extractPlaylistAnalysisText(playlist: Playlist): string {
   if (playlist.meaning?.core_themes?.length) {
     const themeText = playlist.meaning.core_themes
       .map(t => {
-        const weight = Math.max(1, Math.round((t.confidence ?? 0.5) * 2))
+        const weight = Math.max(1, Math.round(safeNumber(t.confidence, 0.5) * 2))
         const text = `${t.name} ${t.description}`.trim()
         return Array(weight).fill(text).join(' ')
       })
@@ -222,7 +223,7 @@ function extractPlaylistAnalysisText(playlist: Playlist): string {
 
   // Intensity
   const intensity = playlist.emotional?.intensity_score
-  if (typeof intensity === 'number') {
+  if (isValidNumber(intensity)) {
     parts.push(intensityToText(intensity))
   }
 
@@ -309,7 +310,7 @@ function getTopListeningContexts(
   const entries = Object.entries(contexts) as [string, number][]
 
   return entries
-    .filter(([, score]) => typeof score === 'number' && score > 0.4)
+    .filter(([, score]) => isValidNumber(score) && score > 0.4)
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([context]) => context.replace(/_/g, ' '))

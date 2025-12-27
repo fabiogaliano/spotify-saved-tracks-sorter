@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	}
 
 	const providerStatuses = await providerKeyService.getProviderStatuses(
-		session.user.id.toString()
+		parseInt(session.user.id)
 	)
 	const hasApiKeys = providerStatuses.some(status => status.hasKey)
 

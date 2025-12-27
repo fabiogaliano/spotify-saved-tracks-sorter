@@ -112,33 +112,30 @@ export function useAnalysisSubscription({ userId, enabled = true }: AnalysisSubs
       return;
     }
 
-    // Handle direct job notifications (including failures without trackId)
+    // Handle direct job notifications - job-level concerns only
+    // Track-level updates are delegated to jobSubscriptionManager for single source of truth
     if (isDirectJobNotification(wsMessage)) {
-      if (wsMessage.status === 'FAILED' && wsMessage.error) {
+      // Show toast for job-level failures (null trackId = job failed, not a specific track)
+      if (wsMessage.status === 'FAILED' && wsMessage.error && wsMessage.trackId === null) {
         toast.error(`Analysis failed: ${wsMessage.error}`, {
           duration: 5000,
           dismissible: true,
         });
       }
-      // If we have a trackId, update the track status
-      if (wsMessage.trackId !== null) {
-        const trackId = wsMessage.trackId;
-        if (wsMessage.status === 'FAILED') {
-          updateTrackAnalysis(trackId, null, 'failed');
-        } else if (wsMessage.status === 'COMPLETED') {
-          updateTrackAnalysis(trackId, null, 'analyzed');
-        }
-      }
-      // Invalidate to refresh job stats
-      if (wsMessage.status === 'FAILED' || wsMessage.status === 'COMPLETED') {
+
+      // Invalidate job stats on terminal states
+      if (wsMessage.status === 'FAILED' || wsMessage.status === 'COMPLETED' || wsMessage.status === 'SKIPPED') {
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: likedSongsKeys.analysisStatus() });
         }, 100);
       }
-      return;
+
+      // Fall through to jobSubscriptionManager for track-level updates
+      // This ensures all statuses (QUEUED, IN_PROGRESS, COMPLETED, FAILED, SKIPPED) are handled consistently
     }
 
-    // Route messages through subscription manager for track updates
+    // Route all messages through subscription manager for track updates
+    // JobSubscriptionManager is the single source of truth for track status mapping
     jobSubscriptionManager.processMessage(wsMessage);
 
     // Handle legacy message formats with type guards

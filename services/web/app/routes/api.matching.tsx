@@ -7,7 +7,7 @@ import { trackRepository } from '~/lib/repositories/TrackRepository'
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 import { logger } from '~/lib/logging/Logger'
 import type { Playlist, Song } from '~/lib/models/Matching'
-import type { SongAnalysis } from '~/lib/services/analysis/analysis-schemas'
+import { validateSongAnalysis } from '~/lib/services/analysis/analysis-validator'
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUserSession(request)
@@ -64,20 +64,30 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     )
 
-    const songs: Song[] = trackResults
-      .filter(({ track, trackAnalysis }) => track && trackAnalysis)
-      .map(({ track, trackAnalysis }) => ({
-        id: track!.id,
-        spotifyTrackId: track!.spotify_track_id,
+    // Validate analysis at the boundary - filter out invalid data
+    const songs: Song[] = trackResults.reduce<Song[]>((acc, { track, trackAnalysis }) => {
+      if (!track || !trackAnalysis) return acc
+
+      const validatedAnalysis = validateSongAnalysis(trackAnalysis.analysis)
+      if (!validatedAnalysis) {
+        logger.warn('Skipping track with invalid analysis', { trackId: track.id })
+        return acc
+      }
+
+      acc.push({
+        id: track.id,
+        spotifyTrackId: track.spotify_track_id,
         track: {
-          id: track!.id.toString(),
-          title: track!.name,
-          artist: track!.artist,
-          album: track!.album || '',
-          spotify_id: track!.spotify_track_id
+          id: track.id.toString(),
+          title: track.name,
+          artist: track.artist,
+          album: track.album || '',
+          spotify_track_id: track.spotify_track_id
         },
-        analysis: trackAnalysis!.analysis as SongAnalysis
-      }))
+        analysis: validatedAnalysis
+      })
+      return acc
+    }, [])
 
     // Get existing tracks in the playlist for profiling (parallel fetching)
     const existingTracks = await playlistRepository.getPlaylistTracks(playlistId)
@@ -91,20 +101,27 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     )
 
-    const existingPlaylistSongs: Song[] = existingTrackResults
-      .filter(({ track, trackAnalysis }) => track && trackAnalysis)
-      .map(({ track, trackAnalysis }) => ({
-        id: track!.id,
-        spotifyTrackId: track!.spotify_track_id,
+    // Validate existing playlist song analyses at the boundary
+    const existingPlaylistSongs: Song[] = existingTrackResults.reduce<Song[]>((acc, { track, trackAnalysis }) => {
+      if (!track || !trackAnalysis) return acc
+
+      const validatedAnalysis = validateSongAnalysis(trackAnalysis.analysis)
+      if (!validatedAnalysis) return acc // Silently skip invalid for existing songs
+
+      acc.push({
+        id: track.id,
+        spotifyTrackId: track.spotify_track_id,
         track: {
-          id: track!.id.toString(),
-          title: track!.name,
-          artist: track!.artist,
-          album: track!.album || '',
-          spotify_id: track!.spotify_track_id
+          id: track.id.toString(),
+          title: track.name,
+          artist: track.artist,
+          album: track.album || '',
+          spotify_track_id: track.spotify_track_id
         },
-        analysis: trackAnalysis!.analysis as SongAnalysis
-      }))
+        analysis: validatedAnalysis
+      })
+      return acc
+    }, [])
 
     logger.info('Fetched tracks for matching', {
       existingTracks: existingPlaylistSongs.length,

@@ -6,6 +6,7 @@ import type { SongAnalysis } from '../analysis/analysis-schemas'
 import type { ReccoBeatsAudioFeatures } from '../reccobeats/ReccoBeatsService'
 import type { VectorizationService } from '../vectorization/VectorizationService'
 import type { SemanticMatcher } from '../semantic/SemanticMatcher'
+import { safeNumber } from '~/lib/utils/safe-number'
 
 interface PlaylistProfile {
   vector: number[]
@@ -25,7 +26,7 @@ export class MatchingService {
     private readonly matchRepository: MatchRepository,
     private readonly vectorization: VectorizationService,
     private readonly semanticMatcher: SemanticMatcher
-  ) {}
+  ) { }
 
   /**
    * Main matching function using hybrid approach
@@ -48,10 +49,37 @@ export class MatchingService {
       // Profile the playlist
       const profile = await this.profilePlaylist(playlist, existingPlaylistSongs)
 
-      // Process songs in parallel with progress tracking
-      const results = await Promise.all(
+      // Process songs in parallel with graceful error handling
+      const settled = await Promise.allSettled(
         songs.map(song => this.scoreSong(song, profile))
       )
+
+      const results: MatchResult[] = []
+      let failureCount = 0
+
+      for (let i = 0; i < settled.length; i++) {
+        const outcome = settled[i]
+        if (outcome.status === 'fulfilled') {
+          results.push(outcome.value)
+        } else {
+          failureCount++
+          logger.warn('Song scoring failed', {
+            songId: songs[i].id,
+            artist: songs[i].track?.artist,
+            reason: outcome.reason?.message ?? String(outcome.reason)
+          })
+          results.push(this.createFailedMatch(songs[i]))
+        }
+      }
+
+      if (failureCount > 0) {
+        logger.info('Matching completed with failures', {
+          playlistId: playlist.id,
+          total: songs.length,
+          failed: failureCount,
+          failureRate: (failureCount / songs.length * 100).toFixed(1) + '%'
+        })
+      }
 
       // Sort by score
       results.sort((a, b) => b.similarity - a.similarity)
@@ -158,8 +186,11 @@ export class MatchingService {
     const vector = await this.vectorization.vectorizePlaylist(playlist)
 
     // Extract metadata from playlist analysis
-    const moods = playlist.emotional?.dominant_mood ? [playlist.emotional.dominant_mood.mood] : []
-    const themes = playlist.meaning?.core_themes?.map(t => t.name) || []
+    const moods = playlist.emotional?.dominant_mood?.mood
+      ? [playlist.emotional.dominant_mood.mood]
+      : []
+    const themes = (playlist.meaning?.core_themes?.map(t => t.name) ?? [])
+      .filter((name): name is string => typeof name === 'string')
 
     return {
       vector,
@@ -300,10 +331,11 @@ export class MatchingService {
     if (songContexts && profile.listeningContexts) {
       Object.entries(profile.listeningContexts).forEach(([context, avgScore]) => {
         if (context in songContexts) {
+          const ctxScore = safeNumber(songContexts[context as keyof typeof songContexts])
+          // Only count as a factor if we have a valid score
           factors++
-          const ctxScore = songContexts[context as keyof typeof songContexts]
           // Higher score if both playlist and song are good for this context
-          score += Math.min(avgScore, ctxScore)
+          score += Math.min(safeNumber(avgScore), ctxScore)
         }
       })
     }
@@ -363,15 +395,15 @@ export class MatchingService {
 
       // Check energy transition
       const energyDiff = Math.abs(
-        (playlistSong.analysis.emotional.energy || 0.5) -
-        (song.analysis.emotional.energy || 0.5)
+        safeNumber(playlistSong.analysis.emotional.energy, 0.5) -
+        safeNumber(song.analysis.emotional.energy, 0.5)
       )
       const energyScore = 1 - (energyDiff * 0.5) // Gentle penalty for big jumps
 
       // Check valence transition
       const valenceDiff = Math.abs(
-        (playlistSong.analysis.emotional.valence || 0.5) -
-        (song.analysis.emotional.valence || 0.5)
+        safeNumber(playlistSong.analysis.emotional.valence, 0.5) -
+        safeNumber(song.analysis.emotional.valence, 0.5)
       )
       const valenceScore = 1 - (valenceDiff * 0.3) // Even gentler penalty
 
@@ -384,7 +416,12 @@ export class MatchingService {
   /**
    * Get mood transition score
    */
-  private getMoodTransitionScore(fromMood: string, toMood: string): number {
+  private getMoodTransitionScore(fromMood: string | undefined, toMood: string | undefined): number {
+    // Guard: if either mood is missing, return neutral score
+    if (!fromMood || !toMood) {
+      return 0.5
+    }
+
     // Define good mood transitions
     const goodTransitions: Record<string, string[]> = {
       'happy': ['euphoric', 'nostalgic', 'empowered', 'relaxed'],
@@ -442,13 +479,13 @@ export class MatchingService {
    */
   private extractAudioFeaturesFromSongs(songs: Song[]): ReccoBeatsAudioFeatures[] {
     const features: ReccoBeatsAudioFeatures[] = []
-    
+
     songs.forEach(song => {
       if (song.analysis?.audio_features) {
         features.push(song.analysis.audio_features as ReccoBeatsAudioFeatures)
       }
     })
-    
+
     return features
 
   }
@@ -514,13 +551,14 @@ export class MatchingService {
 
     try {
       const songFeatures = song.analysis?.audio_features
+      if (!songFeatures) return 0
 
       // Calculate average similarity to playlist songs
       let totalScore = 0
       let count = 0
 
       for (const pFeatures of playlistFeatures) {
-        const score = this.compareAudioFeatures(songFeatures as ReccoBeatsAudioFeatures, pFeatures)
+        const score = this.compareAudioFeatures(songFeatures, pFeatures)
         totalScore += score
         count++
       }
@@ -539,8 +577,8 @@ export class MatchingService {
    * Compare two sets of audio features
    */
   private compareAudioFeatures(
-    features1: ReccoBeatsAudioFeatures,
-    features2: ReccoBeatsAudioFeatures
+    features1: Partial<ReccoBeatsAudioFeatures>,
+    features2: Partial<ReccoBeatsAudioFeatures>
   ): number {
     // Weight different features based on importance for playlist cohesion
     const weights = {
@@ -603,6 +641,29 @@ export class MatchingService {
   }
 
   // Helper methods
+
+  /**
+   * Create a fallback match result for songs that failed scoring
+   */
+  private createFailedMatch(song: Song): MatchResult {
+    return {
+      track_info: song.track,
+      similarity: 0,
+      component_scores: {
+        theme_similarity: 0,
+        mood_similarity: 0,
+        mood_compatibility: 0,
+        sentiment_compatibility: 0,
+        intensity_match: 0,
+        activity_match: 0,
+        fit_score_similarity: 0,
+        thematic_contradiction: 0
+      },
+      veto_applied: true,
+      veto_reason: 'Scoring error'
+    }
+  }
+
   private cosineSimilarity(vec1: number[], vec2: number[]): number {
     if (!vec1 || !vec2 || vec1.length !== vec2.length) return 0
 
@@ -712,8 +773,7 @@ export class MatchingService {
       const contexts = song.analysis?.context?.listening_contexts
       if (contexts) {
         Object.entries(contexts).forEach(([context, score]) => {
-          // Ensure score is a number (guard against string/null values)
-          const numScore = typeof score === 'number' ? score : 0
+          const numScore = safeNumber(score)
           contextSums[context] = (contextSums[context] || 0) + numScore
           contextCounts[context] = (contextCounts[context] || 0) + 1
         })

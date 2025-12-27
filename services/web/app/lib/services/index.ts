@@ -7,7 +7,6 @@ import { DefaultLyricsService } from './lyrics/LyricsService'
 import { DefaultVectorizationService } from './vectorization/VectorizationService'
 import { MatchingService } from './matching/MatchingService'
 import { SupabaseMatchRepository } from '~/lib/repositories/MatchRepository'
-import { getAnalysisJobService, AnalysisJobService } from './AnalysisJobService'
 import { SemanticMatcher } from './semantic/SemanticMatcher'
 
 // todo: need to at runtime with user keys
@@ -47,8 +46,7 @@ export {
   matchRepository,
   matchingService,
   SyncService,
-  SpotifyService,
-  getAnalysisJobService
+  SpotifyService
 }
 
 // Export types for external use
@@ -58,6 +56,5 @@ export type {
   SongAnalysisService,
   PlaylistAnalysisService,
   DefaultVectorizationService as VectorizationService,
-  MatchingService,
-  AnalysisJobService
+  MatchingService
 }

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './Card';
-import { cn } from '~/lib/utils';
+import { cn } from '~/lib/utils/tw';
 
 type ThemedCardProps = {
   children: ReactNode;

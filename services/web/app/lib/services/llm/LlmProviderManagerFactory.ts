@@ -1,4 +1,4 @@
-import { LlmProviderManager } from './LlmProviderManager'
+import { LlmProviderManager, type LlmProviderName } from './LlmProviderManager'
 import { providerKeyService } from './ProviderKeyService'
 import { logger } from '~/lib/logging/Logger'
 
@@ -27,7 +27,7 @@ export class LlmProviderManagerFactory {
       return null
     }
 
-    return new LlmProviderManager(provider, apiKey)
+    return new LlmProviderManager(provider as LlmProviderName, apiKey)
   }
 
   /**
@@ -49,6 +49,6 @@ export class LlmProviderManagerFactory {
       )
     }
 
-    return new LlmProviderManager(provider, apiKey)
+    return new LlmProviderManager(provider as LlmProviderName, apiKey)
   }
 }

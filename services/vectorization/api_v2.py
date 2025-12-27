@@ -320,11 +320,12 @@ async def calculate_similarity(request: SimilarityRequest) -> Dict[str, float]:
         v1 = np.array(request.vec1)
         v2 = np.array(request.vec2)
 
-        # Handle dimension mismatch
+        # Reject dimension mismatch - indicates bug or misconfiguration
         if len(v1) != len(v2):
-            min_len = min(len(v1), len(v2))
-            v1 = v1[:min_len]
-            v2 = v2[:min_len]
+            raise HTTPException(
+                status_code=400,
+                detail=f"Vector dimension mismatch: vec1 has {len(v1)} dimensions, vec2 has {len(v2)} dimensions"
+            )
 
         # Cosine similarity
         norm1, norm2 = np.linalg.norm(v1), np.linalg.norm(v2)

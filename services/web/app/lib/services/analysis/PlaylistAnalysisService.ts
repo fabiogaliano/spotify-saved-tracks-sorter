@@ -2,6 +2,7 @@ import { PlaylistAnalysisService as IPlaylistAnalysisService } from '~/lib/model
 import type { LlmProviderManager } from '../llm/LlmProviderManager'
 import * as v from 'valibot'
 import { PlaylistAnalysisSchema, type PlaylistAnalysis } from './analysis-schemas'
+import { coerceLlmOutput } from './analysis-validator'
 
 // Enhanced playlist analysis prompt that captures cultural themes and cohesion
 const ENHANCED_PLAYLIST_ANALYSIS_PROMPT = `You are an expert music curator. Analyze this playlist to understand its purpose and cohesive elements. Only identify cultural significance when it's explicitly present and central to the playlist's theme.
@@ -141,6 +142,7 @@ export class PlaylistAnalysisService implements IPlaylistAnalysisService {
         if (match?.[1]) return JSON.parse(match[1].trim())
         throw new Error('No code block')
       },
+      // TODO: Replace with structured output (JSON mode) when upgrading ai/sdk
       () => {
         const match = responseText.match(/{[\s\S]*}/s)
         if (match) return JSON.parse(match[0])
@@ -202,60 +204,10 @@ export class PlaylistAnalysisService implements IPlaylistAnalysisService {
     }
   }
 
-  /**
-   * Coerce LLM output to match expected schema types.
-   * LLMs sometimes return strings instead of arrays or numbers.
-   */
-  private coerceLlmOutput(obj: unknown): unknown {
-    if (obj === null || obj === undefined) return obj
-    if (Array.isArray(obj)) return obj.map(item => this.coerceLlmOutput(item))
-    if (typeof obj !== 'object') return obj
-
-    const result: Record<string, unknown> = {}
-    const record = obj as Record<string, unknown>
-
-    // Fields that should be arrays of strings
-    const arrayFields = new Set([
-      'generational_markers', 'social_movements', 'peak_moments',
-      'perfect_for', 'avoid_during', 'time_of_day', 'season', 'life_moments',
-      'cohesion_factors', 'must_have_elements', 'deal_breakers', 'growth_potential',
-      'similarity_priorities', 'exclusion_criteria', 'ideal_additions',
-      'internal_conflicts', 'supporting_tracks'
-    ])
-
-    // Fields that should be numbers (0.0 to 1.0 scores)
-    const numberFields = new Set([
-      'confidence', 'consistency', 'intensity_score', 'emotional_range',
-      'catharsis_potential', 'alone_vs_group', 'intimate_vs_public',
-      'active_vs_passive', 'repeat_potential', 'transition_quality',
-      'genre_flexibility', 'mood_rigidity', 'cultural_specificity',
-      'era_constraints', 'universal_appeal', 'mood_consistency',
-      'energy_flexibility', 'theme_cohesion', 'sonic_similarity'
-    ])
-
-    for (const [key, value] of Object.entries(record)) {
-      if (arrayFields.has(key) && typeof value === 'string') {
-        // Coerce single string to array
-        result[key] = [value]
-      } else if (numberFields.has(key) && typeof value === 'string') {
-        // Try to extract a number from the string, default to 0.5
-        const parsed = parseFloat(value)
-        result[key] = isNaN(parsed) ? 0.5 : Math.max(0, Math.min(1, parsed))
-      } else if (typeof value === 'object' && value !== null) {
-        // Recurse into nested objects
-        result[key] = this.coerceLlmOutput(value)
-      } else {
-        result[key] = value
-      }
-    }
-
-    return result
-  }
-
   private validateAndParseAnalysis(analysis: unknown): PlaylistAnalysis {
     try {
       // First, coerce LLM output to match expected types
-      const coercedAnalysis = this.coerceLlmOutput(analysis)
+      const coercedAnalysis = coerceLlmOutput(analysis)
 
       // Use valibot to validate and parse the analysis
       const result = v.safeParse(PlaylistAnalysisSchema, coercedAnalysis)

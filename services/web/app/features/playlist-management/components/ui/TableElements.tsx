@@ -1,4 +1,4 @@
-import { PlaylistTrackUI } from '../playlist-viewer/types';
+import { PlaylistTrackUI } from '../../types';
 
 export const TableElements = {
   Header: () => (

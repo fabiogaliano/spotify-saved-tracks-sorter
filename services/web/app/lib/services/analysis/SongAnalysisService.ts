@@ -3,6 +3,7 @@ import { SongAnalysisService as ISongAnalysisService } from '~/lib/models/SongAn
 import type { LlmProviderManager } from '../llm/LlmProviderManager'
 import * as v from 'valibot'
 import { SongAnalysisSchema, type SongAnalysis } from './analysis-schemas'
+import { coerceLlmOutput } from './analysis-validator'
 import { logger } from '~/lib/logging/Logger'
 import type { TransformedLyricsBySection } from '../lyrics/utils/lyrics-transformer'
 import { AudioFeaturesService } from '~/lib/services/audio/AudioFeaturesService'
@@ -255,27 +256,15 @@ export class SongAnalysisService implements ISongAnalysisService {
   }
 
   private validateAndParseAnalysis(analysis: unknown): SongAnalysis {
-    try {
-      // Use valibot to validate and parse the analysis
-      const result = v.safeParse(SongAnalysisSchema, analysis)
+    // First, coerce LLM output to match expected types
+    const coercedAnalysis = coerceLlmOutput(analysis)
 
-      if (result.success) {
-        return result.output
-      } else {
-        // Return the analysis as-is if it has the basic structure
-        // This maintains backward compatibility
-        if (typeof analysis === 'object' && analysis !== null &&
-          'meaning' in analysis && 'emotional' in analysis) {
-          return analysis as SongAnalysis
-        }
-
-        throw new Error('Invalid analysis structure')
-      }
-    } catch (error) {
-      console.error('[SongAnalysis] Validation error:', error)
-      // If validation fails completely, throw to trigger retry
-      throw new Error(`Analysis validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    const result = v.safeParse(SongAnalysisSchema, coercedAnalysis)
+    if (!result.success) {
+      logger.error('[SongAnalysis] Validation failed', { issues: result.issues })
+      throw new Error(`Invalid analysis structure: ${result.issues.map(i => i.message).join(', ')}`)
     }
+    return result.output
   }
 
 
@@ -469,10 +458,11 @@ export class SongAnalysisService implements ISongAnalysisService {
         song: f.song
       }));
 
-      // Retry with smaller batch size for failures
+      // Retry with smaller batch size for failures (step down: 10 → 5 → 1)
+      const smallerBatchSize = this.getRetryBatchSize(batchOptions.batchSize);
       const retryResults = await this.analyzeBatchOptimized(retryTracks, {
         ...batchOptions,
-        batchSize: Math.min(batchOptions.batchSize, 3) as 1 | 5 | 10
+        batchSize: smallerBatchSize
       });
 
       // Update results with retry outcomes
@@ -485,6 +475,17 @@ export class SongAnalysisService implements ISongAnalysisService {
     }
 
     return results;
+  }
+
+  /**
+   * Get the next smaller valid batch size for retries
+   */
+  private getRetryBatchSize(currentSize: 1 | 5 | 10): 1 | 5 | 10 {
+    switch (currentSize) {
+      case 10: return 5;
+      case 5: return 1;
+      case 1: return 1;
+    }
   }
 
   /**

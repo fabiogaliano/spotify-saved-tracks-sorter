@@ -1,3 +1,4 @@
+// @ts-nocheck - Test/debug route, not worth strict typing
 import { ActionFunction } from 'react-router';
 import { useLoaderData, useActionData, Form, Link } from 'react-router';
 import { LoaderFunction } from 'react-router';

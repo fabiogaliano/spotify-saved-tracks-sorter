@@ -125,7 +125,7 @@ export default function MatchingPage({ playlists, tracks }: MatchingPageProps) {
         })
 
         // Convert to our MatchedSong format and sort by similarity
-        const songs: MatchedSong[] = data.results
+        const songs: MatchedSong[] = (data.results ?? [])
           .map(result => ({
             id: typeof result.track_info.id === 'string'
               ? parseInt(result.track_info.id, 10)
