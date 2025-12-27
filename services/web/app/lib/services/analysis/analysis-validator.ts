@@ -12,19 +12,32 @@ const STRING_ARRAY_FIELDS = new Set([
   'internal_conflicts', 'supporting_tracks'
 ])
 
-// Fields that should be arrays of objects
-const OBJECT_ARRAY_FIELDS = new Set([
-  'core_themes', 'themes', 'metaphors', 'key_lines', 'journey'
-])
+// Fields that should be arrays of objects, with string-to-object coercion
+const OBJECT_ARRAY_COERCION: Record<string, (s: string) => object> = {
+  'themes': (s) => ({ name: s, confidence: 0.5, description: '' }),
+  'core_themes': (s) => ({ name: s, confidence: 0.5, description: '' }),
+  'metaphors': (s) => ({ text: s, meaning: '' }),
+  'key_lines': (s) => ({ line: s, significance: '' }),
+  'journey': (s) => ({ section: 'verse', mood: s, description: '' })
+}
+
+const OBJECT_ARRAY_FIELDS = new Set(Object.keys(OBJECT_ARRAY_COERCION))
 
 // Fields that should be numbers (0.0 to 1.0 scores)
 const NUMBER_FIELDS = new Set([
+  // Shared / nested object scores
   'confidence', 'consistency', 'intensity_score', 'emotional_range',
   'catharsis_potential', 'alone_vs_group', 'intimate_vs_public',
   'active_vs_passive', 'repeat_potential', 'transition_quality',
   'genre_flexibility', 'mood_rigidity', 'cultural_specificity',
   'era_constraints', 'universal_appeal', 'mood_consistency',
-  'energy_flexibility', 'theme_cohesion', 'sonic_similarity'
+  'energy_flexibility', 'theme_cohesion', 'sonic_similarity',
+  // Song emotional top-level scores
+  'intensity', 'valence', 'energy',
+  // Listening context scores
+  'workout', 'party', 'relaxation', 'focus', 'driving',
+  'emotional_release', 'cooking', 'social_gathering',
+  'morning_routine', 'late_night', 'romance', 'meditation'
 ])
 
 /**
@@ -44,6 +57,10 @@ export function coerceLlmOutput(obj: unknown): unknown {
     if (STRING_ARRAY_FIELDS.has(key) && typeof value === 'string') {
       // Coerce single string to array
       result[key] = [value]
+    } else if (OBJECT_ARRAY_FIELDS.has(key) && typeof value === 'string') {
+      // Coerce string to array of objects using field-specific mapping
+      const coercer = OBJECT_ARRAY_COERCION[key]
+      result[key] = [coercer(value)]
     } else if (OBJECT_ARRAY_FIELDS.has(key) && typeof value === 'object' && value !== null && !Array.isArray(value)) {
       // Coerce single object to array of objects
       result[key] = [coerceLlmOutput(value)]
@@ -81,44 +98,6 @@ export function validateSongAnalysis(data: unknown): SongAnalysis | null {
   }
 
   return result.output
-}
-
-/**
- * Validates analysis data, returning original data if valid or null if invalid.
- * Less strict than validateSongAnalysis - logs warning but doesn't block.
- *
- * Use this for defensive validation where you want to continue
- * processing even with partially invalid data.
- */
-export function validateSongAnalysisLoose(data: unknown): SongAnalysis | null {
-  if (!data) return null
-
-  try {
-    const result = v.safeParse(SongAnalysisSchema, data)
-    if (result.success) {
-      return result.output
-    }
-
-    // Log but still try to use the data if it has the expected shape
-    logger.debug('Song analysis validation issues (using data anyway)', {
-      issueCount: result.issues.length,
-    })
-
-    // If it at least has the expected top-level structure, return it
-    if (
-      typeof data === 'object' &&
-      data !== null &&
-      'meaning' in data &&
-      'emotional' in data &&
-      'context' in data
-    ) {
-      return data as SongAnalysis
-    }
-
-    return null
-  } catch {
-    return null
-  }
 }
 
 /**

@@ -120,6 +120,10 @@ export function useLikedSongsManagement({ initialSongs }: UseLikedSongsManagemen
 
     try {
       await analyzeMutation.mutateAsync({ trackIds, batchSize: options.batchSize, batchId });
+      // Clear selection after analysis starts (consistent with analyzeSelectedTracks)
+      if (options.useSelected) {
+        setRowSelection({});
+      }
     } catch (error) {
       // Clear subscription on failure
       jobSubscriptionManager.setCurrentJob(null);

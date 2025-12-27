@@ -194,7 +194,7 @@ export class SongAnalysisService implements ISongAnalysisService {
       }
     }
 
-    console.error('All JSON extraction methods failed. Response:', responseText.slice(0, 500))
+    logger.error('All JSON extraction methods failed', { responsePreview: responseText.slice(0, 500) })
     throw new Error('Failed to extract valid JSON from LLM response')
   }
 

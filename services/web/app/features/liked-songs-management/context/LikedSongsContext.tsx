@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useCallback, ReactNode, use
 import { TrackWithAnalysis, UIAnalysisStatus, TrackAnalysis } from '~/lib/models/Track';
 import { useWebSocket } from '~/lib/hooks/useWebSocket';
 import { jobSubscriptionManager, JobStatusUpdate } from '~/lib/services/JobSubscriptionManager';
-import { apiRoutes } from '~/lib/config/routes';
+import { apiRoutes, getWebSocketUrl } from '~/lib/config/routes';
 import {
   ItemState,
   ItemStatesMap,
@@ -94,14 +94,14 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
   const jobRecoveryRef = useRef(false);
 
   // WebSocket connection
-  const WEBSOCKET_URL = 'ws://localhost:3001/ws';
+  const wsUrl = getWebSocketUrl();
   const {
     isConnected: isWebSocketConnected,
     lastMessage: webSocketLastMessage,
     subscribeToItem,
     connect: connectWebSocket,
     disconnect: disconnectWebSocket
-  } = useWebSocket(WEBSOCKET_URL, { autoConnect: false });
+  } = useWebSocket(wsUrl, { autoConnect: false });
 
   // Helper function to get computed values from job state
   const getJobCounts = useCallback((job: AnalysisJob | null) => {
@@ -417,8 +417,6 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
           : song
       )
     );
-
-    setIsAnalyzing(true);
 
     // Use fetch to send a JSON request instead of form data
     return fetch(apiRoutes.likedSongs.analyze, {

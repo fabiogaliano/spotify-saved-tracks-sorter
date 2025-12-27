@@ -23,7 +23,7 @@ import { PlaylistTrackUI } from '../types';
 import { prefetchPlaylistImages } from '../queries/playlist-image-queries';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUpdatePlaylistInfo } from '../queries/playlist-queries';
-import { apiRoutes } from '~/lib/config/routes';
+import { apiRoutes, getWebSocketUrl } from '~/lib/config/routes';
 
 type PlaylistManagementProps = {
   playlists: Playlist[]
@@ -45,7 +45,7 @@ const PlaylistManagementContent = ({ playlists }: PlaylistManagementProps) => {
   const [isAnalyzingTracks, setIsAnalyzingTracks] = useState(false);
 
   // WebSocket connection
-  const wsUrl = `ws://localhost:3001/ws`;
+  const wsUrl = getWebSocketUrl();
   const { isConnected: wsConnected, lastMessage: wsMessage, connect, disconnect } = useWebSocket(wsUrl, {
     autoConnect: false,
     debug: false,
