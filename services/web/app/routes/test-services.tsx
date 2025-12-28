@@ -1,5 +1,4 @@
-import { redirect } from 'react-router'
-import { LoaderFunction } from 'react-router'
+import { LoaderFunction, redirect } from 'react-router'
 
 import { apiRoutes } from '~/lib/config/routes'
 

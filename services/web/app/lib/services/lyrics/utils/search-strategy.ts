@@ -103,7 +103,7 @@ export function generateQueryVariants(artist: string, title: string): string[] {
 
 	// 1. CLEAN TITLE FIRST - 83% success rate at position 1
 	// Remove parentheticals AND dash suffixes
-	let cleanTitle = title
+	const cleanTitle = title
 		.replace(/\s*[\(\[][^\)\]]+[\)\]]\s*/g, '') // Remove (content) and [content]
 		.replace(dashPattern, '') // Remove " - suffix"
 		.trim()

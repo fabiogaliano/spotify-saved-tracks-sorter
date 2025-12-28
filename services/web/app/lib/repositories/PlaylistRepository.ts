@@ -6,8 +6,7 @@ import type {
 	PlaylistTrackInsert,
 } from '~/lib/models/Playlist'
 import { getSupabase } from '~/lib/services/DatabaseService'
-import type { Database } from '~/types/database.types'
-import type { Enums } from '~/types/database.types'
+import type { Database, Enums } from '~/types/database.types'
 
 import { SYNC_STATUS, type SyncStatus } from './TrackRepository'
 

@@ -1,8 +1,7 @@
 import { StrictMode } from 'react'
 
 import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from 'react-router'
-import { redirect } from 'react-router'
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, redirect } from 'react-router'
 
 import {
 	createResponseWithUpdatedSession,

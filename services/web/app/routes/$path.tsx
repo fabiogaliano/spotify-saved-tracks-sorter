@@ -1,7 +1,6 @@
 import React from 'react'
 
-import { LoaderFunction, MetaFunction } from 'react-router'
-import { Link, useRouteError } from 'react-router'
+import { Link, LoaderFunction, MetaFunction, useRouteError } from 'react-router'
 
 export const meta: MetaFunction = () => {
 	return [

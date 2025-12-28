@@ -1,5 +1,4 @@
-import { LoaderFunction } from 'react-router'
-import { Outlet } from 'react-router'
+import { LoaderFunction, Outlet } from 'react-router'
 
 import { getUserSession } from '~/features/auth/auth.utils'
 

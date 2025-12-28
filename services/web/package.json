@@ -19,7 +19,7 @@
 		"lyrics:snapshot": "bun run app/lib/services/lyrics/utils/__tests__/generate-snapshots.ts",
 		"format": "prettier --write \"app/**/*.{ts,tsx,js,jsx,json,css,md}\"",
 		"format:check": "prettier --check \"app/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-		"lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
+		"lint": "eslint --ignore-path ../../.gitignore --cache --cache-location ./node_modules/.cache/eslint .",
 		"typecheck": "react-router typegen && tsc",
 		"db:types": "rm -rf ./app/types/database.types.ts && bunx supabase gen types --lang=typescript --project-id 'szhpoywveuvfbhcxiafi' --schema public > app/types/database.types.ts",
 		"clean": "rm -rf node_modules bun.lockb build .next .react-router",

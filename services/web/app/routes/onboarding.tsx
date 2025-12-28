@@ -1,5 +1,4 @@
-import { ActionFunctionArgs, LoaderFunction, redirect } from 'react-router'
-import { useLoaderData } from 'react-router'
+import { ActionFunctionArgs, LoaderFunction, redirect, useLoaderData } from 'react-router'
 
 import { getUserSession } from '~/features/auth/auth.utils'
 import Onboarding from '~/features/onboarding/Onboarding'

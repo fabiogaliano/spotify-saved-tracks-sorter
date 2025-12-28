@@ -16,8 +16,7 @@ import {
 	PlaylistUpdateInput,
 	playlistRepository,
 } from '~/lib/repositories/PlaylistRepository'
-import { trackRepository } from '~/lib/repositories/TrackRepository'
-import { SYNC_STATUS } from '~/lib/repositories/TrackRepository'
+import { SYNC_STATUS, trackRepository } from '~/lib/repositories/TrackRepository'
 import { getSupabase } from '~/lib/services/DatabaseService'
 import { SpotifyService } from '~/lib/services/SpotifyService'
 import {
@@ -114,7 +113,7 @@ export class PlaylistService {
 			}
 
 			let finalDescription = playlistUpdate.description
-			let shouldBeAIFlagged = playlist.is_flagged || false
+			const shouldBeAIFlagged = playlist.is_flagged || false
 
 			if (
 				shouldBeAIFlagged &&

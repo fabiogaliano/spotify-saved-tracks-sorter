@@ -321,7 +321,7 @@ export const LikedSongsProvider: React.FC<LikedSongsProviderProps> = ({
 					const newItemStates = new Map(prevJob.itemStates)
 					newItemStates.set(trackId, trackJobStatus)
 
-					let newDbStats = { ...prevJob.dbStats }
+					const newDbStats = { ...prevJob.dbStats }
 
 					// Update dbStats when items complete or fail
 					if (trackJobStatus === 'completed' || trackJobStatus === 'failed') {

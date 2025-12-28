@@ -151,7 +151,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	} catch (error) {
 		console.error(`Error performing action ${action} for provider ${provider}:`, error)
 
-		let errorMessage = `Failed to ${action} for ${provider}`
+		const errorMessage = `Failed to ${action} for ${provider}`
 		let errorDetails = error instanceof Error ? error.message : 'Unknown error'
 
 		if (error instanceof Error) {
