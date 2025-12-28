@@ -2,11 +2,15 @@ import wretch from 'wretch'
 import { LyricsService } from '~/lib/services'
 import { logger } from '~/lib/logging/Logger'
 import type { LyricsSection } from '~/lib/models/Lyrics'
-import { SearchResponse, ResponseReferents, } from './types/genius.types'
+import { SearchResponse, ResponseReferents, type ResponseHitsResult } from './types/genius.types'
 import { LyricsParser } from './utils/lyrics-parser'
 import { LyricsTransformer, TransformedLyricsBySection } from './utils/lyrics-transformer'
-import { calculateSimilarity } from './utils/string-similarity'
 import { ConcurrencyLimiter } from '~/lib/utils/concurrency'
+import {
+	generateQueryVariants,
+	findBestMatch,
+	debugCandidates,
+} from './utils/search-strategy'
 
 export interface GeniusServiceConfig {
 	accessToken: string
@@ -15,8 +19,8 @@ export interface GeniusServiceConfig {
 export class DefaultLyricsService implements LyricsService {
 	private readonly baseUrl = 'https://api.genius.com'
 	private readonly client: ReturnType<typeof wretch>
-	// Limit to 3 concurrent requests with 100ms minimum interval (Genius API is stricter)
-	private readonly limiter = new ConcurrencyLimiter(3, 100)
+	// 5 concurrent requests with 50ms interval (~20 req/sec, safe for authenticated API)
+	private readonly limiter = new ConcurrencyLimiter(5, 50)
 
 	constructor(config: GeniusServiceConfig) {
 		if (!config.accessToken) {
@@ -48,78 +52,103 @@ export class DefaultLyricsService implements LyricsService {
 		}
 	}
 
-	private async searchSong(artist: string, song: string) {
-		const searchQuery = encodeURIComponent(`${artist} ${song}`)
+	private async searchSong(artist: string, song: string): Promise<ResponseHitsResult> {
+		// Generate multiple query variants to try
+		const queryVariants = generateQueryVariants(artist, song);
+		const debug = process.env.DEBUG_LYRICS_SEARCH === 'true';
 
-		try {
-			const response: SearchResponse = await this.limiter.run(() =>
-				this.client.get(`/search?q=${searchQuery}`).json()
-			)
-
-			const firstHit = response.response?.hits?.[0]?.result
-
-			if (!firstHit?.url) {
-				throw new logger.AppError(`Song not found: ${artist} - ${song}`, 'LYRICS_SERVICE_ERROR', 404)
-			}
-
-			const similarityScore = calculateSimilarity(
-				firstHit.primary_artist.name,
-				artist
-			);
-
-			if (similarityScore < 0.7) {
-				throw new logger.AppError(
-					`Found song "${firstHit.title}" but artist "${firstHit.primary_artist.name}" doesn't match "${artist}" (similarity: ${(similarityScore * 100).toFixed(1)}%)`,
-					'LYRICS_SERVICE_ERROR',
-					404
-				);
-			}
-
-			return firstHit
-		} catch (error) {
-			console.error('Error in searchSong:', error)
-			throw new logger.AppError(`Search failed for ${artist} - ${song}`, 'LYRICS_SERVICE_ERROR', 503, {
-				error,
-				context: 'search',
-			})
+		if (debug) {
+			console.log(`\n=== Searching for: "${artist}" - "${song}" ===`);
+			console.log('Query variants:', queryVariants);
 		}
+
+		let lastError: Error | null = null;
+
+		// Try each query variant until we find a good match
+		for (const query of queryVariants) {
+			try {
+				const searchQuery = encodeURIComponent(query);
+				const response: SearchResponse = await this.limiter.run(() =>
+					this.client.get(`/search?q=${searchQuery}`).json()
+				);
+
+				const hits = response.response?.hits;
+				if (!hits || hits.length === 0) {
+					if (debug) console.log(`No results for query: "${query}"`);
+					continue;
+				}
+
+				// Extract results from hits
+				const results = hits
+					.map(hit => hit.result)
+					.filter((r): r is ResponseHitsResult => !!r?.url);
+
+				if (debug) {
+					debugCandidates(results, artist, song);
+				}
+
+				// Find best match using combined scoring
+				const match = findBestMatch(results, artist, song, query);
+
+				if (match) {
+					if (debug) {
+						console.log(
+							`✓ Found match: "${match.result.title}" by "${match.result.primary_artist.name}" ` +
+							`[score: ${(match.score * 100).toFixed(1)}%, query: "${match.queryUsed}"]`
+						);
+					}
+					return match.result;
+				}
+
+				if (debug) {
+					console.log(`No good match found for query: "${query}" (best score below threshold)`);
+				}
+			} catch (error) {
+				lastError = error as Error;
+				if (debug) console.log(`Query failed: "${query}"`, error);
+			}
+		}
+
+		// No match found with any query variant
+		throw new logger.AppError(
+			`Song not found: ${artist} - ${song} (tried ${queryVariants.length} query variants)`,
+			'LYRICS_SERVICE_ERROR',
+			404,
+			{ queriesAttempted: queryVariants }
+		);
 	}
 
 	private async fetchReferents(songId: number): Promise<ResponseReferents[]> {
 		const perPage = 50
-		let page = 1
-		let allReferents: ResponseReferents[] = []
-		let hasMoreReferents = true
 
-		while (hasMoreReferents) {
-			try {
-				const response: ResponseReferents = await this.limiter.run(() =>
-					this.client
-						.url(
-							`/referents?song_id=${songId}&text_format=plain&per_page=${perPage}&page=${page}`
-						)
-						.get()
-						.json()
-				)
+		// Fire all 4 pages in parallel - most songs have <200 annotations
+		// Using allSettled so one failed page doesn't break the whole fetch
+		const results = await Promise.allSettled([
+			this.fetchReferentsPage(songId, 1, perPage),
+			this.fetchReferentsPage(songId, 2, perPage),
+			this.fetchReferentsPage(songId, 3, perPage),
+			this.fetchReferentsPage(songId, 4, perPage),
+		])
 
-				const referents = response.response.referents
-				if (!referents || referents.length === 0) {
-					hasMoreReferents = false
-					break
-				}
+		// Extract successful results only
+		return results
+			.filter((r): r is PromiseFulfilledResult<ResponseReferents[]> => r.status === 'fulfilled')
+			.flatMap(r => r.value)
+	}
 
-				allReferents = allReferents.concat(referents)
-				page++
-			} catch (error) {
-				console.error('Error in fetchReferents:', error)
-				throw new logger.AppError(`Failed to fetch referents for song ID ${songId}`, 'LYRICS_SERVICE_ERROR', 503, {
-					error,
-					context: 'referents',
-				})
-			}
+	private async fetchReferentsPage(songId: number, page: number, perPage: number): Promise<ResponseReferents[]> {
+		try {
+			const response: ResponseReferents = await this.limiter.run(() =>
+				this.client
+					.url(`/referents?song_id=${songId}&text_format=plain&per_page=${perPage}&page=${page}`)
+					.get()
+					.json()
+			)
+			return response.response?.referents || []
+		} catch {
+			// Page doesn't exist or error - return empty
+			return []
 		}
-
-		return allReferents
 	}
 
 	private async fetchLyrics(url: string): Promise<LyricsSection[]> {

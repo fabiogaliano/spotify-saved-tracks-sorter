@@ -13,7 +13,7 @@
 		"dev:vector": "cd services/vectorization && uv run python api.py",
 		"build": "cd services/web && bun run build:prod",
 		"start": "cd services/web && bun run start:prod",
-		"test": "cd services/web && bun test",
+		"test": "cd services/web && bunx vitest run --reporter=verbose",
 		"lint": "cd services/web && bun run lint",
 		"typecheck": "cd services/web && bun run typecheck",
 		"setup": "./setup.sh",

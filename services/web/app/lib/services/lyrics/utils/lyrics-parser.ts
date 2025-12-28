@@ -1,27 +1,32 @@
-import * as cheerio from 'cheerio';
-import type { BasicAcceptedElems, CheerioAPI } from 'cheerio';
-import type { Element } from 'domhandler';
+import { parseDocument } from 'htmlparser2';
+import { selectAll, selectOne } from 'css-select';
+import { textContent } from 'domutils';
+import type { Element, Text, AnyNode } from 'domhandler';
 
 import { logger } from '~/lib/logging/Logger';
 import type { LyricsSection } from '~/lib/models/Lyrics';
 
 const SELECTORS = {
-  LYRICS_CONTAINER: '#lyrics-root-pin-spacer',
-  LYRICS_FOOTER: '[class*="LyricsFooter" i]'
+  LYRICS_CONTAINER: '[data-lyrics-container="true"]',
+  LYRICS_HEADER: '[class*="LyricsHeader"]',
+  ANNOTATION_LINK: 'a[class*="ReferentFragment"]'
 } as const;
 
-const PATTERNS = {
-  SECTION: /\[(.*?)(?::|])/g
-} as const;
+// Matches section headers like [Verse 1: Sam Fender] or [Chorus]
+const SECTION_PATTERN = /^\[([^\]]+)\]$/;
+
+interface LineData {
+  text: string;
+  annotationUrl?: string;
+}
 
 export class LyricsParser {
   static parse(html: string): LyricsSection[] {
-    const $ = cheerio.load(html);
-    $(SELECTORS.LYRICS_FOOTER).remove();
-    const lyricsContainer = $(SELECTORS.LYRICS_CONTAINER);
-    const content = lyricsContainer.html() || "";
+    const doc = parseDocument(html);
 
-    if (!content) {
+    // Find lyrics containers
+    const containers = selectAll(SELECTORS.LYRICS_CONTAINER, doc) as Element[];
+    if (containers.length === 0) {
       throw new logger.AppError(
         'Failed to parse lyrics content from Genius API response',
         'LYRICS_SERVICE_ERROR',
@@ -30,153 +35,131 @@ export class LyricsParser {
       );
     }
 
-    return this.findSections(content);
-  }
-
-  private static findSections(content: string): LyricsSection[] {
-    const sections: LyricsSection[] = [];
-    const sectionMatches = content.matchAll(PATTERNS.SECTION);
-    let lastIndex = 0;
-
-    for (const match of sectionMatches) {
-      const sectionStartIndex = match.index!;
-      const sectionEndIndex = content.indexOf('[', sectionStartIndex + 1);
-
-      // If this is not the first section and there's content before it,
-      // treat it as an untitled section
-      if (sectionStartIndex > lastIndex && lastIndex > 0) {
-        const untitledContent = content.slice(lastIndex, sectionStartIndex);
-        if (untitledContent.trim()) {
-          sections.push({
-            type: 'Lyrics',
-            lines: this.processSection(untitledContent, { type: 'Lyrics', startIndex: lastIndex, annotationLinks: {} }),
-            annotationLinks: {}
-          });
+    // Remove header elements from each container
+    for (const container of containers) {
+      const headers = selectAll(SELECTORS.LYRICS_HEADER, container) as Element[];
+      for (const header of headers) {
+        const parent = header.parent;
+        if (parent && 'children' in parent) {
+          const idx = parent.children.indexOf(header);
+          if (idx !== -1) parent.children.splice(idx, 1);
         }
       }
-
-      const sectionContent = sectionEndIndex === -1
-        ? content.slice(sectionStartIndex)
-        : content.slice(sectionStartIndex, sectionEndIndex);
-
-      const section = {
-        type: match[1].trim(),
-        startIndex: sectionStartIndex,
-        annotationLinks: {} as Record<string, number[]>
-      };
-
-      const lines = this.processSection(sectionContent, section);
-      if (lines.length > 0) {
-        sections.push({
-          type: section.type,
-          lines,
-          annotationLinks: section.annotationLinks
-        });
-      }
-
-      lastIndex = sectionEndIndex === -1 ? content.length : sectionEndIndex;
     }
 
-    // If there's any remaining content after the last section, add it
-    if (lastIndex < content.length) {
-      const remainingContent = content.slice(lastIndex);
-      if (remainingContent.trim()) {
-        sections.push({
-          type: 'Lyrics',
-          lines: this.processSection(remainingContent, { type: 'Lyrics', startIndex: lastIndex, annotationLinks: {} }),
-          annotationLinks: {}
-        });
-      }
+    // Extract all lines with annotation info
+    const allLines: LineData[] = [];
+    for (const container of containers) {
+      const lines = this.extractLinesFromContainer(container);
+      allLines.push(...lines);
     }
 
-    return sections;
+    // Parse into sections
+    return this.buildSections(allLines);
   }
 
-  private static processSection(content: string, section: { type: string; startIndex: number; annotationLinks: Record<string, number[]> }) {
-    const $ = cheerio.load(content);
-    const lines: { id: number; text: string }[] = [];
-    const claimedLines = new Set<number>();
-    const lineMap = new Map<number, string>();
-    let lineCounter = 1;
+  private static extractLinesFromContainer(container: Element): LineData[] {
+    const lines: LineData[] = [];
+    let currentLine = '';
+    let currentAnnotationUrl: string | undefined;
 
-    // Process annotation links first
-    $('a[class^="ReferentFragment"]').each((_, element) => {
-      const url = $(element).attr('href');
-      if (!url) return;
+    const processNode = (node: AnyNode) => {
+      if (node.type === 'text') {
+        currentLine += (node as Text).data || '';
+      } else if (node.type === 'tag') {
+        const el = node as Element;
 
-      if (!section.annotationLinks[url]) {
-        section.annotationLinks[url] = [];
+        if (el.name === 'br') {
+          // Line break - save current line
+          const trimmed = currentLine.trim();
+          if (trimmed) {
+            lines.push({ text: trimmed, annotationUrl: currentAnnotationUrl });
+          }
+          currentLine = '';
+          currentAnnotationUrl = undefined;
+        } else if (el.name === 'a' && el.attribs?.class?.includes('ReferentFragment')) {
+          // Annotation link - recurse into it to handle <br> inside
+          const url = el.attribs?.href;
+          currentAnnotationUrl = url;
+          for (const child of el.children || []) {
+            processNode(child);
+          }
+        } else if (el.attribs?.class?.includes('LyricsHeader')) {
+          // Skip header elements
+          return;
+        } else {
+          // Recurse into children
+          for (const child of el.children || []) {
+            processNode(child);
+          }
+        }
       }
+    };
 
-      const textNodes = this.extractTextNodes($, element);
-      const lineTexts = textNodes.split('\n').filter(line => line.trim());
+    for (const child of container.children || []) {
+      processNode(child);
+    }
 
-      this.mapLinesToAnnotations(lineTexts, lineCounter, url, section, claimedLines, lineMap);
-      lineCounter += lineTexts.length;
-    });
-
-    // Process remaining text
-    const remainingLines = $('div[class^="Lyrics__Container"]')
-      .contents()
-      .filter((_, node) => {
-        const isText = node.type === 'text';
-        const isBreak = node.type === 'tag' && node.name === 'br';
-        const isNotAnnotation = !$(node).find('a[class^="ReferentFragment"]').length;
-        return (isText || isBreak) && isNotAnnotation;
-      })
-      .map((_, node) => {
-        if (node.type === 'text') return $(node).text().trim();
-        if (node.type === 'tag' && node.name === 'br') return '\n';
-        return '';
-      })
-      .get()
-      .join('')
-      .split('\n')
-      .filter(line => line.trim());
-
-    remainingLines.forEach(lineText => {
-      if (!lineMap.has(lineCounter)) {
-        lineMap.set(lineCounter, lineText);
-      }
-      lineCounter++;
-    });
-
-    // Build final lines array
-    for (let i = 1; i < lineCounter; i++) {
-      const text = lineMap.get(i);
-      if (text) {
-        lines.push({ id: i, text });
-      }
+    // Handle remaining content
+    const trimmed = currentLine.trim();
+    if (trimmed) {
+      lines.push({ text: trimmed, annotationUrl: currentAnnotationUrl });
     }
 
     return lines;
   }
 
-  private static extractTextNodes($: CheerioAPI, element: BasicAcceptedElems<Element>): string {
-    return $(element).find('span').contents().map((_, node) => {
-      if (node.type === 'text') return $(node).text().trim();
-      if (node.type === 'tag' && node.name === 'br') return '\n';
-      if (node.type === 'tag' && node.name === 'i') return $(node).text().trim();
-      return '';
-    }).get().join('');
-  }
+  private static buildSections(lines: LineData[]): LyricsSection[] {
+    const sections: LyricsSection[] = [];
+    let currentSection: LyricsSection | null = null;
+    let lineId = 1;
 
-  private static mapLinesToAnnotations(
-    lineTexts: string[],
-    currentLineCounter: number,
-    url: string,
-    section: { annotationLinks: Record<string, number[]> },
-    claimedLines: Set<number>,
-    lineMap: Map<number, string>
-  ) {
-    lineTexts.forEach((lineText, i) => {
-      const lineIndex = currentLineCounter + i;
-      lineMap.set(lineIndex, lineText);
+    for (const line of lines) {
+      const sectionMatch = line.text.match(SECTION_PATTERN);
 
-      if (!claimedLines.has(lineIndex)) {
-        section.annotationLinks[url].push(lineIndex);
-        claimedLines.add(lineIndex);
+      if (sectionMatch) {
+        // This is a section header like [Verse 1: Sam Fender]
+        // Save previous section if exists
+        if (currentSection && currentSection.lines.length > 0) {
+          sections.push(currentSection);
+        }
+
+        // Start new section
+        currentSection = {
+          type: sectionMatch[1].trim(),
+          lines: [],
+          annotationLinks: {}
+        };
+        lineId = 1;
+      } else {
+        // This is a lyrics line
+        if (!currentSection) {
+          // No section header yet - create default section
+          currentSection = {
+            type: 'Lyrics',
+            lines: [],
+            annotationLinks: {}
+          };
+        }
+
+        currentSection.lines.push({ id: lineId, text: line.text });
+
+        if (line.annotationUrl) {
+          if (!currentSection.annotationLinks[line.annotationUrl]) {
+            currentSection.annotationLinks[line.annotationUrl] = [];
+          }
+          currentSection.annotationLinks[line.annotationUrl].push(lineId);
+        }
+
+        lineId++;
       }
-    });
+    }
+
+    // Don't forget the last section
+    if (currentSection && currentSection.lines.length > 0) {
+      sections.push(currentSection);
+    }
+
+    return sections;
   }
 }

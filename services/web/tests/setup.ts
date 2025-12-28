@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { SpotifyApi } from '@fostertheweb/spotify-web-sdk'
 import { writeFileSync, readFileSync, mkdirSync } from 'fs'
 import { resolve, dirname } from 'path'
