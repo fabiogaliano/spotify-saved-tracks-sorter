@@ -12,13 +12,12 @@ export async function action({ request }: ActionFunctionArgs) {
 	const logger = Logger.getInstance()
 	try {
 		logger.info('Attempting Spotify authentication via /auth/spotify action...')
-		return await authenticator.authenticate('spotify', request, {
-			// todo: handle failureRedirect
-			// failureRedirect: '/login?error=auth_failed',
-		})
+		// remix-auth v4: authenticate() throws a redirect Response for OAuth flows
+		// This will redirect to Spotify's authorization page
+		return await authenticator.authenticate('spotify', request)
 	} catch (error) {
+		// OAuth strategies throw redirect Responses - we need to re-throw those
 		if (error instanceof Response) {
-			logger.info('Authentication resulted in a Error Response')
 			throw error
 		}
 

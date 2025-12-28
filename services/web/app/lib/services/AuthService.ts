@@ -1,4 +1,4 @@
-import { authenticator } from '~/features/auth/auth.server'
+import { SESSION_KEY } from '~/features/auth/auth.server'
 import type { SpotifySession } from '~/features/auth/auth.server'
 import { sessionStorage } from '~/features/auth/session.server'
 import { Logger } from '~/lib/logging/Logger'
@@ -27,7 +27,7 @@ export class AuthService {
 	}> {
 		try {
 			const session = await sessionStorage.getSession(request.headers.get('Cookie'))
-			const user = session.get(authenticator.sessionKey) as SpotifySession | null
+			const user = session.get(SESSION_KEY) as SpotifySession | null
 
 			if (!user) {
 				this.logger.info('No user session found')
@@ -81,7 +81,7 @@ export class AuthService {
 				const refreshed = await refreshPromise
 
 				if (refreshed) {
-					session.set(authenticator.sessionKey, user)
+					session.set(SESSION_KEY, user)
 					const cookieHeader = await sessionStorage.commitSession(session)
 
 					this.logger.info('[AUTH] Token refreshed successfully')
