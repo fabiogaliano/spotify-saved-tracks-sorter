@@ -56,3 +56,27 @@ When adding new functionality:
 - Store files are organized in lib/stores
 - Each store has a specific responsibility
 - UI components access stores through hooks
+
+## Dependency Notes & Known Issues
+
+### React Router (pinned to 7.6.x)
+
+**Issue:** React Router 7.7.0+ introduces a CSS clearing behavior after initial hydration ([PR #13872](https://github.com/remix-run/react-router/pull/13872)). When combined with browser extensions that modify the DOM (DarkReader, Grammarly, password managers, etc.), this causes:
+
+1. Hydration mismatch (extensions inject content before React hydrates)
+2. React falls back to full client re-render
+3. Critical CSS gets cleared during this process
+4. **Result:** Flash of unstyled content for users with certain extensions
+
+**Current solution:** Pinned to React Router 7.6.3 which doesn't have this CSS clearing behavior.
+
+**Future upgrade path:**
+
+- **React 19** is reportedly more forgiving with hydration mismatches
+- Wait for React Router to fix this edge case (CSS shouldn't clear when hydration fails)
+- Consider upgrading React to v19 first, then React Router
+
+**Related issues:**
+
+- [remix-run/remix#2947](https://github.com/remix-run/remix/issues/2947) - hydrateRoot with extensions
+- [facebook/react#24430](https://github.com/facebook/react/issues/24430) - Hydration mismatch from plugins
