@@ -1,5 +1,6 @@
 import React from 'react'
-import { Link } from 'react-router';
+
+import { Link } from 'react-router'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'back'
 export type ButtonSize = 'small' | 'medium' | 'large'
@@ -132,7 +133,7 @@ export function ActionButton({
 	// Loading spinner
 	const loadingSpinner = (
 		<div className="absolute inset-0 flex items-center justify-center">
-			<div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></div>
+			<div className="h-4 w-4 animate-spin rounded-full border-t-2 border-b-2 border-white"></div>
 		</div>
 	)
 

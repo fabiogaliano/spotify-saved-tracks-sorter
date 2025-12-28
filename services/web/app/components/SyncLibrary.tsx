@@ -1,4 +1,4 @@
-import { Form } from 'react-router';
+import { Form } from 'react-router'
 
 type SyncLibraryProps = {
 	userId: number | undefined
@@ -13,7 +13,7 @@ export function SyncLibrary({ userId }: SyncLibraryProps) {
 					type="submit"
 					name="_action"
 					value="sync"
-					className="px-6 py-3 bg-[#1DB954] text-foreground font-semibold rounded-full hover:bg-[#1ed760] transition-colors"
+					className="text-foreground rounded-full bg-[#1DB954] px-6 py-3 font-semibold transition-colors hover:bg-[#1ed760]"
 				>
 					Sync Spotify Library
 				</button>
@@ -21,4 +21,3 @@ export function SyncLibrary({ userId }: SyncLibraryProps) {
 		</div>
 	)
 }
-

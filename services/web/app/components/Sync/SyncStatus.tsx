@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+
 import { SyncResult } from '~/lib/models/Sync'
+
 import { SyncNotification } from './SyncNotification'
 
 type SyncStatusProps = {
@@ -58,7 +60,7 @@ export function SyncStatus({ result }: SyncStatusProps) {
 
 	return (
 		<div
-			className="fixed bottom-4 right-4 flex flex-col gap-2 max-w-sm z-50"
+			className="fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2"
 			role="alert"
 			aria-live="polite"
 		>

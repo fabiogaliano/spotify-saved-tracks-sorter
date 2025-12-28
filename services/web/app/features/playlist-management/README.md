@@ -52,11 +52,11 @@ features/playlist-management/
 
 The system handles two types of playlists:
 
-1. **AI-Enabled Playlists**: 
+1. **AI-Enabled Playlists**:
    - Have flags for AI processing (`is_flagged: true`)
    - Shown in the "is_flagged" tab
 
-2. **Regular Playlists**: 
+2. **Regular Playlists**:
    - Standard playlists (`is_flagged: false`)
    - Shown in the "others" tab
 
@@ -68,37 +68,38 @@ Track data handling is a critical part of the system and includes special case h
 
 ```typescript
 const formatTrackData = useCallback((track: any) => {
-  // Handle different track data formats (API vs UI)
-  // If the track already has the right format properties, just ensure date formatting
-  if (track.title) {
-    return {
-      ...track,
-      dateAdded: track.addedAt ? formatDate(track.addedAt) : (track.dateAdded || 'Unknown'),
-      rawAddedAt: track.addedAt || track.rawAddedAt || ''
-    };
-  } 
-  // If the track has API format properties, use mapTrackToUIFormat
-  else if (track.name || track.spotify_track_id) {
-    const mappedTrack = mapTrackToUIFormat(track);
-    // Also add the raw date for hover functionality
-    return {
-      ...mappedTrack,
-      rawAddedAt: track.added_at || ''
-    };
-  }
-  // Fallback for unknown format
-  return {
-    id: track.id || track.spotify_track_id || 'unknown',
-    title: track.title || track.name || 'Unknown Title',
-    artist: track.artist || 'Unknown Artist',
-    album: track.album || 'Unknown Album',
-    dateAdded: track.dateAdded || (track.addedAt ? formatDate(track.addedAt) : 'Unknown'),
-    rawAddedAt: track.rawAddedAt || track.addedAt || track.added_at || ''
-  };
-}, []);
+	// Handle different track data formats (API vs UI)
+	// If the track already has the right format properties, just ensure date formatting
+	if (track.title) {
+		return {
+			...track,
+			dateAdded: track.addedAt ? formatDate(track.addedAt) : track.dateAdded || 'Unknown',
+			rawAddedAt: track.addedAt || track.rawAddedAt || '',
+		}
+	}
+	// If the track has API format properties, use mapTrackToUIFormat
+	else if (track.name || track.spotify_track_id) {
+		const mappedTrack = mapTrackToUIFormat(track)
+		// Also add the raw date for hover functionality
+		return {
+			...mappedTrack,
+			rawAddedAt: track.added_at || '',
+		}
+	}
+	// Fallback for unknown format
+	return {
+		id: track.id || track.spotify_track_id || 'unknown',
+		title: track.title || track.name || 'Unknown Title',
+		artist: track.artist || 'Unknown Artist',
+		album: track.album || 'Unknown Album',
+		dateAdded: track.dateAdded || (track.addedAt ? formatDate(track.addedAt) : 'Unknown'),
+		rawAddedAt: track.rawAddedAt || track.addedAt || track.added_at || '',
+	}
+}, [])
 ```
 
 This function handles multiple potential data formats:
+
 - UI format (with `title` property)
 - API format (with `name` or `spotify_track_id` properties)
 - Unknown format (with fallback values)
@@ -106,6 +107,7 @@ This function handles multiple potential data formats:
 ### Date Formatting
 
 Date handling includes two representations:
+
 1. **Relative dates** (`dateAdded`): Shows human-readable format like "Today", "Yesterday", "2 weeks ago"
 2. **Raw dates** (`rawAddedAt`): Stores original date string for tooltip display on hover
 
@@ -114,7 +116,7 @@ Date handling includes two representations:
 Track loading states are now handled consistently for all playlist types:
 
 ```typescript
-const isLoading = getLoadingStateForPlaylist(selectedPlaylist || '');
+const isLoading = getLoadingStateForPlaylist(selectedPlaylist || '')
 ```
 
 - All playlists show loading indicators when their tracks are being fetched

@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
-import { Form, useActionData, useNavigation, useSubmit } from 'react-router';
+import { useEffect, useState } from 'react'
+
+import { Form, useActionData, useNavigation, useSubmit } from 'react-router'
+
 import { Notification, type NotificationType } from '~/components/common/Notification'
 import { apiRoutes } from '~/lib/config/routes'
 
@@ -58,7 +60,7 @@ export function ProviderKeysManager({
 			case 'openai':
 				return (
 					<svg
-						className="w-5 h-5 text-muted-foreground/70"
+						className="text-muted-foreground/70 h-5 w-5"
 						viewBox="0 0 24 24"
 						fill="none"
 						xmlns="http://www.w3.org/2000/svg"
@@ -72,7 +74,7 @@ export function ProviderKeysManager({
 			case 'anthropic':
 				return (
 					<svg
-						className="w-5 h-5 text-muted-foreground/70"
+						className="text-muted-foreground/70 h-5 w-5"
 						viewBox="0 0 24 24"
 						fill="none"
 						xmlns="http://www.w3.org/2000/svg"
@@ -86,7 +88,7 @@ export function ProviderKeysManager({
 			case 'google':
 				return (
 					<svg
-						className="w-5 h-5 text-muted-foreground/70"
+						className="text-muted-foreground/70 h-5 w-5"
 						viewBox="0 0 24 24"
 						fill="none"
 						xmlns="http://www.w3.org/2000/svg"
@@ -421,7 +423,7 @@ export function ProviderKeysManager({
 		<div className="space-y-6">
 			<div className="flex flex-col gap-4">
 				<h3 className="text-sm font-medium">API Keys</h3>
-				<p className="text-xs text-muted-foreground/60">
+				<p className="text-muted-foreground/60 text-xs">
 					Add your own API keys for language models to use in the application.
 				</p>
 				{notification && (
@@ -435,20 +437,16 @@ export function ProviderKeysManager({
 				)}
 
 				{/* Provider cards - vertical layout */}
-				<div className="flex flex-col gap-4 mt-2">
+				<div className="mt-2 flex flex-col gap-4">
 					{localProviderStatuses.map(status => (
 						<div key={status.provider} className="flex flex-col">
 							{/* Provider header */}
 							<div
-								className={`
-                  p-3 transition-all border
-                  ${status.hasKey
-										? 'bg-blue-50/50 border-blue-200'
-										: 'bg-muted border-border hover:border-gray-300'
-									}
-                  ${activeProvider === status.provider ? 'rounded-t-xl' : 'rounded-xl'}
-                  cursor-pointer
-                `}
+								className={`border p-3 transition-all ${
+									status.hasKey ?
+										'border-blue-200 bg-blue-50/50'
+									:	'bg-muted border-border hover:border-gray-300'
+								} ${activeProvider === status.provider ? 'rounded-t-xl' : 'rounded-xl'} cursor-pointer`}
 								onClick={() =>
 									setActiveProvider(
 										activeProvider === status.provider ? null : status.provider
@@ -460,30 +458,29 @@ export function ProviderKeysManager({
 										<div className={`text-${status.hasKey ? 'blue' : 'gray'}-600`}>
 											{getProviderIcon(status.provider)}
 										</div>
-										<span className="font-medium text-sm">
+										<span className="text-sm font-medium">
 											{getProviderDisplayName(status.provider)}
 										</span>
 									</div>
 									{status.hasKey && (
 										<div className="flex items-center gap-2">
-											{status.isActive ? (
-												<span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-green-100 text-green-800">
+											{status.isActive ?
+												<span className="inline-flex items-center rounded-sm bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
 													Active
 												</span>
-											) : (
-												<button
+											:	<button
 													type="button"
 													onClick={e => {
 														e.stopPropagation()
 														handleSetActiveProvider(status.provider)
 													}}
-													className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100"
+													className="inline-flex items-center rounded-sm bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
 													disabled={loading !== null}
 												>
-													{loading === 'setting' && status.provider === activeProvider ? (
+													{loading === 'setting' && status.provider === activeProvider ?
 														<span className="flex items-center">
 															<svg
-																className="animate-spin -ml-1 mr-1 h-3 w-3 text-blue-700"
+																className="mr-1 -ml-1 h-3 w-3 animate-spin text-blue-700"
 																xmlns="http://www.w3.org/2000/svg"
 																fill="none"
 																viewBox="0 0 24 24"
@@ -504,11 +501,9 @@ export function ProviderKeysManager({
 															</svg>
 															Setting...
 														</span>
-													) : (
-														'Set Active'
-													)}
+													:	'Set Active'}
 												</button>
-											)}
+											}
 										</div>
 									)}
 								</div>
@@ -516,7 +511,7 @@ export function ProviderKeysManager({
 
 							{/* API Key Form - appears directly under the provider when active */}
 							{activeProvider === status.provider && (
-								<div className="p-4 border border-blue-200 border-t-0 bg-white rounded-b-xl">
+								<div className="rounded-b-xl border border-t-0 border-blue-200 bg-white p-4">
 									<Form
 										method="post"
 										onSubmit={async e => {
@@ -558,7 +553,7 @@ export function ProviderKeysManager({
 											<div>
 												<label
 													htmlFor="apiKey"
-													className="block text-xs font-medium text-muted-foreground/50 mb-1"
+													className="text-muted-foreground/50 mb-1 block text-xs font-medium"
 												>
 													API Key
 												</label>
@@ -577,10 +572,10 @@ export function ProviderKeysManager({
 													/>
 													<button
 														type="button"
-														className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-muted-foreground/60"
+														className="text-muted-foreground hover:text-muted-foreground/60 absolute inset-y-0 right-0 flex items-center pr-3"
 														onClick={() => setShowApiKey(!showApiKey)}
 													>
-														{showApiKey ? (
+														{showApiKey ?
 															<svg
 																className="h-5 w-5"
 																fill="none"
@@ -594,8 +589,7 @@ export function ProviderKeysManager({
 																	d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
 																/>
 															</svg>
-														) : (
-															<svg
+														:	<svg
 																className="h-5 w-5"
 																fill="none"
 																viewBox="0 0 24 24"
@@ -614,10 +608,10 @@ export function ProviderKeysManager({
 																	d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
 																/>
 															</svg>
-														)}
+														}
 													</button>
 												</div>
-												<p className="mt-1 text-xs text-muted-foreground/70">
+												<p className="text-muted-foreground/70 mt-1 text-xs">
 													Your API key is encrypted before being stored and never shared.
 												</p>
 											</div>
@@ -626,18 +620,19 @@ export function ProviderKeysManager({
 												{status.hasKey && (
 													<button
 														type="button"
-														className="text-xs text-rose-600 hover:text-rose-800 transition-colors inline-flex items-center"
+														className="inline-flex items-center text-xs text-rose-600 transition-colors hover:text-rose-800"
 														disabled={loading !== null}
 														onClick={e => {
 															e.stopPropagation()
 															handleDeleteKey(status.provider)
 														}}
 													>
-														{loading === 'removing' &&
-															status.provider === activeProvider ? (
+														{(
+															loading === 'removing' && status.provider === activeProvider
+														) ?
 															<span className="flex items-center">
 																<svg
-																	className="animate-spin -ml-1 mr-1 h-3 w-3 text-rose-600"
+																	className="mr-1 -ml-1 h-3 w-3 animate-spin text-rose-600"
 																	xmlns="http://www.w3.org/2000/svg"
 																	fill="none"
 																	viewBox="0 0 24 24"
@@ -658,32 +653,31 @@ export function ProviderKeysManager({
 																</svg>
 																Removing...
 															</span>
-														) : (
-															'Remove Key'
-														)}
+														:	'Remove Key'}
 													</button>
 												)}
 												<div className={status.hasKey ? '' : 'ml-auto'}>
 													<button
 														type="submit"
 														disabled={navigation.state === 'submitting' || !apiKey.trim()}
-														className={`
-                              inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
-                              text-foreground bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                              ${navigation.state === 'submitting' ||
+														className={`text-foreground inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-hidden ${
+															(
+																navigation.state === 'submitting' ||
 																!apiKey.trim() ||
 																loading !== null
-																? 'opacity-75 cursor-not-allowed'
-																: ''
-															}
-                            `}
+															) ?
+																'cursor-not-allowed opacity-75'
+															:	''
+														} `}
 													>
-														{navigation.state === 'submitting' ||
+														{(
+															navigation.state === 'submitting' ||
 															loading === 'saving' ||
-															loading === 'validating' ? (
+															loading === 'validating'
+														) ?
 															<span className="flex items-center">
 																<svg
-																	className="animate-spin -ml-1 mr-2 h-4 w-4 text-foreground"
+																	className="text-foreground mr-2 -ml-1 h-4 w-4 animate-spin"
 																	xmlns="http://www.w3.org/2000/svg"
 																	fill="none"
 																	viewBox="0 0 24 24"
@@ -704,9 +698,7 @@ export function ProviderKeysManager({
 																</svg>
 																{loading === 'validating' ? 'Validating...' : 'Saving...'}
 															</span>
-														) : (
-															'Save API Key'
-														)}
+														:	'Save API Key'}
 													</button>
 												</div>
 											</div>

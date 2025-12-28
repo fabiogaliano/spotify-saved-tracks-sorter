@@ -1,84 +1,96 @@
-import { useEffect, useMemo } from 'react';
-import { Playlist } from '~/lib/models/Playlist';
-import { mapPlaylistToUIFormat } from '../utils';
-import { usePlaylistUIContext } from '../store/playlist-ui-store';
-import { usePlaylists } from '../queries/playlist-queries';
+import { useEffect, useMemo } from 'react'
+
+import { Playlist } from '~/lib/models/Playlist'
+
+import { usePlaylists } from '../queries/playlist-queries'
+import { usePlaylistUIContext } from '../store/playlist-ui-store'
+import { mapPlaylistToUIFormat } from '../utils'
 
 interface UsePlaylistManagementProps {
-  playlists: Playlist[];
+	playlists: Playlist[]
 }
 
-export type PlaylistDetailViewTabs = 'is_flagged' | 'others';
+export type PlaylistDetailViewTabs = 'is_flagged' | 'others'
 
-export function usePlaylistManagement({ playlists: initialPlaylists }: UsePlaylistManagementProps) {
-  const {
-    selectedPlaylist,
-    selectedTab,
-    searchQuery,
-    updateSelectedPlaylist,
-    updateSelectedTab,
-    setSearchQuery,
-  } = usePlaylistUIContext();
+export function usePlaylistManagement({
+	playlists: initialPlaylists,
+}: UsePlaylistManagementProps) {
+	const {
+		selectedPlaylist,
+		selectedTab,
+		searchQuery,
+		updateSelectedPlaylist,
+		updateSelectedTab,
+		setSearchQuery,
+	} = usePlaylistUIContext()
 
-  // Use React Query to get playlists (with initialData from loader)
-  const { data: playlists } = usePlaylists(initialPlaylists);
+	// Use React Query to get playlists (with initialData from loader)
+	const { data: playlists } = usePlaylists(initialPlaylists)
 
-  const mappedPlaylists = useMemo(() => {
-    return (playlists || []).map(playlist => mapPlaylistToUIFormat(playlist));
-  }, [playlists]);
+	const mappedPlaylists = useMemo(() => {
+		return (playlists || []).map(playlist => mapPlaylistToUIFormat(playlist))
+	}, [playlists])
 
-  const filteredTabPlaylists = useMemo(() => {
-    return mappedPlaylists.filter(playlist =>
-      selectedTab === 'is_flagged' ? playlist.smartSortingEnabled : !playlist.smartSortingEnabled
-    );
-  }, [mappedPlaylists, selectedTab]);
+	const filteredTabPlaylists = useMemo(() => {
+		return mappedPlaylists.filter(playlist =>
+			selectedTab === 'is_flagged' ?
+				playlist.smartSortingEnabled
+			:	!playlist.smartSortingEnabled
+		)
+	}, [mappedPlaylists, selectedTab])
 
-  // Auto-select first playlist when tab changes or playlists update
-  useEffect(() => {
-    if (filteredTabPlaylists.length === 0) return;
+	// Auto-select first playlist when tab changes or playlists update
+	useEffect(() => {
+		if (filteredTabPlaylists.length === 0) return
 
-    const selectedPlaylistId = localStorage.getItem(`selectedPlaylistId_${selectedTab}`);
-    if (selectedPlaylistId) {
-      const playlistExists = filteredTabPlaylists.some(p => p.id.toString() === selectedPlaylistId);
+		const selectedPlaylistId = localStorage.getItem(`selectedPlaylistId_${selectedTab}`)
+		if (selectedPlaylistId) {
+			const playlistExists = filteredTabPlaylists.some(
+				p => p.id.toString() === selectedPlaylistId
+			)
 
-      if (playlistExists) {
-        updateSelectedPlaylist(selectedPlaylistId);
-      } else {
-        const firstPlaylistId = filteredTabPlaylists[0].id.toString();
-        updateSelectedPlaylist(firstPlaylistId);
-      }
-    } else {
-      const firstPlaylistId = filteredTabPlaylists[0].id.toString();
-      updateSelectedPlaylist(firstPlaylistId);
-    }
-  }, [selectedTab, filteredTabPlaylists, updateSelectedPlaylist]);
+			if (playlistExists) {
+				updateSelectedPlaylist(selectedPlaylistId)
+			} else {
+				const firstPlaylistId = filteredTabPlaylists[0].id.toString()
+				updateSelectedPlaylist(firstPlaylistId)
+			}
+		} else {
+			const firstPlaylistId = filteredTabPlaylists[0].id.toString()
+			updateSelectedPlaylist(firstPlaylistId)
+		}
+	}, [selectedTab, filteredTabPlaylists, updateSelectedPlaylist])
 
-  const filteredPlaylists = useMemo(() => {
-    return mappedPlaylists
-      .filter(playlist => selectedTab === 'is_flagged' ? playlist.smartSortingEnabled : !playlist.smartSortingEnabled)
-      .filter(playlist => {
-        if (!searchQuery) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-          playlist.name.toLowerCase().includes(query) ||
-          playlist.description?.toLowerCase().includes(query)
-        );
-      });
-  }, [mappedPlaylists, selectedTab, searchQuery]);
+	const filteredPlaylists = useMemo(() => {
+		return mappedPlaylists
+			.filter(playlist =>
+				selectedTab === 'is_flagged' ?
+					playlist.smartSortingEnabled
+				:	!playlist.smartSortingEnabled
+			)
+			.filter(playlist => {
+				if (!searchQuery) return true
+				const query = searchQuery.toLowerCase()
+				return (
+					playlist.name.toLowerCase().includes(query) ||
+					playlist.description?.toLowerCase().includes(query)
+				)
+			})
+	}, [mappedPlaylists, selectedTab, searchQuery])
 
-  const currentPlaylist = useMemo(() => {
-    if (!selectedPlaylist) return null;
-    return mappedPlaylists.find(p => p.id === selectedPlaylist) || null;
-  }, [selectedPlaylist, mappedPlaylists]);
+	const currentPlaylist = useMemo(() => {
+		if (!selectedPlaylist) return null
+		return mappedPlaylists.find(p => p.id === selectedPlaylist) || null
+	}, [selectedPlaylist, mappedPlaylists])
 
-  return {
-    selectedPlaylist,
-    selectedTab,
-    searchQuery,
-    filteredPlaylists,
-    currentPlaylist,
-    updateSelectedPlaylist,
-    updateSelectedTab,
-    setSearchQuery,
-  };
+	return {
+		selectedPlaylist,
+		selectedTab,
+		searchQuery,
+		filteredPlaylists,
+		currentPlaylist,
+		updateSelectedPlaylist,
+		updateSelectedTab,
+		setSearchQuery,
+	}
 }

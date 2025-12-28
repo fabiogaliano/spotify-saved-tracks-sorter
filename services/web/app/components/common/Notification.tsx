@@ -13,12 +13,12 @@ type NotificationProps = {
 	}
 }
 
-export function Notification({ 
-	type, 
-	message, 
-	onClose, 
+export function Notification({
+	type,
+	message,
+	onClose,
 	persistent = false,
-	action
+	action,
 }: NotificationProps) {
 	useEffect(() => {
 		if (!persistent) {
@@ -61,53 +61,32 @@ export function Notification({
 	}
 
 	return (
-		<div className={`
-			flex items-center justify-between
-			px-4 py-3 
-			rounded-xl
-			shadow-lg
-			backdrop-blur-xs
-			transition-all duration-300 ease-in-out
-			${getTypeStyles()}
-		`}>
+		<div
+			className={`flex items-center justify-between rounded-xl px-4 py-3 shadow-lg backdrop-blur-xs transition-all duration-300 ease-in-out ${getTypeStyles()} `}
+		>
 			<div className="flex-1">
-				<span className="text-sm font-medium">
-					{message}
-				</span>
-				
+				<span className="text-sm font-medium">{message}</span>
+
 				{action && (
 					<button
 						onClick={action.onClick}
-						className={`
-							mt-2 text-xs font-medium underline
-							transition-all duration-200
-							${getButtonHoverStyles()}
-						`}
+						className={`mt-2 text-xs font-medium underline transition-all duration-200 ${getButtonHoverStyles()} `}
 					>
 						{action.label}
 					</button>
 				)}
 			</div>
-			
+
 			<button
 				onClick={onClose}
-				className={`
-					ml-4 p-1.5
-					rounded-full
-					transition-all duration-200
-					${getButtonHoverStyles()}
-				`}
+				className={`ml-4 rounded-full p-1.5 transition-all duration-200 ${getButtonHoverStyles()} `}
 				aria-label="Close notification"
 			>
-				<svg 
-					className="w-3.5 h-3.5" 
-					viewBox="0 0 20 20" 
-					fill="currentColor"
-				>
-					<path 
-						fillRule="evenodd" 
-						d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" 
-						clipRule="evenodd" 
+				<svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+					<path
+						fillRule="evenodd"
+						d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+						clipRule="evenodd"
 					/>
 				</svg>
 			</button>

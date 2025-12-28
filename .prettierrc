@@ -1,17 +1,31 @@
-singleQuote: true
-semi: false
-tabWidth: 2
-useTabs: true
-printWidth: 90
-arrowParens: avoid
-trailingComma: es5
-requirePragma: false
-insertPragma: false
-endOfLine: lf
-bracketSpacing: true
-embeddedLanguageFormatting: auto
-htmlWhitespaceSensitivity: css # 'css', 'strict', 'ignore'
-jsxSingleQuote: false
-proseWrap: preserve # 'always', 'never', 'preserve'
-vueIndentScriptAndStyle: true
-experimentalTernaries: true
+{
+  "singleQuote": true,
+  "semi": false,
+  "tabWidth": 2,
+  "useTabs": true,
+  "printWidth": 90,
+  "arrowParens": "avoid",
+  "trailingComma": "es5",
+  "requirePragma": false,
+  "insertPragma": false,
+  "endOfLine": "lf",
+  "bracketSpacing": true,
+  "embeddedLanguageFormatting": "auto",
+  "htmlWhitespaceSensitivity": "css",
+  "jsxSingleQuote": false,
+  "proseWrap": "preserve",
+  "experimentalTernaries": true,
+  "plugins": [
+    "@trivago/prettier-plugin-sort-imports",
+    "prettier-plugin-tailwindcss"
+  ],
+  "importOrder": [
+    "^react$",
+    "^react-dom$",
+    "<THIRD_PARTY_MODULES>",
+    "^~/(.*)$",
+    "^[./]"
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true
+}

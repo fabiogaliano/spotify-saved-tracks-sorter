@@ -1,7 +1,9 @@
-import { PlaylistAnalysisService as IPlaylistAnalysisService } from '~/lib/models/PlaylistAnalysis'
-import type { LlmProviderManager } from '../llm/LlmProviderManager'
-import { PlaylistAnalysisLlmSchema, type PlaylistAnalysis } from './analysis-schemas'
 import { valibotSchema } from '@ai-sdk/valibot'
+
+import { PlaylistAnalysisService as IPlaylistAnalysisService } from '~/lib/models/PlaylistAnalysis'
+
+import type { LlmProviderManager } from '../llm/LlmProviderManager'
+import { type PlaylistAnalysis, PlaylistAnalysisLlmSchema } from './analysis-schemas'
 
 // Enhanced playlist analysis prompt that captures cultural themes and cohesion
 const ENHANCED_PLAYLIST_ANALYSIS_PROMPT = `You are an expert music curator. Analyze this playlist to understand its purpose and cohesive elements. Only identify cultural significance when it's explicitly present and central to the playlist's theme.
@@ -129,51 +131,54 @@ Provide analysis in this JSON format:
 }`
 
 export class PlaylistAnalysisService implements IPlaylistAnalysisService {
-  constructor(
-    private readonly providerManager: LlmProviderManager
-  ) { }
+	constructor(private readonly providerManager: LlmProviderManager) {}
 
-  async analyzePlaylist(
-    playlistName: string,
-    playlistDescription: string,
-    tracks: Array<{ name: string; artist: string }>
-  ): Promise<string> {
-    try {
-      const trackList = tracks.length > 0
-        ? tracks.map((track, index) =>
-          `${index + 1}. "${track.name}" by ${track.artist}`
-        ).join('\n')
-        : 'No tracks provided - analyzing based on playlist name and description only'
+	async analyzePlaylist(
+		playlistName: string,
+		playlistDescription: string,
+		tracks: Array<{ name: string; artist: string }>
+	): Promise<string> {
+		try {
+			const trackList =
+				tracks.length > 0 ?
+					tracks
+						.map((track, index) => `${index + 1}. "${track.name}" by ${track.artist}`)
+						.join('\n')
+				:	'No tracks provided - analyzing based on playlist name and description only'
 
-      const safeDescription = playlistDescription?.trim() || 'No description provided'
+			const safeDescription = playlistDescription?.trim() || 'No description provided'
 
-      const filledPrompt = ENHANCED_PLAYLIST_ANALYSIS_PROMPT
-        .replace('{playlist_name}', playlistName)
-        .replace('{playlist_description}', safeDescription)
-        .replace('{track_count}', tracks.length.toString())
-        .replace('{track_list}', trackList)
+			const filledPrompt = ENHANCED_PLAYLIST_ANALYSIS_PROMPT.replace(
+				'{playlist_name}',
+				playlistName
+			)
+				.replace('{playlist_description}', safeDescription)
+				.replace('{track_count}', tracks.length.toString())
+				.replace('{track_list}', trackList)
 
-      if (!this.providerManager) {
-        throw new Error('LLM Provider Manager is not initialized')
-      }
+			if (!this.providerManager) {
+				throw new Error('LLM Provider Manager is not initialized')
+			}
 
-      console.log(`[PlaylistAnalysis] Analyzing playlist: ${playlistName}`)
+			console.log(`[PlaylistAnalysis] Analyzing playlist: ${playlistName}`)
 
-      // Use structured output - AI SDK validates against schema automatically
-      const result = await this.providerManager.generateObject<PlaylistAnalysis>(
-        filledPrompt,
-        valibotSchema(PlaylistAnalysisLlmSchema)
-      )
+			// Use structured output - AI SDK validates against schema automatically
+			const result = await this.providerManager.generateObject<PlaylistAnalysis>(
+				filledPrompt,
+				valibotSchema(PlaylistAnalysisLlmSchema)
+			)
 
-      console.log('[PlaylistAnalysis] Analysis structure validated via structured output')
+			console.log('[PlaylistAnalysis] Analysis structure validated via structured output')
 
-      // Return the standard format expected by workers
-      return JSON.stringify({
-        model: this.providerManager.getCurrentModel(),
-        analysis: result.output
-      })
-    } catch (error) {
-      throw new Error(`Failed to analyze playlist ${playlistName}: ${error instanceof Error ? error.message : String(error)}`)
-    }
-  }
+			// Return the standard format expected by workers
+			return JSON.stringify({
+				model: this.providerManager.getCurrentModel(),
+				analysis: result.output,
+			})
+		} catch (error) {
+			throw new Error(
+				`Failed to analyze playlist ${playlistName}: ${error instanceof Error ? error.message : String(error)}`
+			)
+		}
+	}
 }

@@ -1,11 +1,16 @@
-import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from 'react-router';
-import { redirect } from 'react-router';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import { StrictMode } from 'react'
-import { getUserSession, createResponseWithUpdatedSession } from '~/features/auth/auth.utils'
+
+import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from 'react-router'
+import { redirect } from 'react-router'
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+
+import {
+	createResponseWithUpdatedSession,
+	getUserSession,
+} from '~/features/auth/auth.utils'
+import { QueryProvider } from '~/lib/providers/query-provider'
+import { ThemeProvider } from '~/lib/providers/theme-provider'
 import { Toaster } from '~/shared/components/ui/sonner'
-import { ThemeProvider } from '~/lib/providers/theme-provider';
-import { QueryProvider } from '~/lib/providers/query-provider';
 
 import './tailwind.css'
 
@@ -25,17 +30,17 @@ export const links: LinksFunction = () => [
 const publicRoutes = ['/', '/about', '/auth/spotify', '/auth/spotify/callback', '/config']
 
 export type RootLoaderData = {
-	isAuthenticated: boolean;
+	isAuthenticated: boolean
 	spotifyUser: {
-		id: string;
-		email: string;
-		name: string;
-		image?: string;
-	} | null;
+		id: string
+		email: string
+		name: string
+		image?: string
+	} | null
 	appUser: {
-		id: number;
-		hasSetupCompleted: boolean;
-	} | null;
+		id: number
+		hasSetupCompleted: boolean
+	} | null
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -52,15 +57,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const responseData: RootLoaderData = {
 		isAuthenticated,
 		spotifyUser: sessionData?.spotifyUser || null,
-		appUser: sessionData ? {
-			id: sessionData.userId,
-			hasSetupCompleted: sessionData.hasSetupCompleted
-		} : null,
+		appUser:
+			sessionData ?
+				{
+					id: sessionData.userId,
+					hasSetupCompleted: sessionData.hasSetupCompleted,
+				}
+			:	null,
 	}
 
 	return createResponseWithUpdatedSession(responseData, sessionData)
 }
-
 
 export const meta: MetaFunction = () => {
 	return [
@@ -72,7 +79,11 @@ export const meta: MetaFunction = () => {
 
 export function Layout({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className="text-[100%] 2xl:text-[110%] 3xl:text-[125%]" suppressHydrationWarning>
+		<html
+			lang="en"
+			className="3xl:text-[125%] text-[100%] 2xl:text-[110%]"
+			suppressHydrationWarning
+		>
 			<head>
 				<Meta />
 				<Links />
@@ -86,7 +97,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 						disableTransitionOnChange={false}
 					>
 						<main>{children}</main>
-						<Toaster richColors position="bottom-right" duration={5000} closeButton={true} />
+						<Toaster
+							richColors
+							position="bottom-right"
+							duration={5000}
+							closeButton={true}
+						/>
 					</ThemeProvider>
 				</QueryProvider>
 				<ScrollRestoration />

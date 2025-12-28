@@ -1,133 +1,144 @@
-import { Database } from '~/types/database.types';
-import { getSupabase } from '../services/DatabaseService';
+import { Database } from '~/types/database.types'
 
-export type TrackAnalysisAttempt = Database['public']['Tables']['track_analysis_attempts']['Row'];
-export type TrackAnalysisAttemptInsert = Database['public']['Tables']['track_analysis_attempts']['Insert'];
-export type TrackAnalysisAttemptUpdate = Database['public']['Tables']['track_analysis_attempts']['Update'];
+import { getSupabase } from '../services/DatabaseService'
 
-export type FailedAnalysisAttempt = Pick<TrackAnalysisAttempt, 'track_id'>;
+export type TrackAnalysisAttempt =
+	Database['public']['Tables']['track_analysis_attempts']['Row']
+export type TrackAnalysisAttemptInsert =
+	Database['public']['Tables']['track_analysis_attempts']['Insert']
+export type TrackAnalysisAttemptUpdate =
+	Database['public']['Tables']['track_analysis_attempts']['Update']
+
+export type FailedAnalysisAttempt = Pick<TrackAnalysisAttempt, 'track_id'>
 
 export class TrackAnalysisAttemptsRepository {
+	async getLatestAttemptForTrack(trackId: number): Promise<TrackAnalysisAttempt | null> {
+		const { data, error } = await getSupabase()
+			.from('track_analysis_attempts')
+			.select('*')
+			.eq('track_id', trackId)
+			.order('created_at', { ascending: false })
+			.limit(1)
+			.single()
 
+		if (error) {
+			if (error.code === 'PGRST116') {
+				// No rows returned
+				return null
+			}
+			console.error('Error fetching latest track analysis attempt:', error)
+			throw error
+		}
 
-  async getLatestAttemptForTrack(trackId: number): Promise<TrackAnalysisAttempt | null> {
-    const { data, error } = await getSupabase()
-      .from('track_analysis_attempts')
-      .select('*')
-      .eq('track_id', trackId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+		return data
+	}
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No rows returned
-        return null;
-      }
-      console.error('Error fetching latest track analysis attempt:', error);
-      throw error;
-    }
+	async deleteAttempt(attemptId: number): Promise<void> {
+		const { error } = await getSupabase()
+			.from('track_analysis_attempts')
+			.delete()
+			.eq('id', attemptId)
 
-    return data;
-  }
+		if (error) {
+			throw new Error(`Failed to delete attempt ${attemptId}: ${error.message}`)
+		}
+	}
 
-  async deleteAttempt(attemptId: number): Promise<void> {
-    const { error } = await getSupabase()
-      .from('track_analysis_attempts')
-      .delete()
-      .eq('id', attemptId);
+	async getAttemptsByTrackId(trackId: number): Promise<TrackAnalysisAttempt[]> {
+		const { data, error } = await getSupabase()
+			.from('track_analysis_attempts')
+			.select('*')
+			.eq('track_id', trackId)
+			.order('created_at', { ascending: false })
 
-    if (error) {
-      throw new Error(`Failed to delete attempt ${attemptId}: ${error.message}`);
-    }
-  }
+		if (error) {
+			console.error('Error fetching track analysis attempts:', error)
+			throw error
+		}
 
-  async getAttemptsByTrackId(trackId: number): Promise<TrackAnalysisAttempt[]> {
-    const { data, error } = await getSupabase()
-      .from('track_analysis_attempts')
-      .select('*')
-      .eq('track_id', trackId)
-      .order('created_at', { ascending: false });
+		return data || []
+	}
 
-    if (error) {
-      console.error('Error fetching track analysis attempts:', error);
-      throw error;
-    }
+	async getAttemptsByJobId(jobId: string): Promise<TrackAnalysisAttempt[]> {
+		const { data, error } = await getSupabase()
+			.from('track_analysis_attempts')
+			.select('*')
+			.eq('job_id', jobId)
+			.order('created_at', { ascending: false })
 
-    return data || [];
-  }
+		if (error) {
+			console.error('Error fetching track analysis attempts by job ID:', error)
+			throw error
+		}
 
-  async getAttemptsByJobId(jobId: string): Promise<TrackAnalysisAttempt[]> {
-    const { data, error } = await getSupabase()
-      .from('track_analysis_attempts')
-      .select('*')
-      .eq('job_id', jobId)
-      .order('created_at', { ascending: false });
+		return data || []
+	}
 
-    if (error) {
-      console.error('Error fetching track analysis attempts by job ID:', error);
-      throw error;
-    }
+	async createAttempt(
+		attempt: TrackAnalysisAttemptInsert
+	): Promise<TrackAnalysisAttempt> {
+		const { data, error } = await getSupabase()
+			.from('track_analysis_attempts')
+			.insert(attempt)
+			.select()
+			.single()
 
-    return data || [];
-  }
+		if (error) {
+			console.error('Error creating track analysis attempt:', error)
+			throw error
+		}
 
-  async createAttempt(attempt: TrackAnalysisAttemptInsert): Promise<TrackAnalysisAttempt> {
-    const { data, error } = await getSupabase()
-      .from('track_analysis_attempts')
-      .insert(attempt)
-      .select()
-      .single();
+		return data
+	}
 
-    if (error) {
-      console.error('Error creating track analysis attempt:', error);
-      throw error;
-    }
+	async updateAttempt(
+		id: number,
+		updates: TrackAnalysisAttemptUpdate
+	): Promise<TrackAnalysisAttempt> {
+		const { data, error } = await getSupabase()
+			.from('track_analysis_attempts')
+			.update(updates)
+			.eq('id', id)
+			.select()
+			.single()
 
-    return data;
-  }
+		if (error) {
+			console.error('Error updating track analysis attempt:', error)
+			throw error
+		}
 
-  async updateAttempt(id: number, updates: TrackAnalysisAttemptUpdate): Promise<TrackAnalysisAttempt> {
-    const { data, error } = await getSupabase()
-      .from('track_analysis_attempts')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+		return data
+	}
 
-    if (error) {
-      console.error('Error updating track analysis attempt:', error);
-      throw error;
-    }
+	async markAttemptAsFailed(
+		id: number,
+		errorType: string,
+		errorMessage: string
+	): Promise<TrackAnalysisAttempt> {
+		return this.updateAttempt(id, {
+			status: 'FAILED',
+			error_type: errorType,
+			error_message: errorMessage,
+			updated_at: new Date().toISOString(),
+		})
+	}
 
-    return data;
-  }
+	async getFailedAnalysisAttempts(trackIds: number[]): Promise<FailedAnalysisAttempt[]> {
+		if (!trackIds.length) return []
 
-  async markAttemptAsFailed(id: number, errorType: string, errorMessage: string): Promise<TrackAnalysisAttempt> {
-    return this.updateAttempt(id, {
-      status: 'FAILED',
-      error_type: errorType,
-      error_message: errorMessage,
-      updated_at: new Date().toISOString()
-    });
-  }
+		const { data, error } = await getSupabase()
+			.from('track_analysis_attempts')
+			.select('track_id')
+			.in('track_id', trackIds)
+			.eq('status', 'FAILED')
 
-  async getFailedAnalysisAttempts(trackIds: number[]): Promise<FailedAnalysisAttempt[]> {
-    if (!trackIds.length) return [];
+		if (error) {
+			console.error('Error fetching failed analysis attempts:', error)
+			return []
+		}
 
-    const { data, error } = await getSupabase()
-      .from('track_analysis_attempts')
-      .select('track_id')
-      .in('track_id', trackIds)
-      .eq('status', 'FAILED');
-
-    if (error) {
-      console.error('Error fetching failed analysis attempts:', error);
-      return [];
-    }
-
-    return data || [];
-  }
+		return data || []
+	}
 }
 
 export const trackAnalysisAttemptsRepository = new TrackAnalysisAttemptsRepository()

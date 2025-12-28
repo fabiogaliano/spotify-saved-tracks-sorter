@@ -11,7 +11,7 @@
 @theme {
 	--breakpoint-2xl: 1536px;
 	--breakpoint-3xl: 1920px;
-	
+
 	/* Gradient theme colors */
 	--color-gradient-from: var(--gradient-from);
 	--color-gradient-to: var(--gradient-to);
@@ -104,45 +104,61 @@
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
 
-  /* Spacing */
-  --spacing-radius: var(--radius);
+	/* Spacing */
+	--spacing-radius: var(--radius);
 }
 
 /* Custom gradient utilities that respect theme */
 @utility bg-theme-gradient {
-  background: linear-gradient(to bottom, var(--gradient-from), var(--gradient-to));
+	background: linear-gradient(to bottom, var(--gradient-from), var(--gradient-to));
 }
 
 @utility bg-theme-gradient-r {
-  background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+	background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
 }
 
 @utility bg-theme-gradient-t {
-  background: linear-gradient(to top, var(--gradient-from), var(--gradient-to));
+	background: linear-gradient(to top, var(--gradient-from), var(--gradient-to));
 }
 
 @utility bg-theme-gradient-l {
-  background: linear-gradient(to left, var(--gradient-from), var(--gradient-to));
+	background: linear-gradient(to left, var(--gradient-from), var(--gradient-to));
 }
 
 /* Text gradient utilities */
 @utility bg-gradient-brand {
-  background-image: linear-gradient(to right, var(--gradient-text-from), var(--gradient-text-to));
-  background-clip: text;
-  color: transparent;
+	background-image: linear-gradient(
+		to right,
+		var(--gradient-text-from),
+		var(--gradient-text-to)
+	);
+	background-clip: text;
+	color: transparent;
 }
 
 /* Card gradient utilities */
 @utility bg-card-primary {
-  background-image: linear-gradient(to bottom right, var(--gradient-card-primary-from), var(--gradient-card-primary-to));
+	background-image: linear-gradient(
+		to bottom right,
+		var(--gradient-card-primary-from),
+		var(--gradient-card-primary-to)
+	);
 }
 
 @utility bg-card-secondary {
-  background-image: linear-gradient(to bottom right, var(--gradient-card-secondary-from), var(--gradient-card-secondary-to));
+	background-image: linear-gradient(
+		to bottom right,
+		var(--gradient-card-secondary-from),
+		var(--gradient-card-secondary-to)
+	);
 }
 
 @utility bg-card-accent {
-  background-image: linear-gradient(to bottom right, var(--gradient-card-accent-from), var(--gradient-card-accent-to));
+	background-image: linear-gradient(
+		to bottom right,
+		var(--gradient-card-accent-from),
+		var(--gradient-card-accent-to)
+	);
 }
 
 /*
@@ -159,52 +175,52 @@
 }
 /* Custom Scrollbar Styles */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+	width: 6px;
+	height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+	background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--color-muted-foreground/20);
-  border-radius: 20px;
-  transition: background-color 0.2s ease;
+	background-color: var(--color-muted-foreground/20);
+	border-radius: 20px;
+	transition: background-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-muted-foreground/40);
+	background-color: var(--color-muted-foreground/40);
 }
 
 /* For Firefox */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-muted-foreground/20) transparent;
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-muted-foreground/20) transparent;
 }
 
 /* Custom class to show scrollbar only on hover */
 .hover-show-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--color-muted-foreground/10);
+	background-color: var(--color-muted-foreground/10);
 }
 
 .hover-show-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: var(--color-muted-foreground/30);
+	background-color: var(--color-muted-foreground/30);
 }
 /* Light Theme - High Contrast Design Tokens */
 :root {
 	/* Core Colors */
 	--background: oklch(0.99 0 0);
 	--foreground: oklch(0.15 0.01 285);
-	
+
 	/* Gradients */
 	--gradient-from: oklch(0.9 0.05 240);
 	--gradient-to: oklch(0.95 0 0);
-	
+
 	/* Text Gradients */
 	--gradient-text-from: oklch(0.55 0.18 140); /* Spotify green */
 	--gradient-text-to: oklch(0.45 0.18 260); /* Info blue */
-	
+
 	/* Card Gradients */
 	--gradient-card-primary-from: oklch(0.85 0.05 140); /* Light green */
 	--gradient-card-primary-to: oklch(0.85 0.05 240); /* Light blue */
@@ -212,64 +228,64 @@
 	--gradient-card-secondary-to: oklch(0.85 0.05 280); /* Light purple */
 	--gradient-card-accent-from: oklch(0.85 0.05 280); /* Light purple */
 	--gradient-card-accent-to: oklch(0.85 0.05 320); /* Light pink */
-	
+
 	/* Card & Popover */
 	--card: oklch(1 0 0);
 	--card-foreground: oklch(0.15 0.01 285);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.15 0.01 285);
-	
+
 	/* Primary - High contrast blue */
 	--primary: oklch(0.35 0.18 260);
 	--primary-foreground: oklch(0.99 0 0);
-	
+
 	/* Secondary - Light gray */
 	--secondary: oklch(0.95 0.002 286);
 	--secondary-foreground: oklch(0.15 0.01 285);
-	
+
 	/* Muted - Medium gray */
 	--muted: oklch(0.92 0.002 286);
 	--muted-foreground: oklch(0.45 0.015 285);
-	
+
 	/* Accent */
 	--accent: oklch(0.95 0.002 286);
 	--accent-foreground: oklch(0.15 0.01 285);
-	
+
 	/* Destructive - High contrast red */
 	--destructive: oklch(0.5 0.2 27);
 	--destructive-foreground: oklch(0.99 0 0);
-	
+
 	/* Borders & Inputs */
 	--border: oklch(0.88 0.005 286);
 	--input: oklch(0.88 0.005 286);
 	--ring: oklch(0.35 0.18 260);
-	
+
 	/* Charts */
 	--chart-1: oklch(0.6 0.2 41);
 	--chart-2: oklch(0.55 0.15 185);
 	--chart-3: oklch(0.4 0.12 227);
 	--chart-4: oklch(0.8 0.18 84);
 	--chart-5: oklch(0.7 0.18 70);
-	
+
 	/* Brand Colors */
 	--spotify: oklch(0.55 0.18 140);
 	--spotify-hover: oklch(0.5 0.18 140);
-	
+
 	/* Status Colors */
 	--success: oklch(0.5 0.16 140);
 	--warning: oklch(0.55 0.16 85);
 	--error: oklch(0.5 0.2 27);
 	--info: oklch(0.45 0.18 260);
-	
+
 	/* Similarity Score Colors */
 	--similarity-excellent: oklch(0.5 0.16 140);
 	--similarity-good: oklch(0.55 0.14 140);
 	--similarity-fair: oklch(0.55 0.16 85);
 	--similarity-poor: oklch(0.5 0.18 27);
-	
+
 	/* Spacing */
 	--radius: 0.5rem;
-	
+
 	/* Sidebar */
 	--sidebar: oklch(0.98 0 0);
 	--sidebar-foreground: oklch(0.15 0.01 285);
@@ -285,15 +301,15 @@
 	/* Core Colors */
 	--background: oklch(0.15 0.01 285);
 	--foreground: oklch(0.98 0 0);
-	
+
 	/* Gradients */
-	--gradient-from: oklch(0.25 0.05 240);  /* Dark blue */
-	--gradient-to: oklch(0.15 0 0);        /* Dark gray */
-	
+	--gradient-from: oklch(0.25 0.05 240); /* Dark blue */
+	--gradient-to: oklch(0.15 0 0); /* Dark gray */
+
 	/* Text Gradients */
 	--gradient-text-from: oklch(0.65 0.18 140); /* Brighter green */
 	--gradient-text-to: oklch(0.65 0.18 260); /* Brighter blue */
-	
+
 	/* Card Gradients */
 	--gradient-card-primary-from: oklch(0.3 0.05 140); /* Dark green */
 	--gradient-card-primary-to: oklch(0.3 0.05 240); /* Dark blue */
@@ -301,61 +317,61 @@
 	--gradient-card-secondary-to: oklch(0.3 0.05 280); /* Dark purple */
 	--gradient-card-accent-from: oklch(0.3 0.05 280); /* Dark purple */
 	--gradient-card-accent-to: oklch(0.3 0.05 320); /* Dark pink */
-	
+
 	/* Card & Popover */
 	--card: oklch(0.22 0.01 285);
 	--card-foreground: oklch(0.98 0 0);
 	--popover: oklch(0.22 0.01 285);
 	--popover-foreground: oklch(0.98 0 0);
-	
+
 	/* Primary - High contrast blue */
 	--primary: oklch(0.65 0.18 260);
 	--primary-foreground: oklch(0.13 0.01 285);
-	
+
 	/* Secondary - Dark gray */
 	--secondary: oklch(0.28 0.01 286);
 	--secondary-foreground: oklch(0.98 0 0);
-	
+
 	/* Muted - Medium gray */
 	--muted: oklch(0.28 0.01 286);
 	--muted-foreground: oklch(0.75 0.015 286);
-	
+
 	/* Accent */
 	--accent: oklch(0.28 0.01 286);
 	--accent-foreground: oklch(0.98 0 0);
-	
+
 	/* Destructive - High contrast red */
 	--destructive: oklch(0.65 0.2 27);
 	--destructive-foreground: oklch(0.13 0.01 285);
-	
+
 	/* Borders & Inputs */
 	--border: oklch(0.35 0.01 286);
 	--input: oklch(0.35 0.01 286);
 	--ring: oklch(0.65 0.18 260);
-	
+
 	/* Charts */
 	--chart-1: oklch(0.5 0.2 264);
 	--chart-2: oklch(0.7 0.15 162);
 	--chart-3: oklch(0.75 0.18 70);
 	--chart-4: oklch(0.65 0.2 304);
 	--chart-5: oklch(0.65 0.2 16);
-	
+
 	/* Brand Colors */
 	--spotify: oklch(0.65 0.18 140);
 	--spotify-hover: oklch(0.7 0.18 140);
-	
+
 	/* Status Colors */
 	--success: oklch(0.65 0.16 140);
 	--warning: oklch(0.7 0.16 85);
 	--error: oklch(0.65 0.2 27);
 	--info: oklch(0.65 0.18 260);
-	
+
 	/* Similarity Score Colors */
 	--similarity-excellent: oklch(0.65 0.16 140);
 	--similarity-good: oklch(0.6 0.14 140);
 	--similarity-fair: oklch(0.7 0.16 85);
 	--similarity-poor: oklch(0.65 0.18 27);
-	
+
 	/* Sidebar */
 	--sidebar: oklch(0.2 0.01 285);
 	--sidebar-foreground: oklch(0.98 0 0);
@@ -423,6 +439,8 @@
 	body {
 		@apply bg-background text-foreground;
 		/* Smooth transitions for theme changes */
-		transition: background-color 0.3s ease, color 0.3s ease;
+		transition:
+			background-color 0.3s ease,
+			color 0.3s ease;
 	}
 }

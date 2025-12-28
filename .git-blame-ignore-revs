@@ -1,0 +1,8 @@
+# .git-blame-ignore-revs
+# This file lists commits that should be ignored by git blame.
+# Configure with: git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Format: One commit SHA per line, comments start with #
+
+# Prettier formatting + import sorting migration (2024-12-28)
+6c12e69

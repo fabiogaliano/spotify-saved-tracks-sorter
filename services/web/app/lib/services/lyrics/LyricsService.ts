@@ -1,15 +1,21 @@
 import wretch from 'wretch'
-import { LyricsService } from '~/lib/services'
+
 import { logger } from '~/lib/logging/Logger'
 import type { LyricsSection } from '~/lib/models/Lyrics'
-import { SearchResponse, ResponseReferents, type ResponseHitsResult } from './types/genius.types'
+import { LyricsService } from '~/lib/services'
+import { ConcurrencyLimiter } from '~/lib/utils/concurrency'
+
+import {
+	type ResponseHitsResult,
+	ResponseReferents,
+	SearchResponse,
+} from './types/genius.types'
 import { LyricsParser } from './utils/lyrics-parser'
 import { LyricsTransformer, TransformedLyricsBySection } from './utils/lyrics-transformer'
-import { ConcurrencyLimiter } from '~/lib/utils/concurrency'
 import {
-	generateQueryVariants,
-	findBestMatch,
 	debugCandidates,
+	findBestMatch,
+	generateQueryVariants,
 } from './utils/search-strategy'
 
 export interface GeniusServiceConfig {
@@ -45,67 +51,74 @@ export class DefaultLyricsService implements LyricsService {
 
 			return LyricsTransformer.transform(lyrics, referents)
 		} catch (error) {
-			throw new logger.AppError(`Failed to get lyrics for ${artist} - ${song}`, 'LYRICS_SERVICE_ERROR', 503, {
-				error,
-				context: 'get_lyrics',
-			})
+			throw new logger.AppError(
+				`Failed to get lyrics for ${artist} - ${song}`,
+				'LYRICS_SERVICE_ERROR',
+				503,
+				{
+					error,
+					context: 'get_lyrics',
+				}
+			)
 		}
 	}
 
 	private async searchSong(artist: string, song: string): Promise<ResponseHitsResult> {
 		// Generate multiple query variants to try
-		const queryVariants = generateQueryVariants(artist, song);
-		const debug = process.env.DEBUG_LYRICS_SEARCH === 'true';
+		const queryVariants = generateQueryVariants(artist, song)
+		const debug = process.env.DEBUG_LYRICS_SEARCH === 'true'
 
 		if (debug) {
-			console.log(`\n=== Searching for: "${artist}" - "${song}" ===`);
-			console.log('Query variants:', queryVariants);
+			console.log(`\n=== Searching for: "${artist}" - "${song}" ===`)
+			console.log('Query variants:', queryVariants)
 		}
 
-		let lastError: Error | null = null;
+		let lastError: Error | null = null
 
 		// Try each query variant until we find a good match
 		for (const query of queryVariants) {
 			try {
-				const searchQuery = encodeURIComponent(query);
+				const searchQuery = encodeURIComponent(query)
 				const response: SearchResponse = await this.limiter.run(() =>
 					this.client.get(`/search?q=${searchQuery}`).json()
-				);
+				)
 
-				const hits = response.response?.hits;
+				const hits = response.response?.hits
 				if (!hits || hits.length === 0) {
-					if (debug) console.log(`No results for query: "${query}"`);
-					continue;
+					if (debug) console.log(`No results for query: "${query}"`)
+					continue
 				}
 
 				// Extract results from hits
 				const results = hits
 					.map(hit => hit.result)
-					.filter((r): r is ResponseHitsResult => !!r?.url);
+					.filter((r): r is ResponseHitsResult => !!r?.url)
 
 				if (debug) {
-					debugCandidates(results, artist, song);
+					debugCandidates(results, artist, song)
 				}
 
 				// Find best match using combined scoring
-				const match = findBestMatch(results, artist, song, query);
+				const match = findBestMatch(results, artist, song, query)
 
 				if (match) {
 					if (debug) {
 						console.log(
 							`✓ Found match: "${match.result.title}" by "${match.result.primary_artist.name}" ` +
-							`[score: ${(match.score * 100).toFixed(1)}%, query: "${match.queryUsed}"]`
-						);
+								`[score: ${(match.score * 100).toFixed(1)}%, query: "${match.queryUsed}"]`
+						)
 					}
-					return match.result;
+					return match.result
 				}
 
 				if (debug) {
-					console.log(`No good match found for query: "${query}" (best score below threshold)`);
+					console.log(
+						`No good match found for query: "${query}" (best score below threshold)`
+					)
 				}
 			} catch (error) {
-				lastError = error as Error;
-				if (debug) console.log(`Query failed: "${query}"`, error);
+				lastError = error as Error
+				if (debug) console.log(`Query failed: "${query}"`, error)
 			}
 		}
 
@@ -115,7 +128,7 @@ export class DefaultLyricsService implements LyricsService {
 			'LYRICS_SERVICE_ERROR',
 			404,
 			{ queriesAttempted: queryVariants }
-		);
+		)
 	}
 
 	private async fetchReferents(songId: number): Promise<ResponseReferents[]> {
@@ -132,15 +145,23 @@ export class DefaultLyricsService implements LyricsService {
 
 		// Extract successful results only
 		return results
-			.filter((r): r is PromiseFulfilledResult<ResponseReferents[]> => r.status === 'fulfilled')
+			.filter(
+				(r): r is PromiseFulfilledResult<ResponseReferents[]> => r.status === 'fulfilled'
+			)
 			.flatMap(r => r.value)
 	}
 
-	private async fetchReferentsPage(songId: number, page: number, perPage: number): Promise<ResponseReferents[]> {
+	private async fetchReferentsPage(
+		songId: number,
+		page: number,
+		perPage: number
+	): Promise<ResponseReferents[]> {
 		try {
 			const response: ResponseReferents = await this.limiter.run(() =>
 				this.client
-					.url(`/referents?song_id=${songId}&text_format=plain&per_page=${perPage}&page=${page}`)
+					.url(
+						`/referents?song_id=${songId}&text_format=plain&per_page=${perPage}&page=${page}`
+					)
 					.get()
 					.json()
 			)
@@ -154,23 +175,31 @@ export class DefaultLyricsService implements LyricsService {
 	private async fetchLyrics(url: string): Promise<LyricsSection[]> {
 		try {
 			console.log('Fetching lyrics from URL:', url)
-			const response = await this.limiter.run(() =>
-				wretch(url).get().text()
-			)
+			const response = await this.limiter.run(() => wretch(url).get().text())
 
 			if (!response.includes('lyrics-root')) {
-				throw new logger.AppError(`Failed to find lyrics content. URL: ${url}`, 'LYRICS_SERVICE_ERROR', 422, {
-					context: 'lyrics_content',
-				})
+				throw new logger.AppError(
+					`Failed to find lyrics content. URL: ${url}`,
+					'LYRICS_SERVICE_ERROR',
+					422,
+					{
+						context: 'lyrics_content',
+					}
+				)
 			}
 
 			return LyricsParser.parse(response)
 		} catch (error) {
 			console.error('Error in fetchLyrics:', error)
-			throw new logger.AppError(`Failed to fetch lyrics from ${url}`, 'LYRICS_SERVICE_ERROR', 503, {
-				error,
-				context: 'lyrics_fetch',
-			})
+			throw new logger.AppError(
+				`Failed to fetch lyrics from ${url}`,
+				'LYRICS_SERVICE_ERROR',
+				503,
+				{
+					error,
+					context: 'lyrics_fetch',
+				}
+			)
 		}
 	}
 }

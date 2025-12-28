@@ -1,11 +1,14 @@
 import { useState } from 'react'
-import { apiRoutes } from '~/lib/config/routes';
+
+import { useLoaderData } from 'react-router'
+
+import { apiRoutes } from '~/lib/config/routes'
+
 import { ProviderKeysManager } from './ApiKeys/ProviderKeysManager'
-import { useLoaderData } from 'react-router';
 
 type RootLoaderData = {
-	isAuthenticated: boolean;
-	user: { id: string } | null;
+	isAuthenticated: boolean
+	user: { id: string } | null
 }
 
 export function ConfigButton() {
@@ -14,7 +17,7 @@ export function ConfigButton() {
 	const [providerStatuses, setProviderStatuses] = useState([
 		{ provider: 'openai', hasKey: false },
 		{ provider: 'anthropic', hasKey: false },
-		{ provider: 'google', hasKey: false }
+		{ provider: 'google', hasKey: false },
 	])
 
 	function closeModal() {
@@ -32,7 +35,9 @@ export function ConfigButton() {
 		if (!user?.id) return
 
 		try {
-			const response = await fetch(apiRoutes.llmProvider.base + '?action=getProviderStatuses')
+			const response = await fetch(
+				apiRoutes.llmProvider.base + '?action=getProviderStatuses'
+			)
 			const data = await response.json()
 
 			if (data.providerStatuses) {
@@ -47,19 +52,10 @@ export function ConfigButton() {
 		<>
 			<button
 				onClick={openModal}
-				className="px-4 py-2
-          rounded-full
-          font-medium
-          text-sm
-          bg-muted 
-          text-muted-foreground/50 
-          flex items-center justify-center 
-          hover:bg-muted hover:text-muted-foreground/70 
-          transition-all duration-200 
-          active:scale-95"
+				className="bg-muted text-muted-foreground/50 hover:bg-muted hover:text-muted-foreground/70 flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95"
 			>
 				<svg
-					className="w-4 h-4"
+					className="h-4 w-4"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -81,16 +77,13 @@ export function ConfigButton() {
 			{isOpen && (
 				<>
 					{/* Modal backdrop */}
-					<div
-						className="fixed inset-0 bg-background/25 z-40"
-						onClick={closeModal}
-					/>
+					<div className="bg-background/25 fixed inset-0 z-40" onClick={closeModal} />
 
 					{/* Modal content */}
-					<div className="fixed inset-0 overflow-y-auto z-50">
+					<div className="fixed inset-0 z-50 overflow-y-auto">
 						<div className="flex min-h-full items-center justify-center p-4 text-center">
-							<div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card p-6 text-left align-middle shadow-xl transition-all">
-								<h3 className="text-lg font-medium leading-6 text-foreground">
+							<div className="bg-card w-full max-w-md transform overflow-hidden rounded-2xl p-6 text-left align-middle shadow-xl transition-all">
+								<h3 className="text-foreground text-lg leading-6 font-medium">
 									Configuration!
 								</h3>
 
@@ -99,16 +92,15 @@ export function ConfigButton() {
 										{/* API Keys Section */}
 										<div>
 											<div className="mt-4">
-												{user?.id ? (
+												{user?.id ?
 													<ProviderKeysManager
 														userId={user.id}
 														providerStatuses={providerStatuses}
 													/>
-												) : (
-													<div className="text-sm text-muted-foreground/70 p-4 border border-border rounded-md">
+												:	<div className="text-muted-foreground/70 border-border rounded-md border p-4 text-sm">
 														Please log in to manage your API keys.
 													</div>
-												)}
+												}
 											</div>
 										</div>
 
@@ -119,7 +111,7 @@ export function ConfigButton() {
 								<div className="mt-6 flex justify-end">
 									<button
 										type="button"
-										className="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+										className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2"
 										onClick={closeModal}
 									>
 										Close

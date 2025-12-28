@@ -1,3 +1,3 @@
-export * from './formatters';
-export * from './colors';
-export * from './mappers';
+export * from './formatters'
+export * from './colors'
+export * from './mappers'

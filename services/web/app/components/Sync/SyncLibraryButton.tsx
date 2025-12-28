@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react'
-import { useFetcher } from 'react-router';
+import { useEffect, useState } from 'react'
+
+import { useFetcher } from 'react-router'
+
 import { SyncResult } from '~/lib/models/Sync'
+
 import { SyncStatus } from './SyncStatus'
 
 type SyncLibraryButtonProps = {
@@ -32,18 +35,11 @@ export function SyncLibraryButton({ userId }: SyncLibraryButtonProps) {
 				<button
 					type="submit"
 					disabled={isLoading}
-					className={`
-						px-4 py-2 
-						rounded-full
-						font-medium
-						text-sm
-						transition-all duration-200
-						${
-							isLoading
-								? 'bg-muted text-muted-foreground cursor-not-allowed'
-								: 'bg-[#1DB954] text-foreground hover:bg-[#1ed760] active:scale-95'
-						}
-					`}
+					className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+						isLoading ?
+							'bg-muted text-muted-foreground cursor-not-allowed'
+						:	'text-foreground bg-[#1DB954] hover:bg-[#1ed760] active:scale-95'
+					} `}
 				>
 					{buttonText}
 				</button>

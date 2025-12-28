@@ -7,10 +7,10 @@
  * @returns A valid number, never NaN
  */
 export function safeNumber(value: unknown, fallback = 0): number {
-  if (typeof value === 'number' && !Number.isNaN(value)) {
-    return value
-  }
-  return fallback
+	if (typeof value === 'number' && !Number.isNaN(value)) {
+		return value
+	}
+	return fallback
 }
 
 /**
@@ -24,18 +24,18 @@ export function safeNumber(value: unknown, fallback = 0): number {
  * @returns A valid number clamped to [min, max]
  */
 export function safeNumberInRange(
-  value: unknown,
-  min: number,
-  max: number,
-  fallback = 0
+	value: unknown,
+	min: number,
+	max: number,
+	fallback = 0
 ): number {
-  const num = safeNumber(value, fallback)
-  return Math.max(min, Math.min(max, num))
+	const num = safeNumber(value, fallback)
+	return Math.max(min, Math.min(max, num))
 }
 
 /**
  * Type guard to check if a value is a valid number (not NaN).
  */
 export function isValidNumber(value: unknown): value is number {
-  return typeof value === 'number' && !Number.isNaN(value)
+	return typeof value === 'number' && !Number.isNaN(value)
 }

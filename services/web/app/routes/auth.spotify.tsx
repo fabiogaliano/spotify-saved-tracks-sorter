@@ -1,5 +1,6 @@
-import type { ActionFunctionArgs } from 'react-router';
-import { redirect } from 'react-router';
+import type { ActionFunctionArgs } from 'react-router'
+import { redirect } from 'react-router'
+
 import { authenticator } from '~/features/auth/auth.server'
 import { Logger } from '~/lib/logging/Logger'
 
@@ -18,10 +19,13 @@ export async function action({ request }: ActionFunctionArgs) {
 	} catch (error) {
 		if (error instanceof Response) {
 			logger.info('Authentication resulted in a Error Response')
-			throw error;
+			throw error
 		}
 
-		logger.error('Unexpected error during authenticator.authenticate call in /auth/spotify:', error)
+		logger.error(
+			'Unexpected error during authenticator.authenticate call in /auth/spotify:',
+			error
+		)
 
 		return redirect('/')
 	}

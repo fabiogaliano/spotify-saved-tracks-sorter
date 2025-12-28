@@ -7,32 +7,30 @@ The Toast Store provides a centralized way to manage toast notifications through
 ### Usage
 
 ```tsx
-import { useToastStore } from '~/lib/stores/toastStore';
+import { useToastStore } from '~/lib/stores/toastStore'
 
 function MyComponent() {
-  const { success, error, warning, info, loading, promise } = useToastStore();
-  
-  const handleSuccess = () => {
-    success('Operation completed successfully!');
-  };
-  
-  const handleError = () => {
-    error('An error occurred');
-  };
-  
-  const handleAsyncOperation = async () => {
-    const myPromise = fetchData();
-    
-    promise(myPromise, {
-      loading: 'Loading data...',
-      success: 'Data loaded successfully!',
-      error: 'Failed to load data',
-    });
-  };
-  
-  return (
-    <button onClick={handleSuccess}>Show Success Toast</button>
-  );
+	const { success, error, warning, info, loading, promise } = useToastStore()
+
+	const handleSuccess = () => {
+		success('Operation completed successfully!')
+	}
+
+	const handleError = () => {
+		error('An error occurred')
+	}
+
+	const handleAsyncOperation = async () => {
+		const myPromise = fetchData()
+
+		promise(myPromise, {
+			loading: 'Loading data...',
+			success: 'Data loaded successfully!',
+			error: 'Failed to load data',
+		})
+	}
+
+	return <button onClick={handleSuccess}>Show Success Toast</button>
 }
 ```
 

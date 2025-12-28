@@ -1,69 +1,74 @@
-import { LoaderFunction, MetaFunction } from 'react-router';
-import { Link, useRouteError } from 'react-router';
-import React from 'react';
+import React from 'react'
+
+import { LoaderFunction, MetaFunction } from 'react-router'
+import { Link, useRouteError } from 'react-router'
 
 export const meta: MetaFunction = () => {
-  return [
-    { title: '404 - Page Not Found | Sorted' },
-    { name: 'description', content: 'The page you are looking for does not exist.' },
-  ];
-};
+	return [
+		{ title: '404 - Page Not Found | Sorted' },
+		{ name: 'description', content: 'The page you are looking for does not exist.' },
+	]
+}
 
 export const loader: LoaderFunction = async () => {
-  return new Response('404 Not Found', { status: 404 });
-};
+	return new Response('404 Not Found', { status: 404 })
+}
 
 export default function NotFound() {
-  return (
-    <div className="min-h-screen bg-theme-gradient text-foreground flex flex-col">
-      {/* Nav */}
-      <nav className="sticky top-0 z-10 flex justify-between items-center px-6 py-5 md:px-12 backdrop-blur-sm bg-background/50 border-b border-border/50">
-        <div className="flex items-center">
-          <Link to="/" className="text-2xl md:text-3xl font-bold bg-gradient-brand">
-            Sorted.
-          </Link>
-        </div>
-      </nav>
+	return (
+		<div className="bg-theme-gradient text-foreground flex min-h-screen flex-col">
+			{/* Nav */}
+			<nav className="bg-background/50 border-border/50 sticky top-0 z-10 flex items-center justify-between border-b px-6 py-5 backdrop-blur-sm md:px-12">
+				<div className="flex items-center">
+					<Link to="/" className="bg-gradient-brand text-2xl font-bold md:text-3xl">
+						Sorted.
+					</Link>
+				</div>
+			</nav>
 
-      {/* 404 Content */}
-      <div className="flex-grow flex items-center justify-center px-6 md:px-12 py-12">
-        <div className="max-w-3xl mx-auto bg-background/30 backdrop-blur-sm rounded-2xl p-10 border border-border text-center relative overflow-hidden">
-          {/* Glow effects */}
-          <div className="absolute -top-20 -left-10 w-64 h-64 bg-purple-500 rounded-full filter blur-3xl opacity-10"></div>
-          <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-blue-500 rounded-full filter blur-3xl opacity-10"></div>
+			{/* 404 Content */}
+			<div className="flex flex-grow items-center justify-center px-6 py-12 md:px-12">
+				<div className="bg-background/30 border-border relative mx-auto max-w-3xl overflow-hidden rounded-2xl border p-10 text-center backdrop-blur-sm">
+					{/* Glow effects */}
+					<div className="absolute -top-20 -left-10 h-64 w-64 rounded-full bg-purple-500 opacity-10 blur-3xl filter"></div>
+					<div className="absolute -right-10 -bottom-10 h-64 w-64 rounded-full bg-blue-500 opacity-10 blur-3xl filter"></div>
 
-          <div className="relative z-10">
-            <div className="text-9xl font-bold bg-gradient-brand opacity-80 mb-6">404</div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Page Not Found</h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-10">
-              The page you're looking for doesn't exist or has been moved.
-            </p>
-            <Link
-              to="/"
-              className="bg-green-500 hover:bg-green-400 transition-all text-foreground text-xl px-10 py-4 rounded-full font-medium inline-block text-center"
-            >
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </div>
+					<div className="relative z-10">
+						<div className="bg-gradient-brand mb-6 text-9xl font-bold opacity-80">
+							404
+						</div>
+						<h1 className="mb-6 text-4xl font-bold md:text-5xl">Page Not Found</h1>
+						<p className="text-muted-foreground mb-10 text-xl md:text-2xl">
+							The page you're looking for doesn't exist or has been moved.
+						</p>
+						<Link
+							to="/"
+							className="text-foreground inline-block rounded-full bg-green-500 px-10 py-4 text-center text-xl font-medium transition-all hover:bg-green-400"
+						>
+							Back to Home
+						</Link>
+					</div>
+				</div>
+			</div>
 
-      {/* Footer */}
-      <footer className="bg-background/50 backdrop-blur-md border-t border-border py-8">
-        <div className="container mx-auto px-6 md:px-12">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-6 md:mb-0">
-              <div className="text-xl md:text-2xl font-bold bg-gradient-brand">
-                Sorted.
-              </div>
-              <div className="text-muted-foreground text-sm mt-2">From likes to perfect playlists.</div>
-            </div>
-            <div className="text-center text-muted-foreground/70 text-sm">
-              2025 Sorted. Not affiliated with Spotify. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+			{/* Footer */}
+			<footer className="bg-background/50 border-border border-t py-8 backdrop-blur-md">
+				<div className="container mx-auto px-6 md:px-12">
+					<div className="flex flex-col items-center justify-between md:flex-row">
+						<div className="mb-6 md:mb-0">
+							<div className="bg-gradient-brand text-xl font-bold md:text-2xl">
+								Sorted.
+							</div>
+							<div className="text-muted-foreground mt-2 text-sm">
+								From likes to perfect playlists.
+							</div>
+						</div>
+						<div className="text-muted-foreground/70 text-center text-sm">
+							2025 Sorted. Not affiliated with Spotify. All rights reserved.
+						</div>
+					</div>
+				</div>
+			</footer>
+		</div>
+	)
 }

@@ -1,162 +1,156 @@
-import { OpenAIProvider } from './providers/OpenAIProvider'
+import type { Schema } from '@ai-sdk/provider-utils'
+
+import { logger } from '~/lib/logging/Logger'
+import type {
+	LlmProviderObjectResponse,
+	LlmProviderResponse,
+	ProviderInterface,
+} from '~/lib/models/LlmProvider'
+import type { LlmProviderManager as ILlmProviderManager } from '~/lib/services'
+
 import { AnthropicProvider } from './providers/AnthropicProvider'
 import { GoogleProvider } from './providers/GoogleProvider'
-import type { LlmProviderManager as ILlmProviderManager } from '~/lib/services'
-import type { ProviderInterface, LlmProviderResponse, LlmProviderObjectResponse } from '~/lib/models/LlmProvider'
-import type { Schema } from '@ai-sdk/provider-utils'
-import { logger } from '~/lib/logging/Logger'
+import { OpenAIProvider } from './providers/OpenAIProvider'
 
 export type LlmProviderName = 'openai' | 'anthropic' | 'google'
 
-
 export class LlmProviderManager implements ILlmProviderManager {
-  private provider: ProviderInterface | null = null
+	private provider: ProviderInterface | null = null
 
-  constructor(providerName: LlmProviderName, apiKey: string) {
-    this.switchProvider(providerName, apiKey)
-  }
+	constructor(providerName: LlmProviderName, apiKey: string) {
+		this.switchProvider(providerName, apiKey)
+	}
 
-  switchProvider(providerName: LlmProviderName, apiKey: string): void {
-    try {
-      switch (providerName) {
-        case 'openai':
-          this.provider = new OpenAIProvider(apiKey)
-          break
-        case 'anthropic':
-          this.provider = new AnthropicProvider(apiKey)
-          break
-        case 'google':
-          this.provider = new GoogleProvider(apiKey)
-          break
-        default:
-          const error = new logger.AppError(
-            'Unsupported provider',
-            'LLM_PROVIDER_ERROR',
-            400,
-            { providerName }
-          )
-          throw error
-      }
-    } catch (error) {
-      throw new logger.AppError(
-        'Failed to switch provider',
-        'LLM_PROVIDER_ERROR',
-        500,
-        { cause: error, providerName }
-      )
-    }
-  }
+	switchProvider(providerName: LlmProviderName, apiKey: string): void {
+		try {
+			switch (providerName) {
+				case 'openai':
+					this.provider = new OpenAIProvider(apiKey)
+					break
+				case 'anthropic':
+					this.provider = new AnthropicProvider(apiKey)
+					break
+				case 'google':
+					this.provider = new GoogleProvider(apiKey)
+					break
+				default:
+					const error = new logger.AppError(
+						'Unsupported provider',
+						'LLM_PROVIDER_ERROR',
+						400,
+						{ providerName }
+					)
+					throw error
+			}
+		} catch (error) {
+			throw new logger.AppError('Failed to switch provider', 'LLM_PROVIDER_ERROR', 500, {
+				cause: error,
+				providerName,
+			})
+		}
+	}
 
-  getAvailableModels(): string[] {
-    try {
-      if (!this.provider) {
-        const error = new logger.AppError(
-          'No provider selected',
-          'LLM_PROVIDER_ERROR',
-          400
-        )
-        throw error
-      }
-      return this.provider.getAvailableModels()
-    } catch (error) {
-      throw new logger.AppError(
-        'Failed to get available models',
-        'LLM_PROVIDER_ERROR',
-        500,
-        { cause: error }
-      )
-    }
-  }
+	getAvailableModels(): string[] {
+		try {
+			if (!this.provider) {
+				const error = new logger.AppError(
+					'No provider selected',
+					'LLM_PROVIDER_ERROR',
+					400
+				)
+				throw error
+			}
+			return this.provider.getAvailableModels()
+		} catch (error) {
+			throw new logger.AppError(
+				'Failed to get available models',
+				'LLM_PROVIDER_ERROR',
+				500,
+				{ cause: error }
+			)
+		}
+	}
 
-  setActiveModel(model: string): void {
-    if (!this.provider) {
-      throw new logger.AppError(
-        'No provider selected',
-        'LLM_PROVIDER_ERROR',
-        400
-      )
-    }
+	setActiveModel(model: string): void {
+		if (!this.provider) {
+			throw new logger.AppError('No provider selected', 'LLM_PROVIDER_ERROR', 400)
+		}
 
-    try {
-      this.provider.setActiveModel(model)
-    } catch (error) {
-      throw new logger.AppError(
-        'Failed to set active model',
-        'LLM_PROVIDER_ERROR',
-        400,
-        { cause: error, provider: this.provider.name, model }
-      )
-    }
-  }
+		try {
+			this.provider.setActiveModel(model)
+		} catch (error) {
+			throw new logger.AppError('Failed to set active model', 'LLM_PROVIDER_ERROR', 400, {
+				cause: error,
+				provider: this.provider.name,
+				model,
+			})
+		}
+	}
 
-  getCurrentModel(): string {
-    if (!this.provider) {
-      throw new logger.AppError(
-        'No provider selected',
-        'LLM_PROVIDER_ERROR',
-        400
-      )
-    }
+	getCurrentModel(): string {
+		if (!this.provider) {
+			throw new logger.AppError('No provider selected', 'LLM_PROVIDER_ERROR', 400)
+		}
 
-    const modelName = this.provider.getActiveModel()
-    return `${this.provider.name}:${modelName}`
-  }
+		const modelName = this.provider.getActiveModel()
+		return `${this.provider.name}:${modelName}`
+	}
 
-  async generateText(prompt: string, model?: string): Promise<LlmProviderResponse> {
-    try {
-      if (!this.provider) {
-        const error = new logger.AppError(
-          'No provider selected',
-          'LLM_PROVIDER_ERROR',
-          400
-        )
-        throw error
-      }
+	async generateText(prompt: string, model?: string): Promise<LlmProviderResponse> {
+		try {
+			if (!this.provider) {
+				const error = new logger.AppError(
+					'No provider selected',
+					'LLM_PROVIDER_ERROR',
+					400
+				)
+				throw error
+			}
 
-      const activeModel = model || this.provider.getActiveModel()
-      const response = await this.provider.generateText(prompt, activeModel)
-      return response
-    } catch (error: any) {
-      // Extract useful error info instead of dumping entire error object
-      const statusCode = error?.statusCode || error?.status || 500
-      const apiError = error?.data?.error || error?.lastError?.data?.error
-      const message = apiError?.message || error?.message || 'Unknown error'
-      const retryDelay = apiError?.details?.find((d: any) => d.retryDelay)?.retryDelay
+			const activeModel = model || this.provider.getActiveModel()
+			const response = await this.provider.generateText(prompt, activeModel)
+			return response
+		} catch (error: any) {
+			// Extract useful error info instead of dumping entire error object
+			const statusCode = error?.statusCode || error?.status || 500
+			const apiError = error?.data?.error || error?.lastError?.data?.error
+			const message = apiError?.message || error?.message || 'Unknown error'
+			const retryDelay = apiError?.details?.find((d: any) => d.retryDelay)?.retryDelay
 
-      throw new logger.AppError(
-        message,
-        statusCode === 429 ? 'RATE_LIMIT_ERROR' : 'LLM_PROVIDER_ERROR',
-        statusCode,
-        { retryDelay, provider: this.provider?.name }
-      )
-    }
-  }
+			throw new logger.AppError(
+				message,
+				statusCode === 429 ? 'RATE_LIMIT_ERROR' : 'LLM_PROVIDER_ERROR',
+				statusCode,
+				{ retryDelay, provider: this.provider?.name }
+			)
+		}
+	}
 
-  async generateObject<T>(prompt: string, schema: Schema<T>, model?: string): Promise<LlmProviderObjectResponse<T>> {
-    try {
-      if (!this.provider) {
-        throw new logger.AppError(
-          'No provider selected',
-          'LLM_PROVIDER_ERROR',
-          400
-        )
-      }
+	async generateObject<T>(
+		prompt: string,
+		schema: Schema<T>,
+		model?: string
+	): Promise<LlmProviderObjectResponse<T>> {
+		try {
+			if (!this.provider) {
+				throw new logger.AppError('No provider selected', 'LLM_PROVIDER_ERROR', 400)
+			}
 
-      const activeModel = model || this.provider.getActiveModel()
-      const response = await this.provider.generateObject<T>(prompt, schema, activeModel)
-      return response
-    } catch (error: any) {
-      const statusCode = error?.statusCode || error?.status || 500
-      const apiError = error?.data?.error || error?.lastError?.data?.error
-      const message = apiError?.message || error?.message || 'Unknown error'
-      const retryDelay = apiError?.details?.find((d: any) => d.retryDelay)?.retryDelay
+			const activeModel = model || this.provider.getActiveModel()
+			const response = await this.provider.generateObject<T>(prompt, schema, activeModel)
+			return response
+		} catch (error: any) {
+			const statusCode = error?.statusCode || error?.status || 500
+			const apiError = error?.data?.error || error?.lastError?.data?.error
+			const message = apiError?.message || error?.message || 'Unknown error'
+			const retryDelay = apiError?.details?.find((d: any) => d.retryDelay)?.retryDelay
 
-      throw new logger.AppError(
-        message,
-        statusCode === 429 ? 'RATE_LIMIT_ERROR' : 'LLM_PROVIDER_ERROR',
-        statusCode,
-        { retryDelay, provider: this.provider?.name }
-      )
-    }
-  }
+			throw new logger.AppError(
+				message,
+				statusCode === 429 ? 'RATE_LIMIT_ERROR' : 'LLM_PROVIDER_ERROR',
+				statusCode,
+				{ retryDelay, provider: this.provider?.name }
+			)
+		}
+	}
 }

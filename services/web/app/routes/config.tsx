@@ -1,8 +1,9 @@
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
-import { useLoaderData } from 'react-router';
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
+import { useLoaderData } from 'react-router'
+
+import { Config } from '~/components/Config'
 import { authenticator } from '~/features/auth/auth.server'
 import type { SpotifySession } from '~/features/auth/auth.server'
-import { Config } from '~/components/Config'
 import { providerKeyService } from '~/lib/services/llm/ProviderKeyService'
 
 export const meta: MetaFunction = () => {
@@ -42,8 +43,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function ConfigPage() {
 	return (
-		<div className="max-w-4xl mx-auto px-4 py-8">
-			<h1 className="text-2xl font-bold mb-6">Configuration</h1>
+		<div className="mx-auto max-w-4xl px-4 py-8">
+			<h1 className="mb-6 text-2xl font-bold">Configuration</h1>
 			<Config />
 		</div>
 	)

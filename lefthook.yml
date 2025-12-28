@@ -1,0 +1,26 @@
+# Lefthook configuration
+# Runs pre-commit and pre-push checks
+
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "services/web/**/*.{ts,tsx,js,jsx,json,css,md}"
+      root: "services/web"
+      run: bunx prettier --write {staged_files}
+      stage_fixed: true
+
+pre-push:
+  parallel: true
+  commands:
+    format-check:
+      run: bun run format:check
+      fail_text: "Prettier formatting check failed! Run 'bun run format' to fix."
+
+    lint:
+      run: bun run lint
+      fail_text: "ESLint failed! Fix linting errors before pushing."
+
+    typecheck:
+      run: bun run typecheck
+      fail_text: "TypeScript type checking failed! Fix type errors before pushing."

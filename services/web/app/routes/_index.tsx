@@ -1,6 +1,7 @@
-import { redirect, type LoaderFunctionArgs } from 'react-router';
-import { getUserSession } from '~/features/auth/auth.utils'
+import { type LoaderFunctionArgs, redirect } from 'react-router'
+
 import LandingPage from '~/features/auth/LandingPage'
+import { getUserSession } from '~/features/auth/auth.utils'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
 	try {

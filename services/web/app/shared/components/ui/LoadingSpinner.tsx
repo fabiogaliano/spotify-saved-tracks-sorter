@@ -53,19 +53,10 @@ export function LoadingSpinner({
 
 	return (
 		<div
-			className={`
-        ${centered ? 'flex flex-col items-center justify-center' : ''}
-        ${fullHeight ? 'min-h-[60vh]' : ''}
-        ${className}
-      `}
+			className={` ${centered ? 'flex flex-col items-center justify-center' : ''} ${fullHeight ? 'min-h-[60vh]' : ''} ${className} `}
 		>
 			<div
-				className={`
-          animate-spin rounded-full 
-          ${sizeClasses[size]} 
-          border-purple-500 
-          mb-${text ? '4' : '0'}
-        `}
+				className={`animate-spin rounded-full ${sizeClasses[size]} border-purple-500 mb-${text ? '4' : '0'} `}
 			></div>
 			{text && <p className={`${textSizes[size]} text-muted-foreground/60`}>{text}</p>}
 		</div>

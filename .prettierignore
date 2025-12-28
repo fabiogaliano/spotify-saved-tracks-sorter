@@ -1,0 +1,29 @@
+# Build outputs
+dist
+build
+.react-router
+*.local
+
+# Dependencies
+node_modules
+.bun
+
+# Generated files
+app/types/database.types.ts
+.react-router/types
+
+# Package manager files
+bun.lockb
+package-lock.json
+pnpm-lock.yaml
+
+# Config files
+.prettierrc
+.eslintrc.cjs
+
+# Logs
+logs/
+*.log
+
+# Python service
+services/vectorization/

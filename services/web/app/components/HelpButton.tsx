@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+
 import { Help } from '~/components/Help'
 
 export function HelpButton() {
@@ -20,16 +21,7 @@ export function HelpButton() {
 		<div className="relative">
 			<button
 				onClick={() => setShowInstructions(!showInstructions)}
-				className="px-4 py-2 
-          rounded-full
-          font-medium
-          text-sm
-          bg-muted 
-          text-muted-foreground/50 
-          flex items-center justify-center 
-          hover:bg-muted hover:text-muted-foreground/70 
-          transition-all duration-200 
-          active:scale-95"
+				className="bg-muted text-muted-foreground/50 hover:bg-muted hover:text-muted-foreground/70 flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95"
 			>
 				?
 			</button>
@@ -38,32 +30,25 @@ export function HelpButton() {
 				<>
 					{/* Backdrop */}
 					<div
-						className="fixed inset-0 bg-background/50 z-40"
+						className="bg-background/50 fixed inset-0 z-40"
 						onClick={() => setShowInstructions(false)}
 					/>
 
 					{/* Modal */}
 					<div
-						className={`
-            fixed z-50
-            ${
-							isMobile
-								? 'inset-4'
-								: 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[32rem] max-h-[80vh]'
-						}
-          `}
+						className={`fixed z-50 ${
+							isMobile ? 'inset-4' : (
+								'top-1/2 left-1/2 max-h-[80vh] w-[32rem] -translate-x-1/2 -translate-y-1/2'
+							)
+						} `}
 					>
 						<div
-							className={`
-              bg-white rounded-2xl shadow-lg border border-border 
-              ${isMobile ? 'h-full' : ''}
-              overflow-y-auto
-            `}
+							className={`border-border rounded-2xl border bg-white shadow-lg ${isMobile ? 'h-full' : ''} overflow-y-auto`}
 						>
-							<div className="sticky top-0 right-0 p-2 flex justify-end bg-white border-b">
+							<div className="sticky top-0 right-0 flex justify-end border-b bg-white p-2">
 								<button
 									onClick={() => setShowInstructions(false)}
-									className="p-2 text-muted-foreground hover:text-muted-foreground/60"
+									className="text-muted-foreground hover:text-muted-foreground/60 p-2"
 								>
 									✕
 								</button>
