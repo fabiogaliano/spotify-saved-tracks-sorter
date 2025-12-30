@@ -25,6 +25,7 @@
 | ------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | **Primary Embedding**    | `intfloat/multilingual-e5-large-instruct`                              | Strong multilingual quality; supports 100 languages; 1024d; instruction-aware |
 | **Emotion Model**        | `SamLowe/roberta-base-go_emotions` (bucketed into ~6-8 meta-emotions)  | Reduce noise from weak labels while keeping useful emotion signal             |
+| **Genre Source**         | Last.fm top tags (album → artist fallback)                             | Deterministic genre signal; complements embeddings for queries like "hiphop"  |
 | **Reranker**             | `Qwen/Qwen3-Reranker-0.6B`                                             | Apache-2.0, strong multilingual quality, production-ready, much faster        |
 | **Vector Persistence**   | Supabase + `pgvector`                                                  | Embed once, reuse forever; enables fast retrieval and stable evaluation       |
 | **Backfills**            | SQS-driven backfill jobs (same reliability model as analysis pipeline) | Resumable/idempotent, progress tracked in DB, usable for re-embedding         |
@@ -139,6 +140,7 @@ Practical note for this project right now:
 | **Playlist with < 3 songs**          | Medium     | Fall back to description-only profiling     |
 | **User has 0 playlists**             | N/A        | Can't sort without targets                  |
 | **Conflicting emotion signals**      | Medium     | Use dominant emotion + top-3 for nuance     |
+| **Missing/low-quality Last.fm tags** | Medium     | Persist NULL; fall back to other signals    |
 | **Very similar playlists**           | Low        | Cross-encoder helps differentiate           |
 | **Popularity bias in co-occurrence** | Medium     | Use PMI/PPMI and minimum-support thresholds |
 
@@ -194,6 +196,7 @@ Current system touchpoints (as implemented today):
 - **Text extraction for embedding:** `services/web/app/lib/services/vectorization/analysis-extractors.ts`
 - **Python vectorization API (FastAPI):** `services/vectorization/api.py`
 - **In-memory embedding cache:** `services/web/app/lib/services/vectorization/VectorCache.ts` (TTL-based, not persisted)
+- **Last.fm genre enrichment (TS):** `services/web/app/lib/services/lastfm/LastFmService.ts` (not yet wired into matching)
 - **Analysis pipeline:**
   - Enqueue: `services/web/app/lib/services/queue/SQSService.ts`
   - Worker: `services/web/workers/analysisWorker.ts`
@@ -231,6 +234,10 @@ Schema additions (conceptual):
   - Keys: `track_id`, `embedding_kind` (e.g. `track_semantic_v1`), `model_name`, `model_version`, `dims`, `content_hash`
   - Payload: `embedding` (`pgvector`)
   - Metadata: `created_at`, `updated_at`
+- **`track_genres`**
+  - Keys: `track_id`, `source` (e.g. `lastfm`), `source_level` (e.g. `album|artist`), `content_hash`
+  - Payload: `genres` (text[]) + optional `genres_with_scores` (json)
+  - Metadata: `created_at`, `updated_at`
 - **`playlist_profiles`**
   - Keys: `playlist_id`, `profile_kind` (e.g. `playlist_profile_v1`), `model_name`, `model_version`, `dims`, `content_hash`
   - Payload: stored vectors + optional aggregates (audio centroid, emotion distribution)
@@ -240,6 +247,7 @@ Indexing requirements (do it right now):
 - Add pgvector index(es) for similarity search (HNSW or IVFFLAT depending on Supabase/pgvector support and dataset size).
 - Add unique constraints for idempotency:
   - `track_embeddings(track_id, embedding_kind, model_name, model_version, content_hash)`
+  - `track_genres(track_id, source, content_hash)`
   - `playlist_profiles(playlist_id, profile_kind, model_name, model_version, content_hash)`
 
 Access layer additions (TS):
@@ -256,11 +264,16 @@ Plan:
 - Introduce a **content hash** computed from:
   - the extracted vectorization text (`analysis-extractors.ts` output)
   - the embedding configuration (model + weights + extraction version)
+- Treat Last.fm genres as a **structured signal only**:
+  - Do **not** inject genres into embedding input text.
+  - Genre changes should invalidate playlist profiles / cached matches, but should not force re-embedding if the analysis text is unchanged.
 - Backfill workflow:
+  - Iterate tracks, fetch/store Last.fm genres (album → artist fallback), write `track_genres`.
   - Iterate tracks with `track_analyses` present, compute/store embeddings.
   - Iterate playlists with `playlist_analyses` present, compute/store profiles.
 - Execute backfills via the existing SQS job mechanism:
   - Add new `job_type` values (e.g. `track_embedding_backfill`, `playlist_profile_backfill`).
+  - Add a genre enrichment job type (e.g. `track_genre_backfill`).
   - Add new SQS message payload variants that encode:
     - item IDs to process
     - model bundle (embedding + reranker + emotion)
@@ -310,6 +323,12 @@ Plan:
 - Define a persisted `playlist_profiles` record derived from:
   - Playlist analysis text (from `playlist_analyses`)
   - Track centroid vector (from track embeddings of tracks already in playlist)
+  - Genre signal from:
+    - explicit genres parsed from playlist name/description (mapped onto the genre whitelist), and/or
+    - aggregated genres of existing playlist tracks via `track_genres`
+  - Keep genres **out of the embedding text** and use them only for:
+    - metadata scoring, and
+    - playlist profile structured fields
   - Audio feature centroid (already present in track analysis JSON via `audio_features`)
   - Optional emotion distribution (bucketed meta-emotions recommended)
 
@@ -363,6 +382,7 @@ Where this integrates:
 Invalidation behavior (automatic):
 - If a playlist gets new analysis or its tracks change → playlist profile hash changes → `playlist_set_hash` changes → cached results are ignored.
 - If new songs are added / analyses updated → track profile hash changes → `candidate_set_hash` changes → cached results are ignored.
+- If Last.fm genres update for relevant tracks → playlist profile hash changes (via `track_genres`) → cached results are ignored.
 - If you change models or scoring config → `config_hash` changes → cached results are ignored.
 
 Success criteria:
