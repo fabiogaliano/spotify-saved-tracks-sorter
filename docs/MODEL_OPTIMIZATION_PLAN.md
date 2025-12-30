@@ -146,12 +146,12 @@ Practical note for this project right now:
 
 ### 3.4 Model/Schema Evolution Edge Cases
 
-| Edge Case                           | Risk Level | Mitigation                                                               |
-| ----------------------------------- | ---------- | ------------------------------------------------------------------------ |
-| **New model incompatible with old** | High       | Must re-embed everything with new model                                  |
-| **Dimension mismatch (768 → 1024)** | High       | Versioned embeddings; keep multiple dims isolated via `model_version`    |
-| **Backfill interruption**           | Medium     | Idempotent jobs keyed by `content_hash`; resumable batches               |
-| **Performance regression**          | Medium     | Measure against the offline evaluation harness before switching defaults |
+| Edge Case                           | Risk Level | Mitigation                                                            |
+| ----------------------------------- | ---------- | --------------------------------------------------------------------- |
+| **New model incompatible with old** | High       | Must re-embed everything with new model                               |
+| **Dimension mismatch (768 → 1024)** | High       | Versioned embeddings; keep multiple dims isolated via `model_version` |
+| **Backfill interruption**           | Medium     | Idempotent jobs keyed by `content_hash`; resumable batches            |
+| **Performance regression**          | Medium     | Measure against the offline evaluation harness before cutover         |
 
 ---
 
@@ -159,12 +159,12 @@ Practical note for this project right now:
 
 ### 4.1 Technical Risks
 
-| Risk                                     | Probability | Impact | Mitigation                     |
-| ---------------------------------------- | ----------- | ------ | ------------------------------ |
-| E5 doesn't improve results significantly | Low         | High   | A/B test before full migration |
-| go_emotions less accurate than LLM mood  | Medium      | Medium | Use as signal, not replacement |
-| Reranking adds too much latency          | Low         | Medium | Make it optional; tune top_k   |
-| Multi-vector complicates debugging       | Medium      | Low    | Good logging and observability |
+| Risk                                     | Probability | Impact | Mitigation                                                              |
+| ---------------------------------------- | ----------- | ------ | ----------------------------------------------------------------------- |
+| E5 doesn't improve results significantly | Low         | High   | Benchmark via offline evaluation harness before cutover                 |
+| go_emotions less accurate than LLM mood  | Medium      | Medium | Use as signal, not replacement                                          |
+| Reranking adds too much latency          | Low         | Medium | Tune top_k, batch sizes, and infrastructure; measure end-to-end latency |
+| Multi-vector complicates debugging       | Medium      | Low    | Good logging and observability                                          |
 
 ### 4.2 Operational Risks
 
@@ -185,6 +185,13 @@ Practical note for this project right now:
 ---
 
 ## 5. Implementation Phases
+
+This plan assumes **breaking changes are acceptable**:
+- We do **not** need feature flags or parallel “old/new” codepaths.
+- We do **not** need backwards-compatible APIs.
+- We optimize for shipping the new pipeline end-to-end, then doing a single cutover.
+
+These phases are **build steps**, not a gradual rollout plan.
 
 ### Phase 0: Map Current State (0.5 day)
 
@@ -236,11 +243,11 @@ Schema additions (conceptual):
   - Metadata: `created_at`, `updated_at`
 - **`track_genres`**
   - Keys: `track_id`, `source` (e.g. `lastfm`), `source_level` (e.g. `album|artist`), `content_hash`
-  - Payload: `genres` (text[]) + optional `genres_with_scores` (json)
+  - Payload: `genres` (text[]) + `genres_with_scores` (json)
   - Metadata: `created_at`, `updated_at`
 - **`playlist_profiles`**
   - Keys: `playlist_id`, `profile_kind` (e.g. `playlist_profile_v1`), `model_name`, `model_version`, `dims`, `content_hash`
-  - Payload: stored vectors + optional aggregates (audio centroid, emotion distribution)
+  - Payload: stored vectors + aggregates (audio centroid, emotion distribution)
   - Metadata: `created_at`, `updated_at`
 
 Indexing requirements (do it right now):
@@ -258,7 +265,7 @@ Success criteria:
 
 ### Phase 3: Backfill + Versioning Strategy (1 day)
 
-**Goal:** Populate the new tables without breaking current behavior.
+**Goal:** Populate the new tables to support the new pipeline (breaking-change friendly cutover).
 
 Plan:
 - Introduce a **content hash** computed from:
@@ -285,7 +292,7 @@ Success criteria:
 
 ### Phase 4: Vectorization API V2 (Python) (2-3 days)
 
-**Goal:** Add the new models while keeping the current endpoints stable for the TS client.
+**Goal:** Add the new models and endpoints needed by the new matching pipeline.
 
 Current state:
 - `services/vectorization/api.py` provides `/embed`, `/embed/batch`, `/embed/hybrid`, `/sentiment`, `/similarity/calculate`.
@@ -297,7 +304,6 @@ Planned changes:
     - **Song (document):** `<track profile text>` (no instruction needed)
   - This affects TS extraction (query vs document strings) and Python embed behavior (query formatting helper).
 - **Emotion model:** add a new endpoint based on `SamLowe/roberta-base-go_emotions` returning a distribution (top-N + probs).
-  - Keep the existing `/sentiment` endpoint intact for backwards compatibility.
 - Emotion bucketing (recommended for matching features):
   - Map 28 labels into ~6-8 meta-emotions to reduce noise.
   - Example buckets:
@@ -330,7 +336,7 @@ Plan:
     - metadata scoring, and
     - playlist profile structured fields
   - Audio feature centroid (already present in track analysis JSON via `audio_features`)
-  - Optional emotion distribution (bucketed meta-emotions recommended)
+  - Emotion distribution (bucketed meta-emotions recommended)
 
 Success criteria:
 - Profile computation is cached/persisted and can be invalidated via `content_hash` changes.
@@ -343,7 +349,7 @@ Stage 1 (fast, in TS):
 - Use persisted track embeddings + playlist profiles to score all candidates.
 - Continue using the existing multi-signal scoring shape in `MatchingService` (metadata + vector + audio + context/thematic/flow), but swap the vector source from “in-memory cache” to “DB-first”.
 
-Stage 2 (slow, optional):
+Stage 2 (slow):
 - Call the Python reranker for Top-N (e.g. 20-50) and blend rerank scores into the final ordering.
 - Persist model name/version used for the final ranking in `track_playlist_matches.model_name` (and add a version field strategy if you want multiple match generations side-by-side).
 
