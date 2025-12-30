@@ -6,6 +6,7 @@ node_modules
 /build
 .env
 supabase
+dist/
 
 ./tests/spotify.session.json
 logs/

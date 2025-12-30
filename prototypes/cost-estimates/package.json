@@ -1,0 +1,23 @@
+{
+	"name": "cost-estimates",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"start": "bun --env-file=../../services/web/.env run src/index.tsx",
+		"dev": "bun --env-file=../../services/web/.env --watch run src/index.tsx",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@opentui/core": "^0.1.65",
+		"@opentui/react": "^0.1.65",
+		"@supabase/supabase-js": "^2.89.0",
+		"dotenv": "^16.4.7",
+		"yaml": "^2.7.0"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.5",
+		"@types/react": "^19.2.7",
+		"typescript": "^5.9.3"
+	}
+}

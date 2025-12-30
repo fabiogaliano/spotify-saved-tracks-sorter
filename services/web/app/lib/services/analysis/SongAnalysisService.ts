@@ -31,7 +31,8 @@ export interface BatchAnalysisResult {
 }
 
 // Streamlined prompt for focused song analysis with audio features
-const ENHANCED_MUSIC_ANALYSIS_PROMPT = `You are an expert music analyst. Analyze this song comprehensively using both lyrics and audio features.
+// Exported for cost estimation tooling
+export const ENHANCED_MUSIC_ANALYSIS_PROMPT = `You are an expert music analyst. Analyze this song comprehensively using both lyrics and audio features.
 
 Artist: {artist}
 Title: {title}
@@ -171,10 +172,7 @@ export class SongAnalysisService implements ISongAnalysisService {
 			}
 
 			// 3. Build enhanced prompt with formatted audio features
-			const filledPrompt = ENHANCED_MUSIC_ANALYSIS_PROMPT.replace('{artist}', artist)
-				.replace('{title}', song)
-				.replace('{lyrics_with_annotations}', JSON.stringify(lyrics, null, 2))
-				.replace('{audio_features}', this.formatAudioFeatures(audioFeatures))
+			const filledPrompt = buildAnalysisPrompt(artist, song, lyrics, audioFeatures)
 
 			if (!this.providerManager) {
 				throw new Error('LLM Provider Manager is not initialized')
@@ -466,25 +464,6 @@ export class SongAnalysisService implements ISongAnalysisService {
 	}
 
 	/**
-	 * Format audio features as human-readable text for LLM prompt
-	 */
-	private formatAudioFeatures(audioFeatures: ReccoBeatsAudioFeatures | null): string {
-		if (!audioFeatures) {
-			return 'Audio features not available - analyze based on lyrics only'
-		}
-
-		return `Tempo: ${audioFeatures.tempo} BPM
-Energy: ${audioFeatures.energy} (0.0 = low, 1.0 = high)
-Valence: ${audioFeatures.valence} (0.0 = sad/negative, 1.0 = happy/positive)
-Danceability: ${audioFeatures.danceability} (0.0 = not danceable, 1.0 = very danceable)
-Acousticness: ${audioFeatures.acousticness} (0.0 = not acoustic, 1.0 = acoustic)
-Instrumentalness: ${audioFeatures.instrumentalness} (0.0 = vocal, 1.0 = instrumental)
-Liveness: ${audioFeatures.liveness} (0.0 = studio, 1.0 = live performance)
-Speechiness: ${audioFeatures.speechiness} (0.0 = non-speech, 1.0 = speech-like)
-Loudness: ${audioFeatures.loudness} dB`
-	}
-
-	/**
 	 * Build the analysis prompt with lyrics and audio features
 	 */
 	private buildAnalysisPrompt(
@@ -493,9 +472,48 @@ Loudness: ${audioFeatures.loudness} dB`
 		lyrics: TransformedLyricsBySection[],
 		audioFeatures: ReccoBeatsAudioFeatures | null
 	): string {
-		return ENHANCED_MUSIC_ANALYSIS_PROMPT.replace('{artist}', artist)
-			.replace('{title}', song)
-			.replace('{lyrics_with_annotations}', JSON.stringify(lyrics, null, 2))
-			.replace('{audio_features}', this.formatAudioFeatures(audioFeatures))
+		return buildAnalysisPrompt(artist, song, lyrics, audioFeatures)
 	}
+}
+
+// =============================================================================
+// Exported utilities for cost estimation and testing
+// =============================================================================
+
+/**
+ * Format audio features as human-readable text for LLM prompt.
+ * Exported for cost estimation tooling.
+ */
+export function formatAudioFeatures(
+	audioFeatures: ReccoBeatsAudioFeatures | null
+): string {
+	if (!audioFeatures) {
+		return 'Audio features not available - analyze based on lyrics only'
+	}
+
+	return `Tempo: ${audioFeatures.tempo} BPM
+Energy: ${audioFeatures.energy} (0.0 = low, 1.0 = high)
+Valence: ${audioFeatures.valence} (0.0 = sad/negative, 1.0 = happy/positive)
+Danceability: ${audioFeatures.danceability} (0.0 = not danceable, 1.0 = very danceable)
+Acousticness: ${audioFeatures.acousticness} (0.0 = not acoustic, 1.0 = acoustic)
+Instrumentalness: ${audioFeatures.instrumentalness} (0.0 = vocal, 1.0 = instrumental)
+Liveness: ${audioFeatures.liveness} (0.0 = studio, 1.0 = live performance)
+Speechiness: ${audioFeatures.speechiness} (0.0 = non-speech, 1.0 = speech-like)
+Loudness: ${audioFeatures.loudness} dB`
+}
+
+/**
+ * Build the complete analysis prompt that gets sent to the LLM.
+ * Exported for cost estimation tooling.
+ */
+export function buildAnalysisPrompt(
+	artist: string,
+	song: string,
+	lyrics: TransformedLyricsBySection[],
+	audioFeatures: ReccoBeatsAudioFeatures | null
+): string {
+	return ENHANCED_MUSIC_ANALYSIS_PROMPT.replace('{artist}', artist)
+		.replace('{title}', song)
+		.replace('{lyrics_with_annotations}', JSON.stringify(lyrics, null, 2))
+		.replace('{audio_features}', formatAudioFeatures(audioFeatures))
 }
