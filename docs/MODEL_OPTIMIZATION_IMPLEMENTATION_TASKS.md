@@ -81,39 +81,46 @@ It is intentionally biased toward *integration points* and *software patterns* s
 
 ### 2.1 Define "embedding input contract"
 Tasks:
-- [ ] **[Task]** Decide the canonical text inputs for:
+- [x] **[Task]** Decide the canonical text inputs for:
   - **Track document text** (from `SongAnalysis` + metadata)
   - **Playlist query text** (from `PlaylistAnalysis` and/or persisted profile)
-- [ ] **[Task]** Decide whether E5 uses:
+  - [Done] Using existing `VectorizationText` structure (metadata/analysis/context) from `analysis-extractors.ts`
+- [x] **[Task]** Decide whether E5 uses:
   - a single combined text string, or
   - structured fields (metadata/analysis/context) that are combined on the TS side.
+  - [Done] Decision: Structured fields combined on TS side (Python stays "dumb")
 
 Implementation guidance:
-- Keep Python “dumb”: it embeds/reranks strings; TS owns domain extraction.
+- Keep Python "dumb": it embeds/reranks strings; TS owns domain extraction.
 - Add an explicit extractor version constant (e.g. `VECTOR_EXTRACTOR_VERSION = 1`) close to `analysis-extractors.ts`.
+- [Done] Added `EXTRACTOR_VERSION` in `versioning.ts`, re-exported from `analysis-extractors.ts`
 
 ### 2.2 Implement stable hashes (don't reuse current `VectorCache.hashContent()`)
 Tasks:
-- [ ] **[Task]** Add a small hashing utility that:
+- [x] **[Task]** Add a small hashing utility that:
   - produces a deterministic hash across runs
   - is not sensitive to object key ordering
   - can hash: extracted texts, config objects, and ordered ID sets
-- [ ] **[Task]** Define these hashes:
-  - `track_content_hash`
-  - `playlist_profile_hash`
-  - `config_hash` (matching weights/thresholds)
-  - `model_bundle_hash`
-  - `candidate_set_hash` and `playlist_set_hash`
+  - [Done] Implemented in `hashing.ts` using SHA-256 with `stableStringify()` for key ordering
+- [x] **[Task]** Define these hashes:
+  - `track_content_hash` -> `hashTrackContent()`
+  - `playlist_profile_hash` -> `hashPlaylistProfile()`
+  - `config_hash` (matching weights/thresholds) -> `hashMatchingConfig()`
+  - `model_bundle_hash` -> `hashModelBundle()`
+  - `candidate_set_hash` and `playlist_set_hash` -> `hashCandidateSet()`, `hashPlaylistSet()`
+  - [Done] All hash functions implemented with versioned prefixes (e.g., `te_v1_xxx`)
 
 Pattern:
-- Use a single “hashing service” (pure functions) and keep it reusable across routes, workers, and services.
+- Use a single "hashing service" (pure functions) and keep it reusable across routes, workers, and services.
+- [Done] All functions are pure, exported from `hashing.ts`
 
 ### 2.3 Define version identifiers
 Tasks:
-- [ ] **[Task]** Create a version strategy aligned with existing `ANALYSIS_VERSION`:
+- [x] **[Task]** Create a version strategy aligned with existing `ANALYSIS_VERSION`:
   - `MATCHING_ALGO_VERSION` (e.g. `matching_v2`)
   - `EMBEDDING_SCHEMA_VERSION` (structure of stored embedding row)
   - `PLAYLIST_PROFILE_VERSION`
+  - [Done] All constants defined in `versioning.ts` with `PIPELINE_VERSIONS` combined object
 
 ---
 
@@ -365,7 +372,7 @@ Tasks:
 
 ## 13) Recommended Implementation Order (minimal risk)
 
-- [ ] **[Step 1]** Hashing/versioning contracts (Phase 0)
+- [x] **[Step 1]** Hashing/versioning contracts (Phase 0)
 - [ ] **[Step 2]** DB schema + repositories (Phases 2–3)
 - [ ] **[Step 3]** DB-first embeddings (Phase 4)
 - [ ] **[Step 4]** Persisted playlist profiles (Phase 6)

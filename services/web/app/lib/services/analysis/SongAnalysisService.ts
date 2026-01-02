@@ -9,6 +9,7 @@ import { createReccoBeatsService } from '~/lib/services/reccobeats/ReccoBeatsSer
 import type { ReccoBeatsAudioFeatures } from '~/lib/services/reccobeats/ReccoBeatsService'
 
 import type { LlmProviderManager } from '../llm/LlmProviderManager'
+import { formatLyricsCompact } from '../lyrics/utils/lyrics-formatter'
 import type { TransformedLyricsBySection } from '../lyrics/utils/lyrics-transformer'
 import {
 	type SongAnalysis,
@@ -36,7 +37,10 @@ export const ENHANCED_MUSIC_ANALYSIS_PROMPT = `You are an expert music analyst. 
 
 Artist: {artist}
 Title: {title}
+
 Lyrics and Annotations:
+(Format: [Section] = song part, ">" = annotation for line above)
+(Annotation types: [Artist] = songwriter's explanation, [Verified] = confirmed, [N votes] = community)
 {lyrics_with_annotations}
 
 Audio Features:
@@ -514,6 +518,6 @@ export function buildAnalysisPrompt(
 ): string {
 	return ENHANCED_MUSIC_ANALYSIS_PROMPT.replace('{artist}', artist)
 		.replace('{title}', song)
-		.replace('{lyrics_with_annotations}', JSON.stringify(lyrics, null, 2))
+		.replace('{lyrics_with_annotations}', formatLyricsCompact(lyrics))
 		.replace('{audio_features}', formatAudioFeatures(audioFeatures))
 }

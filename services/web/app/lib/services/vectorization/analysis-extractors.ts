@@ -3,6 +3,8 @@
  *
  * Extract text from Song and Playlist analysis schemas for vectorization.
  * TypeScript owns schema knowledge - Python just receives text strings.
+ *
+ * IMPORTANT: When changing extraction logic, bump EXTRACTOR_VERSION in versioning.ts
  */
 import type { Playlist, Song } from '~/lib/models/Matching'
 import type {
@@ -10,6 +12,9 @@ import type {
 	SongAnalysis,
 } from '~/lib/services/analysis/analysis-schemas'
 import { isValidNumber, safeNumber } from '~/lib/utils/safe-number'
+
+// Re-export extractor version for easy access at the extraction site
+export { EXTRACTOR_VERSION } from './versioning'
 
 /**
  * Text extracted for vectorization, split by semantic category.
