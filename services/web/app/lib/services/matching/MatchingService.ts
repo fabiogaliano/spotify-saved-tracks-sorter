@@ -4,6 +4,7 @@ import { MatchRepository } from '~/lib/repositories/MatchRepository'
 import { safeNumber } from '~/lib/utils/safe-number'
 
 import type { SongAnalysis } from '../analysis/analysis-schemas'
+import type { EmbeddingService } from '../embedding/EmbeddingService'
 import type { ReccoBeatsAudioFeatures } from '../reccobeats/ReccoBeatsService'
 import type { SemanticMatcher } from '../semantic/SemanticMatcher'
 import type { VectorizationService } from '../vectorization/VectorizationService'
@@ -26,8 +27,51 @@ export class MatchingService {
 	constructor(
 		private readonly matchRepository: MatchRepository,
 		private readonly vectorization: VectorizationService,
-		private readonly semanticMatcher: SemanticMatcher
+		private readonly semanticMatcher: SemanticMatcher,
+		private readonly embeddingService?: EmbeddingService
 	) {}
+
+	/**
+	 * Get embedding for a song using DB-first EmbeddingService if available,
+	 * falling back to in-memory VectorizationService cache.
+	 */
+	private async getSongEmbedding(song: Song): Promise<number[]> {
+		if (this.embeddingService) {
+			const result = await this.embeddingService.embedTrack({ song })
+			return result.embedding
+		}
+		return this.vectorization.vectorizeSong(song)
+	}
+
+	/**
+	 * Batch get embeddings for multiple songs using DB-first pattern.
+	 * Falls back to individual calls if EmbeddingService is not available.
+	 */
+	private async getSongEmbeddingsBatch(songs: Song[]): Promise<Map<number, number[]>> {
+		const results = new Map<number, number[]>()
+
+		if (this.embeddingService) {
+			const batchResult = await this.embeddingService.embedTrackBatch(
+				songs.map(song => ({ song }))
+			)
+			for (const [trackId, result] of batchResult.results) {
+				results.set(trackId, result.embedding)
+			}
+		} else {
+			// Fallback to individual calls (uses VectorCache)
+			const embeddings = await Promise.all(
+				songs.map(song => this.vectorization.vectorizeSong(song))
+			)
+			songs.forEach((song, i) => {
+				if (embeddings[i]) {
+					// Use song.id (database ID) which is always a number
+					results.set(song.id, embeddings[i])
+				}
+			})
+		}
+
+		return results
+	}
 
 	/**
 	 * Main matching function using hybrid approach
@@ -127,13 +171,11 @@ export class MatchingService {
 		const sampleSize = Math.min(20, songs.length)
 		const sampledSongs = songs.slice(0, sampleSize)
 
-		// Use VectorizationService for embeddings (benefits from cache)
-		const embeddings = await Promise.all(
-			sampledSongs.map(song => this.vectorization.vectorizeSong(song))
-		)
+		// Use DB-first EmbeddingService for embeddings when available
+		const embeddingMap = await this.getSongEmbeddingsBatch(sampledSongs)
 
 		// Calculate centroid of embeddings
-		const vectors = embeddings.filter(Boolean) as number[][]
+		const vectors = Array.from(embeddingMap.values())
 		const centroid = this.calculateCentroid(vectors)
 
 		// Extract patterns
@@ -208,8 +250,8 @@ export class MatchingService {
 	 * Score a single song against the playlist profile
 	 */
 	private async scoreSong(song: Song, profile: PlaylistProfile): Promise<MatchResult> {
-		// Get embedding for the song using VectorizationService (cached)
-		const songEmbedding = await this.vectorization.vectorizeSong(song)
+		// Get embedding for the song using DB-first EmbeddingService when available
+		const songEmbedding = await this.getSongEmbedding(song)
 
 		// Tier 1: Quick metadata scoring with semantic mood matching
 		const metadataScore = await this.calculateMetadataScore(song, profile)

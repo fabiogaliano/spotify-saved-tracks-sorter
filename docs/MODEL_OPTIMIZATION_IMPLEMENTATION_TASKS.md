@@ -208,10 +208,10 @@ Pattern:
 Goal: replace `VectorCache` as the source of truth.
 
 Tasks:
-- [ ] **[Task] Introduce a new orchestration layer** (recommended name: `EmbeddingService`)
+- [x] **[Task] Introduce a new orchestration layer** (recommended name: `EmbeddingService`)
   - Inputs:
     - `track_id` + `SongAnalysis`
-    - `playlist_id` + `PlaylistAnalysis`
+    - `playlist_id` + `PlaylistAnalysis` (deferred to Phase 6 - PlaylistProfilingService)
     - `model bundle`
   - Behavior:
     - Extract canonical text
@@ -219,6 +219,12 @@ Tasks:
     - Check DB for persisted embedding
     - If miss: call Python API, validate dims, persist
     - Cache in-memory (L1) only as a performance optimization
+  - [Done] Implemented in:
+    - `services/web/app/lib/services/embedding/EmbeddingService.ts` - Core service with DB-first pattern
+    - `services/web/app/lib/services/embedding/factory.ts` - Dependency injection factory
+    - `services/web/app/lib/services/embedding/index.ts` - Module exports
+  - [Done] MatchingService integrated with optional EmbeddingService injection
+  - [Note] Playlist embedding deferred to Phase 6 because `playlist_profiles` stores full profiles (embedding + aggregates), not just raw embeddings
 
 Integration guidance:
 - Avoid baking DB logic into `DefaultVectorizationService`. Treat it as an HTTP client.
@@ -382,7 +388,7 @@ Tasks:
 
 - [x] **[Step 1]** Hashing/versioning contracts (Phase 0)
 - [x] **[Step 2]** DB schema + repositories (Phases 2–3)
-- [ ] **[Step 3]** DB-first embeddings (Phase 4)
+- [x] **[Step 3]** DB-first embeddings (Phase 4) — `EmbeddingService` implemented
 - [ ] **[Step 4]** Persisted playlist profiles (Phase 6)
 - [ ] **[Step 5]** Match caching/context (Phase 8)
 - [ ] **[Step 6]** Backfills via SQS (Phase 9)
