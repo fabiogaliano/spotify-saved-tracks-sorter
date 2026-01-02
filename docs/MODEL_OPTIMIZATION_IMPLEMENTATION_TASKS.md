@@ -151,24 +151,30 @@ Goal: persist embeddings + profiles with explicit versioning and strict dimensio
 
 ### 4.1 Add pgvector-backed tables
 Tasks:
-- [ ] **[Task] Create `track_embeddings`**
+- [x] **[Task] Create `track_embeddings`**
   - Keys: `track_id`, `embedding_kind`, `model_name`, `model_version`, `dims`, `content_hash`
   - Payload: `embedding` (pgvector)
   - Metadata: timestamps
-- [ ] **[Task] Create `playlist_profiles`**
+  - [Done] `supabase/migrations/20260102164151_vector_persistence_schema.sql`
+- [x] **[Task] Create `playlist_profiles`**
   - Keys: `playlist_id`, `profile_kind`, `model_bundle_hash`, `dims`, `content_hash`
   - Payload: a stored vector + structured aggregates (audio centroid, genre aggregates, emotion buckets)
-- [ ] **[Task] Create `track_genres`**
+  - [Done] Same migration file
+- [x] **[Task] Create `track_genres`**
   - Keys: `track_id`, `source`, `source_level`, `content_hash`
   - Payload: `genres[]`, `genres_with_scores` (json)
-- [ ] **[Task] Create match caching tables** (recommended new tables rather than overloading `track_playlist_matches`):
+  - [Done] Same migration file
+- [x] **[Task] Create match caching tables** (recommended new tables rather than overloading `track_playlist_matches`):
   - `match_contexts`
   - `match_results`
+  - [Done] Same migration file
 
 ### 4.2 Constraints + indexing (critical for idempotency)
 Tasks:
-- [ ] **[Task] Unique constraints** to guarantee safe upserts for backfills.
-- [ ] **[Task] Vector index** for similarity search if you later move to true retrieval.
+- [x] **[Task] Unique constraints** to guarantee safe upserts for backfills.
+  - [Done] All unique indexes created in migration
+- [x] **[Task] Vector index** for similarity search if you later move to true retrieval.
+  - [Done] HNSW indexes created for `track_embeddings` and `playlist_profiles`
 
 Notes:
 - Even if you don’t use SQL similarity search immediately, persisting vectors still enables stable evaluation and avoids recompute.
@@ -180,18 +186,20 @@ Notes:
 Goal: mirror existing repository style and keep matching code clean.
 
 Tasks:
-- [ ] **[Task] Implement repositories**
-  - `TrackEmbeddingRepository`
-  - `PlaylistProfileRepository`
-  - `TrackGenreRepository`
-  - `MatchContextRepository` / `MatchResultRepository`
-- [ ] **[Task] Define "DB-first" read path**
-  - For embeddings: `getBy(track_id, kind, model, version, content_hash)`
-  - For profiles: `getBy(playlist_id, profile_kind, model_bundle_hash, content_hash)`
+- [x] **[Task] Implement repositories**
+  - `TrackEmbeddingRepository` - [Done] `repositories/TrackEmbeddingRepository.ts`
+  - `PlaylistProfileRepository` - [Done] `repositories/PlaylistProfileRepository.ts`
+  - `TrackGenreRepository` - [Done] `repositories/TrackGenreRepository.ts`
+  - `MatchContextRepository` / `MatchResultRepository` - [Done] `repositories/MatchCacheRepository.ts`
+- [x] **[Task] Define "DB-first" read path**
+  - For embeddings: `getByKey(track_id, kind, model, version, content_hash)` - [Done]
+  - For profiles: `getByKey(playlist_id, profile_kind, model_bundle_hash, content_hash)` - [Done]
+- [x] **[Task] Create model types**
+  - [Done] `models/Embedding.ts` with types and repository interfaces
 
 Pattern:
 - Keep repository methods narrow and composable.
-- Add “upsert if missing” helper methods only if they remain deterministic/idempotent.
+- Add "upsert if missing" helper methods only if they remain deterministic/idempotent.
 
 ---
 
@@ -373,7 +381,7 @@ Tasks:
 ## 13) Recommended Implementation Order (minimal risk)
 
 - [x] **[Step 1]** Hashing/versioning contracts (Phase 0)
-- [ ] **[Step 2]** DB schema + repositories (Phases 2–3)
+- [x] **[Step 2]** DB schema + repositories (Phases 2–3)
 - [ ] **[Step 3]** DB-first embeddings (Phase 4)
 - [ ] **[Step 4]** Persisted playlist profiles (Phase 6)
 - [ ] **[Step 5]** Match caching/context (Phase 8)

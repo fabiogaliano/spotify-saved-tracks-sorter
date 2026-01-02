@@ -143,6 +143,120 @@ export type Database = {
 					},
 				]
 			}
+			match_contexts: {
+				Row: {
+					algorithm_version: string
+					candidate_set_hash: string
+					config_hash: string
+					context_hash: string
+					created_at: string
+					embedding_model_name: string
+					embedding_model_version: string
+					emotion_model_name: string | null
+					emotion_model_version: string | null
+					id: number
+					playlist_set_hash: string
+					reranker_model_name: string | null
+					reranker_model_version: string | null
+					user_id: number
+				}
+				Insert: {
+					algorithm_version: string
+					candidate_set_hash: string
+					config_hash: string
+					context_hash: string
+					created_at?: string
+					embedding_model_name: string
+					embedding_model_version: string
+					emotion_model_name?: string | null
+					emotion_model_version?: string | null
+					id?: never
+					playlist_set_hash: string
+					reranker_model_name?: string | null
+					reranker_model_version?: string | null
+					user_id: number
+				}
+				Update: {
+					algorithm_version?: string
+					candidate_set_hash?: string
+					config_hash?: string
+					context_hash?: string
+					created_at?: string
+					embedding_model_name?: string
+					embedding_model_version?: string
+					emotion_model_name?: string | null
+					emotion_model_version?: string | null
+					id?: never
+					playlist_set_hash?: string
+					reranker_model_name?: string | null
+					reranker_model_version?: string | null
+					user_id?: number
+				}
+				Relationships: [
+					{
+						foreignKeyName: 'match_contexts_user_id_fkey'
+						columns: ['user_id']
+						isOneToOne: false
+						referencedRelation: 'users'
+						referencedColumns: ['id']
+					},
+				]
+			}
+			match_results: {
+				Row: {
+					created_at: string
+					factors: Json
+					id: number
+					match_context_id: number
+					playlist_id: number
+					rank: number | null
+					score: number
+					track_id: number
+				}
+				Insert: {
+					created_at?: string
+					factors: Json
+					id?: never
+					match_context_id: number
+					playlist_id: number
+					rank?: number | null
+					score: number
+					track_id: number
+				}
+				Update: {
+					created_at?: string
+					factors?: Json
+					id?: never
+					match_context_id?: number
+					playlist_id?: number
+					rank?: number | null
+					score?: number
+					track_id?: number
+				}
+				Relationships: [
+					{
+						foreignKeyName: 'match_results_match_context_id_fkey'
+						columns: ['match_context_id']
+						isOneToOne: false
+						referencedRelation: 'match_contexts'
+						referencedColumns: ['id']
+					},
+					{
+						foreignKeyName: 'match_results_playlist_id_fkey'
+						columns: ['playlist_id']
+						isOneToOne: false
+						referencedRelation: 'playlists'
+						referencedColumns: ['id']
+					},
+					{
+						foreignKeyName: 'match_results_track_id_fkey'
+						columns: ['track_id']
+						isOneToOne: false
+						referencedRelation: 'tracks'
+						referencedColumns: ['id']
+					},
+				]
+			}
 			playlist_analyses: {
 				Row: {
 					analysis: Json
@@ -181,6 +295,75 @@ export type Database = {
 					},
 					{
 						foreignKeyName: 'playlist_analyses_user_id_fkey'
+						columns: ['user_id']
+						isOneToOne: false
+						referencedRelation: 'users'
+						referencedColumns: ['id']
+					},
+				]
+			}
+			playlist_profiles: {
+				Row: {
+					audio_centroid: Json | null
+					content_hash: string
+					created_at: string
+					dims: number
+					embedding: string | null
+					emotion_distribution: Json | null
+					genre_distribution: Json | null
+					id: number
+					model_bundle_hash: string
+					playlist_id: number
+					profile_kind: string
+					track_count: number
+					track_ids: number[]
+					updated_at: string
+					user_id: number
+				}
+				Insert: {
+					audio_centroid?: Json | null
+					content_hash: string
+					created_at?: string
+					dims: number
+					embedding?: string | null
+					emotion_distribution?: Json | null
+					genre_distribution?: Json | null
+					id?: never
+					model_bundle_hash: string
+					playlist_id: number
+					profile_kind: string
+					track_count?: number
+					track_ids?: number[]
+					updated_at?: string
+					user_id: number
+				}
+				Update: {
+					audio_centroid?: Json | null
+					content_hash?: string
+					created_at?: string
+					dims?: number
+					embedding?: string | null
+					emotion_distribution?: Json | null
+					genre_distribution?: Json | null
+					id?: never
+					model_bundle_hash?: string
+					playlist_id?: number
+					profile_kind?: string
+					track_count?: number
+					track_ids?: number[]
+					updated_at?: string
+					user_id?: number
+				}
+				Relationships: [
+					{
+						foreignKeyName: 'playlist_profiles_playlist_id_fkey'
+						columns: ['playlist_id']
+						isOneToOne: false
+						referencedRelation: 'playlists'
+						referencedColumns: ['id']
+					},
+					{
+						foreignKeyName: 'playlist_profiles_user_id_fkey'
 						columns: ['user_id']
 						isOneToOne: false
 						referencedRelation: 'users'
@@ -439,6 +622,97 @@ export type Database = {
 				Relationships: [
 					{
 						foreignKeyName: 'track_analysis_attempts_track_id_fkey'
+						columns: ['track_id']
+						isOneToOne: false
+						referencedRelation: 'tracks'
+						referencedColumns: ['id']
+					},
+				]
+			}
+			track_embeddings: {
+				Row: {
+					content_hash: string
+					created_at: string
+					dims: number
+					embedding: string
+					embedding_kind: string
+					id: number
+					model_name: string
+					model_version: string
+					track_id: number
+					updated_at: string
+				}
+				Insert: {
+					content_hash: string
+					created_at?: string
+					dims: number
+					embedding: string
+					embedding_kind: string
+					id?: never
+					model_name: string
+					model_version: string
+					track_id: number
+					updated_at?: string
+				}
+				Update: {
+					content_hash?: string
+					created_at?: string
+					dims?: number
+					embedding?: string
+					embedding_kind?: string
+					id?: never
+					model_name?: string
+					model_version?: string
+					track_id?: number
+					updated_at?: string
+				}
+				Relationships: [
+					{
+						foreignKeyName: 'track_embeddings_track_id_fkey'
+						columns: ['track_id']
+						isOneToOne: false
+						referencedRelation: 'tracks'
+						referencedColumns: ['id']
+					},
+				]
+			}
+			track_genres: {
+				Row: {
+					content_hash: string
+					created_at: string
+					genres: string[]
+					genres_with_scores: Json | null
+					id: number
+					source: string
+					source_level: string
+					track_id: number
+					updated_at: string
+				}
+				Insert: {
+					content_hash: string
+					created_at?: string
+					genres?: string[]
+					genres_with_scores?: Json | null
+					id?: never
+					source: string
+					source_level: string
+					track_id: number
+					updated_at?: string
+				}
+				Update: {
+					content_hash?: string
+					created_at?: string
+					genres?: string[]
+					genres_with_scores?: Json | null
+					id?: never
+					source?: string
+					source_level?: string
+					track_id?: number
+					updated_at?: string
+				}
+				Relationships: [
+					{
+						foreignKeyName: 'track_genres_track_id_fkey'
 						columns: ['track_id']
 						isOneToOne: false
 						referencedRelation: 'tracks'

@@ -5,7 +5,9 @@ node_modules
 /.cache
 /build
 .env
-supabase
+# Supabase - track config and migrations, ignore local state
+supabase/.branches/
+supabase/.temp/
 dist/
 
 ./tests/spotify.session.json
