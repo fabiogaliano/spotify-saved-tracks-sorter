@@ -146,6 +146,9 @@ export interface MatchContextRepository {
 
 	/** Delete context and all associated results */
 	delete(id: number): Promise<void>
+
+	/** Prune old contexts for a user, keeping only the most recent N */
+	pruneOldContexts(userId: number, keepCount?: number): Promise<number>
 }
 
 export interface MatchResultRepository {

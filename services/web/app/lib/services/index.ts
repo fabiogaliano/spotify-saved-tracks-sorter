@@ -1,3 +1,7 @@
+import {
+	matchContextRepository,
+	matchResultRepository,
+} from '~/lib/repositories/MatchCacheRepository'
 import { SupabaseMatchRepository } from '~/lib/repositories/MatchRepository'
 
 import { SpotifyService } from './SpotifyService'
@@ -7,6 +11,7 @@ import { SongAnalysisService } from './analysis/SongAnalysisService'
 import { embeddingService } from './embedding'
 import { LlmProviderManager } from './llm/LlmProviderManager'
 import { DefaultLyricsService } from './lyrics/LyricsService'
+import { DefaultMatchCachingService } from './matching/MatchCachingService'
 import { MatchingService } from './matching/MatchingService'
 import { playlistProfilingService } from './profiling'
 import { SemanticMatcher } from './semantic/SemanticMatcher'
@@ -44,6 +49,15 @@ const matchingService = new MatchingService(
 	playlistProfilingService
 )
 
+// Match caching service (Phase 8: cache-first matching orchestration)
+const matchCachingService = new DefaultMatchCachingService(
+	matchingService,
+	matchContextRepository,
+	matchResultRepository,
+	embeddingService,
+	playlistProfilingService
+)
+
 // Export all services
 export {
 	llmProviderManager,
@@ -54,6 +68,7 @@ export {
 	semanticMatcher,
 	matchRepository,
 	matchingService,
+	matchCachingService,
 	embeddingService,
 	playlistProfilingService,
 	SyncService,
@@ -68,4 +83,5 @@ export type {
 	PlaylistAnalysisService,
 	DefaultVectorizationService as VectorizationService,
 	MatchingService,
+	DefaultMatchCachingService as MatchCachingService,
 }

@@ -7,7 +7,7 @@ import { playlistAnalysisRepository } from '~/lib/repositories/PlaylistAnalysisR
 import { playlistRepository } from '~/lib/repositories/PlaylistRepository'
 import { trackAnalysisRepository } from '~/lib/repositories/TrackAnalysisRepository'
 import { trackRepository } from '~/lib/repositories/TrackRepository'
-import { matchingService } from '~/lib/services'
+import { matchCachingService } from '~/lib/services'
 import { validateSongAnalysis } from '~/lib/services/analysis/analysis-validator'
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -134,25 +134,27 @@ export async function action({ request }: ActionFunctionArgs) {
 			return Response.json({ error: 'No tracks with analysis found' }, { status: 400 })
 		}
 
-		// Perform matching
-		const startTime = Date.now()
-		const results = await matchingService.matchSongsToPlaylist(
-			matchingPlaylist,
+		// Perform matching with caching (Phase 8: cache-first flow)
+		const cachedResult = await matchCachingService.matchWithCaching({
+			userId: user.userId,
+			playlist: matchingPlaylist,
 			songs,
-			existingPlaylistSongs
-		)
-		const processingTime = Date.now() - startTime
+			existingPlaylistSongs,
+		})
 
 		logger.info('Matching completed', {
 			playlistId,
-			resultCount: results.length,
-			processingTime,
+			resultCount: cachedResult.results.length,
+			processingTime: cachedResult.processingTime,
+			fromCache: cachedResult.fromCache,
+			contextId: cachedResult.contextId,
 		})
 
 		return Response.json({
 			playlistId: playlistId.toString(),
-			results,
-			processingTime,
+			results: cachedResult.results,
+			processingTime: cachedResult.processingTime,
+			fromCache: cachedResult.fromCache,
 		})
 	} catch (error) {
 		logger.error('Error performing matching', error as Error)

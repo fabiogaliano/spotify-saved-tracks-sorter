@@ -334,7 +334,7 @@ Rollout guidance:
 Goal: repeated matching runs should do 0 embeddings and 0 reranks when nothing changed.
 
 Tasks:
-- [ ] **[Task] Implement `match_contexts` concept**
+- [x] **[Task] Implement `match_contexts` concept**
   - Includes:
     - user_id
     - model bundle identifiers
@@ -342,14 +342,26 @@ Tasks:
     - config_hash
     - playlist_set_hash
     - candidate_set_hash
-- [ ] **[Task] Implement `match_results`** keyed by `match_context_id`.
-- [ ] **[Task] Update `api.matching.tsx` flow**
+  - [Done] `MatchCachingService.buildContextHashes()` computes all hashes; DB schema in `match_contexts` table
+- [x] **[Task] Implement `match_results`** keyed by `match_context_id`.
+  - [Done] `MatchCachingService.persistResults()` stores results with `match_context_id` FK
+- [x] **[Task] Update `api.matching.tsx` flow**
   - Compute context → check cached results → return cached OR compute+persist.
+  - [Done] Route now uses `matchCachingService.matchWithCaching()` which:
+    1. Builds context hash from all inputs
+    2. Checks DB for existing context
+    3. Returns cached results on HIT, computes+persists on MISS
+    4. Returns `fromCache` boolean in response
+
+Implementation files:
+- `services/web/app/lib/services/matching/MatchCachingService.ts` - Core caching orchestration
+- `services/web/app/lib/services/matching/factory.ts` - Dependency injection factory
+- `services/web/app/lib/services/matching/index.ts` - Module exports
+- `services/web/app/routes/api.matching.tsx` - Updated to use cache-first flow
 
 Integration note:
-- Decide whether `track_playlist_matches` is:
-  - deprecated (and replaced by match context tables), or
-  - retained as a “latest snapshot” table for UI convenience.
+- `track_playlist_matches` is retained for now as a separate concern (UI convenience).
+- `match_contexts` + `match_results` are the new caching layer that wraps the entire matching flow.
 
 ---
 
@@ -396,7 +408,7 @@ Tasks:
 - [x] **[Step 2]** DB schema + repositories (Phases 2–3)
 - [x] **[Step 3]** DB-first embeddings (Phase 4) — `EmbeddingService` implemented
 - [x] **[Step 4]** Persisted playlist profiles (Phase 6) — `PlaylistProfilingService` implemented
-- [ ] **[Step 5]** Match caching/context (Phase 8)
+- [x] **[Step 5]** Match caching/context (Phase 8) — `MatchCachingService` implemented
 - [ ] **[Step 6]** Backfills via SQS (Phase 9)
 - [ ] **[Step 7]** Python API V2 models + reranker + emotions (Phase 5)
 - [ ] **[Step 8]** Two-stage matching + rerank integration (Phase 7)
