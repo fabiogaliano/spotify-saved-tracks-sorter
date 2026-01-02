@@ -5,11 +5,21 @@ import { safeNumber } from '~/lib/utils/safe-number'
 
 import type { SongAnalysis } from '../analysis/analysis-schemas'
 import type { EmbeddingService } from '../embedding/EmbeddingService'
+import type {
+	ComputedPlaylistProfile,
+	PlaylistProfilingService,
+} from '../profiling/PlaylistProfilingService'
 import type { ReccoBeatsAudioFeatures } from '../reccobeats/ReccoBeatsService'
 import type { SemanticMatcher } from '../semantic/SemanticMatcher'
 import type { VectorizationService } from '../vectorization/VectorizationService'
 import { AUDIO_FEATURE_WEIGHTS, MATCHING_WEIGHTS } from './matching-config'
 
+/**
+ * Playlist profile used for matching.
+ * Can be populated from either:
+ * - PlaylistProfilingService (DB-first, Phase 6)
+ * - Legacy in-memory computation (fallback)
+ */
 interface PlaylistProfile {
 	vector: number[]
 	genres: string[]
@@ -28,7 +38,8 @@ export class MatchingService {
 		private readonly matchRepository: MatchRepository,
 		private readonly vectorization: VectorizationService,
 		private readonly semanticMatcher: SemanticMatcher,
-		private readonly embeddingService?: EmbeddingService
+		private readonly embeddingService?: EmbeddingService,
+		private readonly profilingService?: PlaylistProfilingService
 	) {}
 
 	/**
@@ -143,18 +154,85 @@ export class MatchingService {
 	}
 
 	/**
-	 * Profile playlist from existing songs or metadata
+	 * Profile playlist from existing songs or metadata.
+	 * Uses DB-first PlaylistProfilingService if available, otherwise computes in-memory.
 	 */
 	private async profilePlaylist(
 		playlist: Playlist,
 		existingSongs: Song[] = []
 	): Promise<PlaylistProfile> {
+		// Use PlaylistProfilingService if available (Phase 6 DB-first pattern)
+		if (this.profilingService && existingSongs.length >= 3) {
+			try {
+				const computed = await this.profilingService.profilePlaylist(
+					playlist,
+					existingSongs
+				)
+				return this.convertComputedProfile(computed, existingSongs)
+			} catch (error) {
+				logger.warn('PlaylistProfilingService failed, falling back to in-memory', {
+					playlistId: playlist.id,
+					error: error instanceof Error ? error.message : String(error),
+				})
+				// Fall through to legacy computation
+			}
+		}
+
+		// Legacy in-memory computation
 		if (existingSongs.length >= 3) {
-			// Learn from existing songs
 			return this.profileFromSongs(playlist, existingSongs)
 		} else {
-			// Use playlist metadata and description
 			return this.profileFromDescription(playlist)
+		}
+	}
+
+	/**
+	 * Convert ComputedPlaylistProfile from ProfilingService to internal PlaylistProfile format.
+	 */
+	private convertComputedProfile(
+		computed: ComputedPlaylistProfile,
+		songs: Song[]
+	): PlaylistProfile {
+		// Extract moods from emotion distribution
+		const moods = Object.entries(computed.emotionDistribution)
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, 2)
+			.map(([mood]) => mood)
+
+		// Extract genres from genre distribution
+		const genres = Object.entries(computed.genreDistribution)
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, 3)
+			.map(([genre]) => genre)
+
+		// Extract themes from songs (not stored in computed profile yet)
+		const themes = this.extractCommonThemes(songs)
+
+		// Extract listening contexts from songs
+		const listeningContexts = this.extractAverageListeningContexts(songs)
+
+		// Extract emotional journey types from songs
+		const emotionalJourneyTypes = this.extractEmotionalJourneyTypes(songs)
+
+		// Get audio features from songs
+		const audioFeatures: ReccoBeatsAudioFeatures[] = []
+		for (const song of songs.slice(0, 20)) {
+			if (song.analysis?.audio_features) {
+				audioFeatures.push(song.analysis.audio_features as ReccoBeatsAudioFeatures)
+			}
+		}
+
+		return {
+			vector: computed.embedding,
+			genres,
+			moods,
+			themes,
+			audioFeatures: audioFeatures.length > 0 ? audioFeatures : undefined,
+			avgAudioFeatures: computed.audioCentroid,
+			listeningContexts,
+			emotionalJourneyTypes,
+			existingSongs: songs.slice(0, 10),
+			method: computed.method,
 		}
 	}
 

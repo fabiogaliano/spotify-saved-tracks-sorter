@@ -269,14 +269,14 @@ Operational tasks:
 Goal: make playlist representation explicit, persisted, and invalidatable.
 
 Tasks:
-- [ ] **[Task] Implement `PlaylistProfilingService`** that produces a persisted profile record.
+- [x] **[Task] Implement `PlaylistProfilingService`** that produces a persisted profile record.
   - Inputs:
     - playlist analysis
     - playlist track IDs
-    - track embeddings for those tracks
-    - track genres
-    - audio features aggregates (already in analysis JSON)
-    - emotion distributions
+    - track embeddings for those tracks (via EmbeddingService)
+    - track genres (from song analysis musical_style)
+    - audio features aggregates (from analysis JSON)
+    - emotion distributions (from song analysis emotional.dominant_mood)
   - Outputs:
     - `playlist_profiles` row with:
       - primary vector (centroid)
@@ -284,18 +284,24 @@ Tasks:
       - genre distribution (structured)
       - emotion bucket distribution
       - content hash
+  - [Done] Implemented in:
+    - `services/web/app/lib/services/profiling/PlaylistProfilingService.ts` - Core service with DB-first pattern
+    - `services/web/app/lib/services/profiling/factory.ts` - Dependency injection factory
+    - `services/web/app/lib/services/profiling/index.ts` - Module exports
 
 Invalidation design tasks:
-- [ ] **[Task] Define what changes playlist profile hash**
-  - playlist analysis changes
-  - playlist membership changes
-  - track embeddings change (new model/version)
-  - track genre updates
+- [x] **[Task] Define what changes playlist profile hash**
+  - playlist analysis changes (via playlistText in hash)
+  - playlist membership changes (via trackIds in hash)
+  - track embeddings change (via model_bundle_hash)
+  - track genre updates (via genreDistribution in hash)
+  - [Done] Using `hashPlaylistProfile()` which includes: playlistText, trackIds, genreDistribution, emotionDistribution, audioCentroid
 
 Integration point:
-- `MatchingService.profilePlaylist()` should attempt:
-  - DB profile read first
-  - fallback to compute-and-persist if missing
+- [x] `MatchingService.profilePlaylist()` now attempts:
+  - PlaylistProfilingService (DB-first) when available
+  - Fallback to legacy in-memory computation if service unavailable or fails
+  - [Done] Optional injection of PlaylistProfilingService into MatchingService constructor
 
 ---
 
@@ -389,7 +395,7 @@ Tasks:
 - [x] **[Step 1]** Hashing/versioning contracts (Phase 0)
 - [x] **[Step 2]** DB schema + repositories (Phases 2–3)
 - [x] **[Step 3]** DB-first embeddings (Phase 4) — `EmbeddingService` implemented
-- [ ] **[Step 4]** Persisted playlist profiles (Phase 6)
+- [x] **[Step 4]** Persisted playlist profiles (Phase 6) — `PlaylistProfilingService` implemented
 - [ ] **[Step 5]** Match caching/context (Phase 8)
 - [ ] **[Step 6]** Backfills via SQS (Phase 9)
 - [ ] **[Step 7]** Python API V2 models + reranker + emotions (Phase 5)

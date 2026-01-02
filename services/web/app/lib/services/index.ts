@@ -4,9 +4,11 @@ import { SpotifyService } from './SpotifyService'
 import { SyncService } from './SyncService'
 import { PlaylistAnalysisService } from './analysis/PlaylistAnalysisService'
 import { SongAnalysisService } from './analysis/SongAnalysisService'
+import { embeddingService } from './embedding'
 import { LlmProviderManager } from './llm/LlmProviderManager'
 import { DefaultLyricsService } from './lyrics/LyricsService'
 import { MatchingService } from './matching/MatchingService'
+import { playlistProfilingService } from './profiling'
 import { SemanticMatcher } from './semantic/SemanticMatcher'
 import { DefaultVectorizationService } from './vectorization/VectorizationService'
 
@@ -33,11 +35,13 @@ const semanticMatcher = new SemanticMatcher(vectorizationService, {
 const songAnalysisService = new SongAnalysisService(lyricsService, llmProviderManager)
 const playlistAnalysisService = new PlaylistAnalysisService(llmProviderManager)
 
-// Matching service (uses vectorization and semantic matcher)
+// Matching service (uses vectorization, semantic matcher, and DB-first services)
 const matchingService = new MatchingService(
 	matchRepository,
 	vectorizationService,
-	semanticMatcher
+	semanticMatcher,
+	embeddingService,
+	playlistProfilingService
 )
 
 // Export all services
@@ -50,6 +54,8 @@ export {
 	semanticMatcher,
 	matchRepository,
 	matchingService,
+	embeddingService,
+	playlistProfilingService,
 	SyncService,
 	SpotifyService,
 }

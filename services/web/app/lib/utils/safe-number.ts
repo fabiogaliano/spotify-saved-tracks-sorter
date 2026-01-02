@@ -14,6 +14,24 @@ export function safeNumber(value: unknown, fallback = 0): number {
 }
 
 /**
+ * Convert a string or number ID to a numeric ID.
+ * Use this when IDs may come as strings (e.g., from URL params, form data, or
+ * model types that allow string | number).
+ *
+ * @param id - The ID to convert (string or number)
+ * @returns The numeric ID
+ * @throws If the string cannot be parsed to a valid integer
+ *
+ * @example
+ * toNumericId(123)      // 123
+ * toNumericId("123")    // 123
+ * toNumericId("abc")    // NaN (caller should validate)
+ */
+export function toNumericId(id: string | number): number {
+	return typeof id === 'string' ? parseInt(id, 10) : id
+}
+
+/**
  * Safely extract a numeric value within a specific range.
  * Useful for normalized scores (0-1) or percentages.
  *
